@@ -140,6 +140,7 @@
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>IA Estratégica</span></div>
       <div class="nav-item" onclick="selectMenu(this,'diretoria')"><span class="nav-icon">⚙️</span><span>Parâmetros</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-financeiro')"><span class="nav-icon">💼</span><span>Comissão Financeiro</span></div>
+      <div class="nav-item" onclick="selectMenu(this,'comissao-operacional')"><span class="nav-icon">🏆</span><span>Comissão Operacional</span></div>
     </nav>
     <div class="sidebar-footer">Sistema Financeiro TEXNET<br>© 2026 - v3.0</div>
   </div>
@@ -162,6 +163,7 @@
             <option value="ia-estrategica">IA Estratégica</option>
             <option value="diretoria">Parâmetros</option>
             <option value="comissao-financeiro">Comissão Financeiro</option>
+            <option value="comissao-operacional">Comissão Operacional</option>
           </select>
         </div>
         <div class="filter-group">
@@ -556,6 +558,152 @@
           </div>
         </div>
 
+        <!-- ===== PARÂMETROS OPERACIONAIS ===== -->
+        <div style="background:white;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:1.75rem;margin-bottom:1.5rem">
+          <h3 style="margin:0 0 1.25rem;color:#1e293b;font-size:1.05rem">🏆 Parâmetros — Comissão Operacional</h3>
+
+          <!-- Metas mensais -->
+          <div style="margin-bottom:1.25rem">
+            <h4 style="margin:0 0 0.75rem;color:#475569;font-size:0.88rem;text-transform:uppercase;letter-spacing:0.05em">📊 Metas Mensais (indicadores)</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem">
+              <div style="background:#f8fafc;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#64748b;display:block;margin-bottom:0.3rem">Meta OS Suporte PF (%)</label>
+                <input type="number" step="0.01" id="op_metaOsPf" value="5.00" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e2e8f0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#64748b;display:block;margin-bottom:0.3rem">Meta OS Suporte PJ (%)</label>
+                <input type="number" step="0.01" id="op_metaOsPj" value="10.00" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e2e8f0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#64748b;display:block;margin-bottom:0.3rem">Meta Churn PF (%) — máx</label>
+                <input type="number" step="0.001" id="op_metaChurnPf" value="2.200" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e2e8f0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#64748b;display:block;margin-bottom:0.3rem">Meta Churn PJ (%) — máx</label>
+                <input type="number" step="0.001" id="op_metaChurnPj" value="1.150" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e2e8f0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#64748b;display:block;margin-bottom:0.3rem">Meta Retiradas (%) — mín</label>
+                <input type="number" step="0.01" id="op_metaRetiradas" value="90.00" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e2e8f0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#64748b;display:block;margin-bottom:0.3rem">Ticket Médio PF (R$)</label>
+                <input type="number" step="1" id="op_ticketPf" value="88" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e2e8f0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#64748b;display:block;margin-bottom:0.3rem">Ticket Médio PJ (R$)</label>
+                <input type="number" step="1" id="op_ticketPj" value="303" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #e2e8f0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+            </div>
+          </div>
+
+          <!-- Prêmios mensais -->
+          <div style="margin-bottom:1.25rem">
+            <h4 style="margin:0 0 0.75rem;color:#475569;font-size:0.88rem;text-transform:uppercase;letter-spacing:0.05em">💰 Prêmios Mensais (% sobre Ebitda ou Resultado)</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem">
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio OS PF (% Ebitda)</label>
+                <input type="number" step="0.001" id="op_premioOsPf" value="0.060" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio OS PJ (% Ebitda)</label>
+                <input type="number" step="0.001" id="op_premioOsPj" value="0.060" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Churn PF (% Ebitda)</label>
+                <input type="number" step="0.001" id="op_premioChurnPf" value="0.060" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Churn PJ (% Ebitda)</label>
+                <input type="number" step="0.001" id="op_premioChurnPj" value="0.060" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Retiradas (% Ebitda)</label>
+                <input type="number" step="0.01" id="op_premioRetiradas" value="0.800" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Resultado Positivo (%)</label>
+                <input type="number" step="0.01" id="op_premioResPos" value="7.00" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fff7f7;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#7f1d1d;display:block;margin-bottom:0.3rem">Desconto Resultado Negativo (%)</label>
+                <input type="number" step="0.01" id="op_premioResNeg" value="2.00" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fecaca;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Ebitda Móvel (% Ebitda)</label>
+                <input type="number" step="0.001" id="op_premioEbitdaMov" value="0.100" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+            </div>
+          </div>
+
+          <!-- Metas e prêmios trimestrais operacionais -->
+          <div>
+            <h4 style="margin:0 0 0.75rem;color:#475569;font-size:0.88rem;text-transform:uppercase;letter-spacing:0.05em">🏅 Metas Trimestrais Operacionais</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem">
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Resultado Acum. Trimestral (R$)</label>
+                <input type="number" step="1000" id="op_metaResultTrim" value="60000" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Churn Fin. Trimestral (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaChurnFinTrim" value="1.650" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Mat-Equip Q1 (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaMatEquip_q1" value="8.43" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Mat-Equip Q2 (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaMatEquip_q2" value="8.74" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Mat-Equip Q3 (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaMatEquip_q3" value="7.31" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Mat-Equip Q4 (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaMatEquip_q4" value="7.52" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Folha Q1 (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaFolha_q1" value="23.63" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Folha Q2 (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaFolha_q2" value="24.45" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Folha Q3 (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaFolha_q3" value="25.65" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#fefce8;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#713f12;display:block;margin-bottom:0.3rem">Meta Folha Q4 (%) — máx</label>
+                <input type="number" step="0.01" id="op_metaFolha_q4" value="28.27" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #fde68a;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Resultado Trim (% Ebitda acum.)</label>
+                <input type="number" step="0.001" id="op_premioResultTrim" value="0.100" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Churn Fin Trim (% Ebitda acum.)</label>
+                <input type="number" step="0.001" id="op_premioChurnFinTrim" value="0.100" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Mat-Equip Trim (% Ebitda acum.)</label>
+                <input type="number" step="0.001" id="op_premioMatEquipTrim" value="0.050" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Folha Trim (% Ebitda acum.)</label>
+                <input type="number" step="0.001" id="op_premioFolhaTrim" value="0.070" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+              <div style="background:#f0fdf4;border-radius:10px;padding:0.875rem 1rem">
+                <label style="font-size:0.78rem;color:#064e3b;display:block;margin-bottom:0.3rem">Prêmio Ebitda Trim (% Ebitda acum.)</label>
+                <input type="number" step="0.001" id="op_premioEbitdaTrim" value="0.200" style="width:100%;padding:0.4rem 0.6rem;border:1px solid #bbf7d0;border-radius:6px;font-weight:700" onchange="salvarParams()">
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Botão salvar -->
         <div style="display:flex;justify-content:flex-end">
           <button onclick="salvarParams()" style="padding:0.75rem 2.5rem;background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:0.5rem;transition:opacity 0.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
@@ -617,7 +765,7 @@
         ⚠️ <strong>Dados da Diretoria não encontrados</strong> para este mês/ano. Recorrência e Reajuste usarão valor <strong>R$ 0</strong>. Para corrigir, faça o upload do PDF na aba <strong>Parâmetros</strong>.
       </div>
 
-      <!-- Banner mês fechado (oculto - status agora fica no card do Total Mensal) -->
+      <!-- Banner mês fechado -->
       <div id="comissaoMesFechadoBanner" style="display:none"></div>
 
       <!-- MATRIZ DE INDICADORES -->
@@ -646,8 +794,102 @@
         <span style="background:#FEF3C7;padding:0.15rem 0.5rem;border-radius:4px;color:#92400E;font-weight:600;margin:0 0.5rem">🟡 Parâmetros</span>Taxas e metas
       </div>
 
-    </div>
+    </div><!-- end comissaoFinanceiroView inner -->
+      </div><!-- end comissaoFinanceiroView -->
+
+      <!-- ============================================================ -->
+      <!-- COMISSÃO OPERACIONAL VIEW                                     -->
+      <!-- ============================================================ -->
+      <div id="comissaoOperacionalView" class="view-container" style="display:none">
+        <div style="max-width:1400px;margin:0 auto;padding:2rem">
+
+          <!-- Header -->
+          <div style="background:linear-gradient(135deg,#1e3a8a,#0369a1,#059669);padding:2rem 2.5rem;border-radius:20px;color:white;margin-bottom:1.5rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+              <div>
+                <h1 style="margin:0;font-size:2rem">🏆 Comissão Operacional</h1>
+                <p style="margin:0.4rem 0 0;opacity:0.85;font-size:0.95rem">Matriz de Resultado 2026 — Indicadores e comissões calculados automaticamente</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+                <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.75rem">
+                  <label style="font-size:0.85rem;font-weight:600;opacity:0.9">📅 Mês:</label>
+                  <select id="opMesFiltro" onchange="renderComissaoOp()" style="background:transparent;border:none;color:white;font-weight:700;font-size:0.95rem;cursor:pointer">
+                    <option value="0" style="color:#1e293b">Janeiro</option>
+                    <option value="1" style="color:#1e293b">Fevereiro</option>
+                    <option value="2" style="color:#1e293b">Março</option>
+                    <option value="3" style="color:#1e293b">Abril</option>
+                    <option value="4" style="color:#1e293b">Maio</option>
+                    <option value="5" style="color:#1e293b">Junho</option>
+                    <option value="6" style="color:#1e293b">Julho</option>
+                    <option value="7" style="color:#1e293b">Agosto</option>
+                    <option value="8" style="color:#1e293b">Setembro</option>
+                    <option value="9" style="color:#1e293b">Outubro</option>
+                    <option value="10" style="color:#1e293b">Novembro</option>
+                    <option value="11" style="color:#1e293b">Dezembro</option>
+                  </select>
+                </div>
+                <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.75rem">
+                  <label style="font-size:0.85rem;font-weight:600;opacity:0.9">🗓 Ano:</label>
+                  <select id="opAnoFiltro" onchange="renderComissaoOp()" style="background:transparent;border:none;color:white;font-weight:700;font-size:0.95rem;cursor:pointer">
+                    <option value="2026" style="color:#1e293b">2026</option>
+                    <option value="2025" style="color:#1e293b">2025</option>
+                  </select>
+                </div>
+                <button onclick="renderComissaoOp()" style="padding:0.55rem 1.2rem;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.6);color:white;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem">🔄 Atualizar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- INDICADORES OPERACIONAIS -->
+          <div style="background:white;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:1.75rem;margin-bottom:1.5rem">
+            <h3 style="margin:0 0 1.25rem;color:#1e293b;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem">
+              📊 Indicadores Operacionais
+              <span id="opMesLabel" style="background:#dbeafe;color:#1e40af;font-size:0.8rem;padding:0.2rem 0.6rem;border-radius:20px;font-weight:600;margin-left:0.5rem"></span>
+            </h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem" id="opIndicadores"></div>
+          </div>
+
+          <!-- NOVOS NEGÓCIOS E CANCELAMENTOS -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem">
+            <div style="background:white;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:1.75rem">
+              <h3 style="margin:0 0 1.25rem;color:#065f46;font-size:1rem;display:flex;align-items:center;gap:0.5rem">🟢 Novos Negócios</h3>
+              <div id="opNovosNegocios"></div>
+            </div>
+            <div style="background:white;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:1.75rem">
+              <h3 style="margin:0 0 1.25rem;color:#991b1b;font-size:1rem;display:flex;align-items:center;gap:0.5rem">🔴 Cancelamentos</h3>
+              <div id="opCancelamentos"></div>
+            </div>
+          </div>
+
+          <!-- RESULTADO LÍQUIDO -->
+          <div id="opResultadoCard" style="margin-bottom:1.5rem"></div>
+
+          <!-- COMISSÕES MENSAIS -->
+          <div style="background:white;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:1.75rem;margin-bottom:1.5rem">
+            <h3 style="margin:0 0 1.25rem;color:#1e293b;font-size:1.05rem">💰 Comissões Mensais</h3>
+            <div id="opComissoesMensais"></div>
+            <div id="opTotalMensal" style="margin-top:1rem"></div>
+          </div>
+
+          <!-- BÔNUS TRIMESTRAL -->
+          <div style="background:white;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);padding:1.75rem;margin-bottom:1.5rem">
+            <h3 style="margin:0 0 1.25rem;color:#1e293b;font-size:1.05rem">🏅 Bônus Trimestral</h3>
+            <p style="color:#64748b;font-size:0.85rem;margin:0 0 1.25rem">Avaliado ao final de cada trimestre (Mar, Jun, Set, Dez) com base nos acumulados.</p>
+            <div id="opBonusTrimestral" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem"></div>
+          </div>
+
+          <!-- Rodapé fontes -->
+          <div style="background:#f8fafc;border-radius:12px;padding:1rem 1.5rem;border-left:4px solid #0369a1;font-size:0.82rem;color:#475569">
+            <strong style="color:#1e293b">📌 Fontes:</strong>
+            <span style="background:#D1FAE5;padding:0.15rem 0.5rem;border-radius:4px;color:#065F46;font-weight:600;margin:0 0.5rem">🟢 Sistema</span>OS, Churn, Novos, Cancelamentos, Retiradas
+            <span style="background:#DBEAFE;padding:0.15rem 0.5rem;border-radius:4px;color:#1E40AF;font-weight:600;margin:0 0.5rem">🔵 Fluxo de Caixa</span>Faturamento e EBITDA Ajustado
+            <span style="background:#FEF3C7;padding:0.15rem 0.5rem;border-radius:4px;color:#92400E;font-weight:600;margin:0 0.5rem">🟡 Parâmetros Operacionais</span>Metas e taxas de prêmio
+          </div>
+
+        </div>
       </div>
+
+
 
     </div><!-- end .content -->
   </div><!-- end .main-content -->
@@ -734,90 +976,97 @@
     // ==================== DADOS FINANCEIROS ====================
     const dadosFinanceiros = {
       receitas: [
-        { nome:"Link Pessoa Física",jan:1463928.46,fev:1235675.95,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:2699604.41 },
-        { nome:"Link Pessoa Jurídica",jan:1189771.05,fev:788162.94,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:1977933.99 },
-        { nome:"Juros/Multa",jan:56504.43,fev:38890.31,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:95394.74 },
-        { nome:"Taxa de instalação",jan:7135.13,fev:2266.66,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:9401.79 },
-        { nome:"Eventos",jan:3150.0,fev:3497.01,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:6647.01 },
-        { nome:"Multa fidelidade e equipamento",jan:663.87,fev:1139.97,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:1803.84 },
-        { nome:"Rendimentos financeiros",jan:2160.49,fev:2472.71,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:4633.2 },
-        { nome:"V. Ativos imobilizados",jan:0.0,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0.0 },
-        { nome:"Vendas canceladas e estornos",jan:-2757.11,fev:-572.13,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:-3329.24 }
+        { nome:"Link Pessoa Física",jan:1463928.46,fev:1235675.95,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:2699604.41 },
+        { nome:"Link Pessoa Jurídica",jan:1189771.05,fev:788162.94,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1977933.99 },
+        { nome:"Juros/Multa",jan:56504.43,fev:38890.31,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:95394.74 },
+        { nome:"Taxa de instalação",jan:7135.13,fev:2266.66,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:9401.79 },
+        { nome:"Eventos",jan:3150.0,fev:3497.01,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:6647.01 },
+        { nome:"Multa fidelidade e equipamento",jan:663.87,fev:1139.97,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1803.84 },
+        { nome:"Rendimentos financeiros",jan:2160.49,fev:2472.71,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:4633.2 },
+        { nome:"V. Ativos imobilizados",jan:0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:0.0 },
+        { nome:"Vendas canceladas e estornos",jan:-2757.11,fev:-572.13,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:-3329.24 }
       ],
       impostos: [
-        { nome:"ICMS",jan:88221.38,fev:99080.62,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:187302.0 },
-        { nome:"COFINS",jan:52907.2,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:52907.2 },
-        { nome:"PIS",jan:11417.3,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:11417.3 },
-        { nome:"IRPJ",jan:70847.45,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:70847.45 },
-        { nome:"CSLL",jan:27665.08,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:27665.08 },
-        { nome:"ISS",jan:5745.14,fev:6285.8,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:12030.94 },
-        { nome:"ISS Retido",jan:1218.24,fev:1267.39,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:2485.63 },
-        { nome:"Simples Nacional",jan:1626.28,fev:1343.8,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:2970.08 },
-        { nome:"FUST/FUNTTEL",jan:17091.99,fev:12526.67,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:29618.66 }
+        { nome:"ICMS",jan:88221.38,fev:99080.62,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:187302.0 },
+        { nome:"COFINS",jan:52907.2,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:52907.2 },
+        { nome:"PIS",jan:11417.3,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:11417.3 },
+        { nome:"IRPJ",jan:70847.45,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:70847.45 },
+        { nome:"CSLL",jan:27665.08,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:27665.08 },
+        { nome:"ISS",jan:5745.14,fev:6285.8,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:12030.94 },
+        { nome:"ISS Retido",jan:1218.24,fev:1267.39,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:2485.63 },
+        { nome:"Simples Nacional",jan:1626.28,fev:1343.8,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:2970.08 },
+        { nome:"FUST/FUNTTEL",jan:17091.99,fev:12526.67,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:29618.66 }
       ],
       custos: [
-        { nome:"Kit Instalação",jan:152053.14,fev:174266.31,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:326319.45 },
-        { nome:"Materiais de Rede",jan:49341.66,fev:22670.74,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:72012.4 },
-        { nome:"Links de Dados / Voip",jan:57341.58,fev:56833.25,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:114174.83 },
-        { nome:"Vtal",jan:62847.53,fev:64036.63,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:126884.16 },
-        { nome:"Alugueis de Postes",jan:17793.58,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:17793.58 },
-        { nome:"Alugueis de Torre e POP",jan:14480.49,fev:10440.56,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:24921.05 },
-        { nome:"Custo com SVA",jan:13393.41,fev:13393.41,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:26786.82 },
-        { nome:"Energia / POP",jan:29532.99,fev:11047.02,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:40580.01 },
-        { nome:"Manutenção POP",jan:2795.5,fev:691.69,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:3487.19 },
-        { nome:"Comissões de vendas",jan:38831.33,fev:29272.77,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:68104.1 },
-        { nome:"Combustivel técnico",jan:31157.92,fev:32876.03,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:64033.95 },
-        { nome:"Manut. Veículo",jan:17987.66,fev:14486.91,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:32474.57 },
-        { nome:"Folha - Direta",jan:709835.26,fev:561211.24,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:1271046.5 },
-        { nome:"Telefonia",jan:4632.76,fev:4393.22,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:9025.98 },
-        { nome:"Man. Equipamento",jan:779.28,fev:140.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:919.28 },
-        { nome:"Ferramentas",jan:8224.74,fev:6483.02,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:14707.76 },
-        { nome:"Moveis e equipamentos escritório TI",jan:1241.88,fev:1233.53,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:2475.41 },
-        { nome:"Tercerização de Serv. (Instalações)",jan:0.0,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0.0 },
-        { nome:"Custos Lastmile",jan:34330.68,fev:33940.41,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:68271.09 }
+        { nome:"Kit Instalação",jan:152053.14,fev:174266.31,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:326319.45 },
+        { nome:"Materiais de Rede",jan:49341.66,fev:22670.74,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:72012.4 },
+        { nome:"Links de Dados / Voip",jan:57341.58,fev:56833.25,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:114174.83 },
+        { nome:"Vtal",jan:62847.53,fev:64036.63,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:126884.16 },
+        { nome:"Alugueis de Postes",jan:17793.58,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:17793.58 },
+        { nome:"Alugueis de Torre e POP",jan:14480.49,fev:10440.56,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:24921.05 },
+        { nome:"Custo com SVA",jan:13393.41,fev:13393.41,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:26786.82 },
+        { nome:"Energia / POP",jan:29532.99,fev:11047.02,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:40580.01 },
+        { nome:"Manutenção POP",jan:2795.5,fev:691.69,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:3487.19 },
+        { nome:"Comissões de vendas",jan:38831.33,fev:29272.77,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:68104.1 },
+        { nome:"Combustivel técnico",jan:31157.92,fev:32876.03,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:64033.95 },
+        { nome:"Manut. Veículo",jan:17987.66,fev:14486.91,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:32474.57 },
+        { nome:"Folha - Direta",jan:709835.26,fev:561211.24,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1271046.5 },
+        { nome:"Telefonia",jan:4632.76,fev:4393.22,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:9025.98 },
+        { nome:"Man. Equipamento",jan:779.28,fev:140.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:919.28 },
+        { nome:"Ferramentas",jan:8224.74,fev:6483.02,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:14707.76 },
+        { nome:"Moveis e equipamentos escritório TI",jan:1241.88,fev:1233.53,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:2475.41 },
+        { nome:"Tercerização de Serv. (Instalações)",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:0.0 },
+        { nome:"Custos Lastmile",jan:34330.68,fev:33940.41,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:68271.09 }
       ],
       despesas: [
-        { nome:"Marketing",jan:54183.69,fev:51344.74,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:105528.43 },
-        { nome:"Serv. Terceiros, jurídicos e consultorias",jan:39654.73,fev:29887.23,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:69541.96 },
-        { nome:"Viagens/Estadia",jan:0.0,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0.0 },
-        { nome:"Segurança Trabalho/ EPI",jan:332.5,fev:2041.42,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:2373.92 },
-        { nome:"Desp. Aluguel de escritório",jan:25978.9,fev:26994.1,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:52973.0 },
-        { nome:"Desp. Reformas empresa",jan:3552.5,fev:2193.71,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:5746.21 },
-        { nome:"Material de uso, consumo e papelaria",jan:2463.51,fev:327.8,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:2791.31 },
-        { nome:"Combustivel Adm",jan:954.05,fev:801.72,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:1755.77 },
-        { nome:"Despesas e taxas com Veiculos",jan:955.76,fev:13047.56,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:14003.32 },
-        { nome:"Despesas Tributárias/ Taxas legais",jan:3609.38,fev:571.43,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:4180.81 },
-        { nome:"Despesas Judiciais",jan:606.02,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:606.02 },
-        { nome:"Treinamentos",jan:0.0,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0.0 },
-        { nome:"Pró-Labore",jan:200000.0,fev:200000.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:400000.0 },
-        { nome:"Sistema",jan:18131.16,fev:21847.41,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:39978.57 },
-        { nome:"Taxas Boleto",jan:9409.45,fev:6727.14,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:16136.59 },
-        { nome:"Enérgia Elétrica escritório",jan:2307.66,fev:4977.36,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:7285.02 },
-        { nome:"Despesas Diversas / Estacionamento",jan:1412.13,fev:3715.51,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:5127.64 },
-        { nome:"Tarifas bancárias",jan:1402.08,fev:30.82,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:1432.9 }
+        { nome:"Marketing",jan:54183.69,fev:51344.74,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:105528.43 },
+        { nome:"Serv. Terceiros, jurídicos e consultorias",jan:39654.73,fev:29887.23,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:69541.96 },
+        { nome:"Viagens/Estadia",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:0.0 },
+        { nome:"Segurança Trabalho/ EPI",jan:332.5,fev:2041.42,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:2373.92 },
+        { nome:"Desp. Aluguel de escritório",jan:25978.9,fev:26994.1,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:52973.0 },
+        { nome:"Desp. Reformas empresa",jan:3552.5,fev:2193.71,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:5746.21 },
+        { nome:"Material de uso, consumo e papelaria",jan:2463.51,fev:327.8,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:2791.31 },
+        { nome:"Combustivel Adm",jan:954.05,fev:801.72,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1755.77 },
+        { nome:"Despesas e taxas com Veiculos",jan:955.76,fev:13047.56,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:14003.32 },
+        { nome:"Despesas Tributárias/ Taxas legais",jan:3609.38,fev:571.43,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:4180.81 },
+        { nome:"Despesas Judiciais",jan:606.02,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:606.02 },
+        { nome:"Treinamentos",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0,nov:0.0,dez:0.0,total:0.0 },
+        { nome:"Pró-Labore",jan:200000.0,fev:200000.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:400000.0 },
+        { nome:"Sistema",jan:18131.16,fev:21847.41,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:39978.57 },
+        { nome:"Taxas Boleto",jan:9409.45,fev:6727.14,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:16136.59 },
+        { nome:"Enérgia Elétrica escritório",jan:2307.66,fev:4977.36,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:7285.02 },
+        { nome:"Despesas Diversas / Estacionamento",jan:1412.13,fev:3715.51,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:5127.64 },
+        { nome:"Tarifas bancárias",jan:1402.08,fev:30.82,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1432.9 }
       ],
       ebitda: [
-        { nome:"EBITDA",jan:832261.35,fev:549104.45,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:1381365.8 }
+        { nome:"EBITDA",jan:832261.35,fev:549104.45,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1381365.8 }
       ],
       ebitda_ajustado: [
         { nome:"IRPJ (Previsão)",jan:20713.14,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:20713.14 },
         { nome:"CSSL (Previsão)",jan:8176.73,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:8176.73 },
         { nome:"Trimestral",jan:98512.53,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:98512.53 },
         { nome:"Compra de Provedor",jan:11708.33,fev:11708.33,mar:11708.33,abr:11708.33,mai:11708.33,jun:11708.33,jul:11708.33,ago:11708.33,set:11708.33,out:11708.33,nov:11708.33,dez:11708.33,total:140499.96 },
+        { nome:"Credito ICMS",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+        { nome:"Ajuste (Mark/Equip)",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+        { nome:"Datora",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+        { nome:"Inclusão 2",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+        { nome:"Inclusão 3",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+        { nome:"Inclusão 4",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+        { nome:"Inclusão 5",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
         { nome:"Ajuste (Postes)",jan:30497.32,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:30497.32 },
         { nome:"Ajuste Vtal Fora",jan:14996.53,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:14996.53 },
-        { nome:"EBITDA (Ajustado)",jan:844681.83,fev:520862.30,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:1365544.13 }
+        { nome:"EBITDA (Ajustado)",jan:844681.83,fev:537396.12,mar:-11708.33,abr:-11708.33,mai:-11708.33,jun:-11708.33,jul:-11708.33,ago:-11708.33,set:-11708.33,out:-11708.33,nov:-11708.33,dez:-11708.33,total:1264994.65 }
       ],
       ajustes: [
-        { nome:"Investimento",jan:26980.22,fev:59809.14,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:86789.36 },
-        { nome:"Empr/Finac/Parcel",jan:417745.56,fev:396693.89,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:814439.45 },
-        { nome:"Impostos",jan:44979.14,fev:0.0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:44979.14 },
-        { nome:"Sócios ou Retiradas",jan:293512.31,fev:299669.73,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:593182.04 }
-      ],
-      bancos: [
-        { nome:"MG - Itaú",jan:0,fev:0,total:0 },
-        { nome:"Speed - Itaú + Vinc.",jan:0,fev:0,total:0 },
-        { nome:"Caixa Tesouraria",jan:0,fev:0,total:0 }
+        { nome:"Investimento",jan:26980.22,fev:59809.14,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:86789.36 },
+        { nome:"Compra de veículos",jan:8448.44,fev:57977.36,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:66425.8 },
+        { nome:"Invest. técnico e administrativo",jan:18531.78,fev:1831.78,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:20363.56 },
+        { nome:"Aq. de provedor",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:0.0 },
+        { nome:"Empr/Finac/Parcel",jan:417745.56,fev:396693.89,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:814439.45 },
+        { nome:"Investimentos POP",jan:35186.47,fev:73528.4,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:108714.87 },
+        { nome:"Empréstimos para giro",jan:44067.64,fev:22495.76,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:66563.4 },
+        { nome:"Reneg. Débitos",jan:0.0,fev:1000.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1000.0 },
+        { nome:"Sócios ou Retiradas",jan:293512.31,fev:299669.73,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:593182.04 }
       ]
     };
 
@@ -842,7 +1091,7 @@
     function changeView() {
       const v = document.getElementById('viewType').value;
       document.querySelectorAll('.view-container').forEach(c=>{c.classList.remove('active');c.style.display='none';});
-      const hideHeader = ['consolidado','comparativo','powerbi','ia-estrategica','diretoria','comissao-financeiro'];
+      const hideHeader = ['consolidado','comparativo','powerbi','ia-estrategica','diretoria','comissao-financeiro','comissao-operacional'];
       document.getElementById('mainHeader').style.display = hideHeader.includes(v) ? 'none' : 'block';
       const show = id => { const el=document.getElementById(id); el.style.display='block'; el.classList.add('active'); };
       if (v==='dashboard') { show('dashboardView'); renderizarGraficos(); }
@@ -852,6 +1101,7 @@
       else if (v==='ia-estrategica') { show('iaEstrategicaView'); carregarApiKey(); }
       else if (v==='diretoria') { show('diretoriaView'); carregarParams(); diretoriaCarregarUltimoMes(); }
       else if (v==='comissao-financeiro') { show('comissaoFinanceiroView'); carregarParams().then(()=>renderComissao()); }
+      else if (v==='comissao-operacional') { show('comissaoOperacionalView'); carregarParams().then(()=>renderComissaoOp()); }
     }
 
     function updatePeriod() {}
@@ -1968,7 +2218,7 @@
       if (aviso) aviso.style.display = reajuste > 0 ? 'none' : 'block';
 
       const cards = [
-        { icon:'💰', label:'Faturamento Base',   val: fatTotal,  cor:'#2563eb', sub:'Total Receitas (Consolidado)' },
+        { icon:'💰', label:'Faturamento Base',   val: fatTotal,  cor:'#2563eb', sub:'Total Receitas (Fluxo de Caixa)' },
         { icon:'📋', label:'Juros/Multa',         val: juros,     cor:'#10b981', sub:'Receita de juros' },
         { icon:'🏦', label:'Tarifas Bancárias',   val: tarifas,   cor:'#f59e0b', sub:'Despesa bancária' },
         { icon:'🔵', label:'Reajuste Contratual', val: reajuste,  cor:'#8b5cf6', sub:'Fonte: PDF Diretoria' },
@@ -2156,7 +2406,16 @@
         'metaEbitda_jan','metaEbitda_fev','metaEbitda_mar','metaEbitda_abr',
         'metaEbitda_mai','metaEbitda_jun','metaEbitda_jul','metaEbitda_ago',
         'metaEbitda_set','metaEbitda_out','metaEbitda_nov','metaEbitda_dez',
-        'metaTrim_q1','metaTrim_q2','metaTrim_q3','metaTrim_q4'
+        'metaTrim_q1','metaTrim_q2','metaTrim_q3','metaTrim_q4',
+        'op_metaOsPf','op_metaOsPj','op_metaChurnPf','op_metaChurnPj','op_metaRetiradas',
+        'op_ticketPf','op_ticketPj',
+        'op_premioOsPf','op_premioOsPj','op_premioChurnPf','op_premioChurnPj',
+        'op_premioRetiradas','op_premioResPos','op_premioResNeg','op_premioEbitdaMov',
+        'op_metaResultTrim','op_metaChurnFinTrim',
+        'op_metaMatEquip_q1','op_metaMatEquip_q2','op_metaMatEquip_q3','op_metaMatEquip_q4',
+        'op_metaFolha_q1','op_metaFolha_q2','op_metaFolha_q3','op_metaFolha_q4',
+        'op_premioResultTrim','op_premioChurnFinTrim','op_premioMatEquipTrim',
+        'op_premioFolhaTrim','op_premioEbitdaTrim'
       ];
       const params = {};
       ids.forEach(id => {
@@ -2342,132 +2601,120 @@
           const data = new Uint8Array(e.target.result);
           const wb = XLSX.read(data, { type: 'array' });
 
-          // Usa aba "Anual Real - 2026" que tem todos os meses como colunas
+          // Usa aba "Anual Real - XXXX"
           const sheetName = wb.SheetNames.find(s => s.toLowerCase().includes('anual real')) || wb.SheetNames[0];
           syncSetProgress(30, `Lendo aba: ${sheetName}`);
           const ws = wb.Sheets[sheetName];
           const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: 0 });
 
-          // Detecta linha de header (com nomes de meses)
-          const MESES_ABREV = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-          let headerIdx = -1;
-          let colMeses = {}; // mesKey → colIndex
+          const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+          const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
 
+          // Detecta header com meses
+          let headerIdx = -1;
+          const colMeses = {};
           for (let i = 0; i < Math.min(10, rows.length); i++) {
             rows[i].forEach((cel, ci) => {
               if (typeof cel === 'string') {
-                const c = cel.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().slice(0,3);
-                if (MESES_ABREV.includes(c)) {
-                  colMeses[c] = ci;
-                  headerIdx = i;
-                }
+                const c = norm(cel).slice(0,3);
+                if (MESES.includes(c)) { colMeses[c] = ci; headerIdx = i; }
               }
             });
-            if (Object.keys(colMeses).length >= 2) break;
+            if (Object.keys(colMeses).length >= 6) break;
           }
-
           if (headerIdx < 0) {
-            syncSetStatus('❌ Não encontrei colunas de meses. Use a aba "Anual Real - 2026".', 'erro');
-            syncSetProgress(null);
-            return;
+            syncSetStatus('❌ Colunas de meses não encontradas. Use a aba "Anual Real".', 'erro');
+            syncSetProgress(null); return;
           }
 
-          syncSetProgress(50, `Meses detectados: ${Object.keys(colMeses).join(', ')}`);
+          syncSetProgress(50, `Meses: ${Object.keys(colMeses).join(', ')}`);
 
-          // Mapeamento: nome da linha (col A) → categoria + nome no sistema
-          const ROW_MAP = {
-            'link pessoa física':                        { cat:'receitas', nome:'Link Pessoa Física' },
-            'link pessoa juridica':                      { cat:'receitas', nome:'Link Pessoa Jurídica' },
-            'juros/multa':                               { cat:'receitas', nome:'Juros/Multa' },
-            'taxa de instalacao':                        { cat:'receitas', nome:'Taxa de instalação' },
-            'eventos':                                   { cat:'receitas', nome:'Eventos' },
-            'multa fidelidade e equipamento':            { cat:'receitas', nome:'Multa fidelidade e equipamento' },
-            'rendimentos financeiros':                   { cat:'receitas', nome:'Rendimentos financeiros' },
-            'vendas canceladas e estornos':              { cat:'receitas', nome:'Vendas canceladas e estornos' },
-            'icms':                                      { cat:'impostos', nome:'ICMS' },
-            'cofins':                                    { cat:'impostos', nome:'COFINS' },
-            'pis':                                       { cat:'impostos', nome:'PIS' },
-            'irpj':                                      { cat:'impostos', nome:'IRPJ' },
-            'csll':                                      { cat:'impostos', nome:'CSLL' },
-            'iss':                                       { cat:'impostos', nome:'ISS' },
-            'fust/funttel':                              { cat:'impostos', nome:'FUST/FUNTTEL' },
-            'kit instalacao':                            { cat:'custos', nome:'Kit Instalação' },
-            'materiais de rede':                         { cat:'custos', nome:'Materiais de Rede' },
-            'links de dados / voip':                     { cat:'custos', nome:'Links de Dados / Voip' },
-            'vtal':                                      { cat:'custos', nome:'Vtal' },
-            'alugueis de postes':                        { cat:'custos', nome:'Alugueis de Postes' },
-            'alugueis de torre e pop':                   { cat:'custos', nome:'Alugueis de Torre e POP' },
-            'custo com sva':                             { cat:'custos', nome:'Custo com SVA' },
-            'energia / pop':                             { cat:'custos', nome:'Energia / POP' },
-            'comissoes de vendas':                       { cat:'custos', nome:'Comissões de vendas' },
-            'combustivel tecnico':                       { cat:'custos', nome:'Combustível técnico' },
-            'manut. veiculo':                            { cat:'custos', nome:'Manut. Veículo' },
-            'folha - direta':                            { cat:'custos', nome:'Folha - Direta' },
-            'telefonia':                                 { cat:'custos', nome:'Telefonia' },
-            'ferramentas':                               { cat:'custos', nome:'Ferramentas' },
-            'custos lastmile':                           { cat:'custos', nome:'Custos Lastmile' },
-            'marketing':                                 { cat:'despesas', nome:'Marketing' },
-            'serv. terceiros, juridicos e consultorias': { cat:'despesas', nome:'Serv. Terceiros, jurídicos e consultorias' },
-            'desp. aluguel de escritorio':               { cat:'despesas', nome:'Desp. Aluguel de escritório' },
-            'pro-labore':                                { cat:'despesas', nome:'Pró-Labore' },
-            'sistema':                                   { cat:'despesas', nome:'Sistema' },
-            'taxas boleto':                              { cat:'despesas', nome:'Taxas Boleto' },
-            'tarifas bancarias':                         { cat:'despesas', nome:'Tarifas bancárias' },
-            'ebitda':                                    { cat:'ebitda', nome:'EBITDA' },
-            'irpj (previsao)':                           { cat:'ebitda_ajustado', nome:'IRPJ (Previsão)' },
-            'cssl (previsao)':                           { cat:'ebitda_ajustado', nome:'CSSL (Previsão)' },
-            'trimestral':                                { cat:'ebitda_ajustado', nome:'Trimestral' },
-            'compra de provedor':                        { cat:'ebitda_ajustado', nome:'Compra de Provedor' },
-            'ajuste (postes)':                           { cat:'ebitda_ajustado', nome:'Ajuste (Postes)' },
-            'ajuste vtal fora':                          { cat:'ebitda_ajustado', nome:'Ajuste Vtal Fora' },
-            'ebitda (ajustado)':                         { cat:'ebitda_ajustado', nome:'EBITDA (Ajustado)' },
-            'investimento':                              { cat:'ajustes', nome:'Investimento' },
-            'empr/finac/parcel':                         { cat:'ajustes', nome:'Empr/Finac/Parcel' },
-            'socios ou retiradas':                       { cat:'ajustes', nome:'Sócios ou Retiradas' },
-          };
+          // Seções do fluxo de caixa
+          const SECTIONS = { 'receitas':'receitas', 'impostos':'impostos', 'custos':'custos',
+            'despesas operac.':'despesas', 'despesas financ.':'despesas', 'ebitda':'ebitda_section' };
+          const STOP_SECTIONS = new Set(['ajustes de caixa','saidas','entradas']);
+          const SKIP_ROWS = new Set(['desembolsos','receitas','custos','impostos','despesas operac.','despesas financ.']);
+          const EBITDA_AJ_STARTS = ['inclusao','irpj (previsao)','cssl (previsao)','trimestral',
+            'compra de provedor','ajuste (postes)','ajuste vtal fora','credito icms',
+            'ajuste (mark/equip)','datora','ebitda (ajustado)'];
+          const AJUSTES_NAMES = new Set(['investimento','compra de veiculos',
+            'invest. tecnico e administrativo','aq. de provedor','empr/finac/parcel',
+            'investimentos pop','emprestimos para giro','reneg. debitos','socios ou retiradas']);
 
-          // Índice rápido dos itens do sistema
+          // Índice dos itens existentes no dadosFinanceiros
           const itemIdx = {};
-          ['receitas','impostos','custos','despesas','ebitda','ebitda_ajustado','ajustes','bancos'].forEach(cat => {
+          ['receitas','impostos','custos','despesas','ebitda','ebitda_ajustado','ajustes'].forEach(cat => {
             (dadosFinanceiros[cat]||[]).forEach(item => { itemIdx[item.nome] = item; });
           });
 
-          let atualizados = 0;
-          let ebitdaVisto = false; // controla pular a linha % do EBITDA (Ajustado) logo após a linha de valores
+          let cur = null, stopped = false, atualizados = 0;
+          const ebitdaValuesRow = {}; // store EBITDA real row
 
+          // First pass: main sections (receitas→ebitda_ajustado)
           for (let i = headerIdx + 1; i < rows.length; i++) {
             const row = rows[i];
             const nomeRaw = typeof row[0] === 'string' ? row[0].trim() : '';
             if (!nomeRaw) continue;
+            const n = norm(nomeRaw);
 
-            const nomeNorm = nomeRaw.toLowerCase()
-              .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-              .replace(/\s+/g, ' ').trim();
+            // Skip % rows
+            const v0 = row[Object.values(colMeses)[0]];
+            if (typeof v0 === 'number' && v0 !== 0 && Math.abs(v0) < 2) continue;
 
-            // Pula linha de % (EBITDA Ajustado %, Folha/Receita, etc.)
-            if (typeof row[Object.values(colMeses)[0]] === 'number' &&
-                Math.abs(row[Object.values(colMeses)[0]]) < 2 &&
-                row[Object.values(colMeses)[0]] !== 0 &&
-                nomeNorm !== 'vtal') continue;
+            if (STOP_SECTIONS.has(n)) { stopped = true; continue; }
+            if (stopped) continue;
 
-            const mapped = ROW_MAP[nomeNorm];
-            if (!mapped) continue;
+            if (n in SECTIONS) { cur = SECTIONS[n]; continue; }
+            if (!cur || SKIP_ROWS.has(n)) continue;
 
-            // Evita duplicar EBITDA (Ajustado) — pega só a linha de valores, não a de %
-            if (mapped.nome === 'EBITDA (Ajustado)' && ebitdaVisto) continue;
-            if (mapped.nome === 'EBITDA (Ajustado)') ebitdaVisto = true;
+            // Special: capture EBITDA real row
+            if (n === 'ebitda' && cur === 'ebitda_section') {
+              const v = row[colMeses['jan']];
+              if (typeof v === 'number' && v > 100000) {
+                MESES.forEach(m => { ebitdaValuesRow[m] = typeof row[colMeses[m]] === 'number' ? Math.round(row[colMeses[m]]*100)/100 : 0; });
+                continue;
+              }
+            }
 
-            const item = itemIdx[mapped.nome];
+            const isEbitdaAj = EBITDA_AJ_STARTS.some(s => n.startsWith(s));
+            const cat = isEbitdaAj ? 'ebitda_ajustado' : (cur === 'ebitda_section' ? 'ebitda_ajustado' : cur);
+
+            const item = itemIdx[nomeRaw];
             if (!item) continue;
 
-            MESES_ABREV.forEach(m => {
-              const ci = colMeses[m];
-              if (ci === undefined) return;
-              const v = row[ci];
-              item[m] = typeof v === 'number' ? Math.round(v * 100) / 100 : 0;
+            MESES.forEach(m => {
+              const v = row[colMeses[m]];
+              item[m] = typeof v === 'number' ? Math.round(v*100)/100 : 0;
             });
-            item.total = MESES_ABREV.reduce((s, m) => s + (item[m] || 0), 0);
-            item.total = Math.round(item.total * 100) / 100;
+            item.total = Math.round(MESES.reduce((s,m) => s+(item[m]||0), 0)*100)/100;
+            atualizados++;
+          }
+
+          // Update EBITDA row
+          const ebitdaItem = itemIdx['EBITDA'];
+          if (ebitdaItem && Object.keys(ebitdaValuesRow).length > 0) {
+            MESES.forEach(m => { ebitdaItem[m] = ebitdaValuesRow[m] || 0; });
+            ebitdaItem.total = Math.round(MESES.reduce((s,m)=>s+(ebitdaItem[m]||0),0)*100)/100;
+            atualizados++;
+          }
+
+          // Second pass: ajustes from SAÍDAS section
+          let inSaidas = false;
+          for (let i = headerIdx + 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row[0]) continue;
+            const n = norm(String(row[0]).trim());
+            if (n === 'ajustes de caixa' || n === 'saidas') { inSaidas = true; continue; }
+            if (n === 'entradas' || n === 'geracao de caixa') { inSaidas = false; continue; }
+            if (!inSaidas || !AJUSTES_NAMES.has(n)) continue;
+            const nomeRaw = String(row[0]).trim();
+            const item = itemIdx[nomeRaw];
+            if (!item) continue;
+            MESES.forEach(m => {
+              const v = row[colMeses[m]];
+              item[m] = typeof v === 'number' ? Math.round(v*100)/100 : 0;
+            });
+            item.total = Math.round(MESES.reduce((s,m)=>s+(item[m]||0),0)*100)/100;
             atualizados++;
           }
 
@@ -2479,11 +2726,10 @@
           renderComissao();
           syncSetProgress(null);
           input.value = '';
-
           syncSetStatus(
             atualizados > 0
-              ? `✅ ${atualizados} categorias importadas da aba "${sheetName}"`
-              : `⚠️ Nenhuma categoria reconhecida. Verifique se enviou o arquivo correto.`,
+              ? `✅ ${atualizados} itens importados da aba "${sheetName}"`
+              : `⚠️ Nenhum item reconhecido. Verifique o arquivo.`,
             atualizados > 0 ? 'ok' : 'warn'
           );
         } catch(err) {
@@ -2606,7 +2852,7 @@
     }
 
     // Auto-fetch na primeira visita do dia
-    const DADOS_VERSION = '2026-v5'; // Incrementar sempre que os dados hardcoded mudarem
+    const DADOS_VERSION = '2026-v9'; // Incrementar sempre que os dados hardcoded mudarem
 
     async function consolidadoInicializar() {
       syncAtualizarStatusUI();
@@ -2638,11 +2884,332 @@
       const anoFiltro = document.getElementById('comissaoAnoFiltro');
       if (mesFiltro) mesFiltro.value = String(hoje.getMonth()); // 0=Jan, 1=Fev...
       if (anoFiltro) anoFiltro.value = String(hoje.getFullYear());
+      const opMesFiltro = document.getElementById('opMesFiltro');
+      const opAnoFiltro = document.getElementById('opAnoFiltro');
+      if (opMesFiltro) opMesFiltro.value = String(hoje.getMonth());
+      if (opAnoFiltro) opAnoFiltro.value = String(hoje.getFullYear());
 
       await carregarParams();
       renderizarGraficos();
       consolidadoInicializar();
     });
+    // ==================== COMISSÃO OPERACIONAL ====================
+    function renderComissaoOp() {
+      const mesIdx  = parseInt(document.getElementById('opMesFiltro')?.value || '0');
+      const ano     = parseInt(document.getElementById('opAnoFiltro')?.value || '2026');
+      const MESES   = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const mesKey  = MESES[mesIdx];
+      const mesNome = MESES_N[mesIdx];
+      const fc  = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+      const fp  = v => (v*100).toFixed(2).replace('.',',') + '%';
+      const gp  = id => parseFloat(document.getElementById(id)?.value || '0');
+      const gpPct = id => gp(id) / 100;  // converte % inserido pelo usuário para decimal
+
+      const lbl = document.getElementById('opMesLabel');
+      if(lbl) lbl.textContent = mesNome + ' ' + ano;
+
+      // === PARÂMETROS (lidos da aba Parâmetros) ===
+      const META_OS_PF      = gpPct('op_metaOsPf');
+      const META_OS_PJ      = gpPct('op_metaOsPj');
+      const META_CHURN_PF   = gpPct('op_metaChurnPf');
+      const META_CHURN_PJ   = gpPct('op_metaChurnPj');
+      const META_RETIRADAS  = gpPct('op_metaRetiradas');
+      const TICKET_PF       = gp('op_ticketPf');
+      const TICKET_PJ       = gp('op_ticketPj');
+
+      const PREMIO_OS_PF    = gpPct('op_premioOsPf');    // 0.060% → divide by 100 via gpPct
+      const PREMIO_OS_PJ    = gpPct('op_premioOsPj');
+      const PREMIO_CHURN_PF = gpPct('op_premioChurnPf');
+      const PREMIO_CHURN_PJ = gpPct('op_premioChurnPj');
+      const PREMIO_RETIRADAS= gpPct('op_premioRetiradas');
+      const PREMIO_RES_POS  = gpPct('op_premioResPos');
+      const PREMIO_RES_NEG  = gpPct('op_premioResNeg');
+      const PREMIO_EBITDA_MOV= gpPct('op_premioEbitdaMov');
+
+      const META_RESULT_TRIM  = gp('op_metaResultTrim');
+      const META_CHURN_FIN_TRIM = gpPct('op_metaChurnFinTrim');
+      const Q = [1,2,3,4];
+      const META_MAT_EQUIP_Q  = Q.map(q => gpPct('op_metaMatEquip_q'+q));
+      const META_FOLHA_Q      = Q.map(q => gpPct('op_metaFolha_q'+q));
+      const PREMIO_RESULT_TRIM  = gpPct('op_premioResultTrim');
+      const PREMIO_CHURN_FIN_TRIM= gpPct('op_premioChurnFinTrim');
+      const PREMIO_MAT_TRIM     = gpPct('op_premioMatEquipTrim');
+      const PREMIO_FOLHA_TRIM   = gpPct('op_premioFolhaTrim');
+      const PREMIO_EBITDA_TRIM  = gpPct('op_premioEbitdaTrim');
+
+      // === FLUXO DE CAIXA ===
+      const ebitdaItem = dadosFinanceiros?.ebitda_ajustado?.find(r => r.nome === 'EBITDA (Ajustado)');
+      const ebitda = ebitdaItem ? (ebitdaItem[mesKey] || 0) : 0;
+      const fat    = dadosFinanceiros?.receitas?.reduce((s,r)=> s + (r[mesKey]||0), 0) || 0;
+
+      // Mat-Equip = Kit Instalação + Materiais de Rede + Man. Equipamento + Moveis e equip. TI
+      const MAT_EQUIP_NOMES = ['Kit Instalação','Materiais de Rede','Man. Equipamento','Moveis e equipamentos escritório TI'];
+      const matEquip = dadosFinanceiros?.custos?.filter(c=>MAT_EQUIP_NOMES.includes(c.nome))
+                        .reduce((s,c)=>s+(c[mesKey]||0),0) || 0;
+      const folhaItem = dadosFinanceiros?.custos?.find(c=>c.nome==='Folha - Direta');
+      const folha = folhaItem ? (folhaItem[mesKey]||0) : 0;
+
+      (async () => {
+        try {
+        const dirEntry = await getDiretoriaDados(mesIdx, ano);
+        const D = (dirEntry && dirEntry.dados) ? dirEntry.dados : {};
+        const get = (k, fb=0) => (D[k] !== null && D[k] !== undefined && D[k] !== '') ? +D[k] : fb;
+
+        const base_pf      = get('base_pf');
+        const base_pj      = get('base_pj');
+        const base_isentos = get('base_isentos');
+        const contratos    = get('contratos', base_pf + base_pj);
+        const os_pf        = get('os_pf');
+        const os_pj        = get('os_pj');
+        const canc_pf      = get('canc_pf');
+        const canc_pj      = get('canc_pj');
+        const retiradas    = get('retiradas');
+        const nn_pf        = get('nn_pf');
+        const nn_pj        = get('nn_pj');
+        const upgrade      = get('upgrade');
+        const reat         = get('reat');
+        const val_canc_pf  = get('val_canc_pf', canc_pf * TICKET_PF);
+        const val_canc_pj  = get('val_canc_pj', canc_pj * TICKET_PJ);
+        const downgrade    = get('downgrade');
+
+        // === INDICADORES ===
+        const pct_os_pf     = contratos  > 0 ? os_pf   / contratos : 0;
+        const pct_os_pj     = base_pj    > 0 ? os_pj   / base_pj   : 0;
+        const pct_churn_pf  = base_pf    > 0 ? canc_pf / base_pf   : 0;
+        const pct_churn_pj  = base_pj    > 0 ? canc_pj / base_pj   : 0;
+        const total_canc_qtd= canc_pf + canc_pj;
+        const pct_retiradas = total_canc_qtd > 0 ? retiradas / total_canc_qtd : 0;
+
+        // Churn Financeiro = valor cancelado / faturamento base
+        const churnFin = fat > 0 ? (val_canc_pf + val_canc_pj) / fat : 0;
+
+        // Resultado R$
+        const nn_total   = nn_pf + nn_pj + upgrade + reat;
+        const canc_total = val_canc_pf + val_canc_pj + downgrade;
+        const resultado  = nn_total - canc_total;
+
+        // === COMISSÕES MENSAIS ===
+        const comOS_PF    = pct_os_pf    <= META_OS_PF    ? ebitda * PREMIO_OS_PF    : 0;
+        const comOS_PJ    = pct_os_pj    <= META_OS_PJ    ? ebitda * PREMIO_OS_PJ    : 0;
+        const comChurn_PF = pct_churn_pf <= META_CHURN_PF ? ebitda * PREMIO_CHURN_PF : 0;
+        const comChurn_PJ = pct_churn_pj <= META_CHURN_PJ ? ebitda * PREMIO_CHURN_PJ : 0;
+        const comRetiradas= pct_retiradas>= META_RETIRADAS? ebitda * PREMIO_RETIRADAS: 0;
+        const comResPOS   = resultado > 0 ? resultado * PREMIO_RES_POS : 0;
+        const comResNEG   = resultado < 0 ? Math.abs(resultado) * PREMIO_RES_NEG * -1 : 0;
+        const comEbitda   = ebitda > 0    ? ebitda  * PREMIO_EBITDA_MOV : 0;
+        const totalMensal = comOS_PF + comOS_PJ + comChurn_PF + comChurn_PJ +
+                            comRetiradas + comResPOS + comResNEG + comEbitda;
+
+        // === BÔNUS TRIMESTRAL ===
+        const TRIMS = [
+          {n:'1º Trim',meses:['jan','fev','mar'],idx:[0,1,2],qi:0},
+          {n:'2º Trim',meses:['abr','mai','jun'],idx:[3,4,5], qi:1},
+          {n:'3º Trim',meses:['jul','ago','set'],idx:[6,7,8], qi:2},
+          {n:'4º Trim',meses:['out','nov','dez'],idx:[9,10,11],qi:3},
+        ];
+        const trim = TRIMS.find(t => t.idx.includes(mesIdx));
+        const isTrimFim = trim && trim.idx[2] === mesIdx;
+        const mesesAte  = trim ? trim.meses.slice(0, trim.idx.indexOf(mesIdx)+1) : [];
+
+        const soma = (cat, nome, ms) => ms.reduce((s,m) => {
+          const item = dadosFinanceiros?.[cat]?.find(r=>r.nome===nome);
+          return s + (item ? (item[m]||0) : 0);
+        }, 0);
+        const somaMulti = (cat, nomes, ms) => ms.reduce((s,m) => {
+          return s + (dadosFinanceiros?.[cat]?.filter(r=>nomes.includes(r.nome)).reduce((a,r)=>a+(r[m]||0),0)||0);
+        }, 0);
+
+        const ebitdaAcum    = soma('ebitda_ajustado','EBITDA (Ajustado)', mesesAte);
+        const fatAcum       = mesesAte.reduce((s,m)=>s+(dadosFinanceiros?.receitas?.reduce((a,r)=>a+(r[m]||0),0)||0),0);
+        const matEquipAcum  = somaMulti('custos', MAT_EQUIP_NOMES, mesesAte);
+        const folhaAcum     = soma('custos','Folha - Direta', mesesAte);
+
+        // Acumula resultado do trimestre lendo PDF de cada mês (simplificado: usa valor do mês atual * nMeses)
+        const nMeses        = mesesAte.length;
+        const resultadoAcum = resultado * nMeses;  // aproximação; idealmente buscaria cada mês
+
+        const qi = trim ? trim.qi : 0;
+        const metaMatEquip  = META_MAT_EQUIP_Q[qi] || 0;
+        const metaFolha     = META_FOLHA_Q[qi] || 0;
+        const matEquipPct   = fatAcum > 0 ? matEquipAcum / fatAcum : 0;
+        const folhaPct      = fatAcum > 0 ? folhaAcum    / fatAcum : 0;
+
+        // Churn Fin acumulado trimestre
+        // Simplificado: média dos meses disponíveis
+        const churnFinAcum  = churnFin;  // usa o do mês atual
+
+        const bonResOk    = isTrimFim && resultadoAcum >= META_RESULT_TRIM;
+        const bonChurnOk  = isTrimFim && churnFinAcum  <= META_CHURN_FIN_TRIM;
+        const bonMatOk    = isTrimFim && metaMatEquip > 0 && matEquipPct <= metaMatEquip;
+        const bonFolhaOk  = isTrimFim && metaFolha    > 0 && folhaPct    <= metaFolha;
+        const bonEbitdaOk = isTrimFim && ebitdaAcum > 0;  // Ebitda sempre pago se positivo no fim do trim
+
+        const bonRes    = bonResOk    ? ebitdaAcum * PREMIO_RESULT_TRIM   : 0;
+        const bonChurn  = bonChurnOk  ? ebitdaAcum * PREMIO_CHURN_FIN_TRIM: 0;
+        const bonMat    = bonMatOk    ? ebitdaAcum * PREMIO_MAT_TRIM      : 0;
+        const bonFolha  = bonFolhaOk  ? ebitdaAcum * PREMIO_FOLHA_TRIM    : 0;
+        const bonEbitda = bonEbitdaOk ? ebitdaAcum * PREMIO_EBITDA_TRIM   : 0;
+        const totalTrim = bonRes + bonChurn + bonMat + bonFolha + bonEbitda;
+
+        // ======== HELPERS DE RENDER ========
+        const badge = (ok, tOk, tNo) =>
+          `<span style="background:${ok?'#d1fae5':'#fee2e2'};color:${ok?'#065f46':'#991b1b'};padding:0.2rem 0.65rem;border-radius:12px;font-size:0.78rem;font-weight:700">${ok?'✓ '+tOk:'✗ '+tNo}</span>`;
+
+        const rowInd = (icon, label, qtd, meta, real, ok, isMax=true) => {
+          const dir = isMax ? '≤' : '≥';
+          return `<div style="background:${ok?'#f0fdf4':'#fff7f7'};border:1px solid ${ok?'#bbf7d0':'#fecaca'};border-radius:12px;padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;gap:1rem">
+            <div style="display:flex;align-items:center;gap:0.75rem">
+              <span style="font-size:1.4rem">${icon}</span>
+              <div>
+                <div style="font-weight:700;color:#1e293b;font-size:0.92rem">${label} <span style="font-weight:400;color:#64748b;font-size:0.8rem">(${qtd})</span></div>
+                <div style="font-size:0.8rem;color:#64748b;margin-top:0.1rem">Meta ${dir} <strong>${fp(meta)}</strong> &nbsp;|&nbsp; Real: <strong>${fp(real)}</strong></div>
+              </div>
+            </div>
+            ${badge(ok,'Meta atingida','Fora da meta')}
+          </div>`;
+        };
+
+        const rowComissao = (label, valor, ok, detalhe='') =>
+          `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;border-radius:10px;background:${ok?'#f0fdf4':valor<0?'#fff7f7':'#f8fafc'};margin-bottom:0.5rem">
+            <div>
+              <span style="font-weight:600;color:#1e293b;font-size:0.9rem">${label}</span>
+              ${detalhe?`<span style="font-size:0.75rem;color:#64748b;margin-left:0.5rem">${detalhe}</span>`:''}
+            </div>
+            <strong style="color:${valor===0?'#94a3b8':ok?'#065f46':'#dc2626'};font-size:0.95rem">${fc(valor)}</strong>
+          </div>`;
+
+        const rowLine = (label, valor, cor='#374151') =>
+          `<div style="display:flex;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid #f1f5f9">
+            <span style="color:#374151;font-size:0.88rem">${label}</span>
+            <strong style="color:${cor}">${fc(valor)}</strong>
+          </div>`;
+
+        const bonCard = (icon, titulo, metaStr, realStr, premio, ok) => {
+          const wait = !isTrimFim;
+          return `<div style="background:${ok?'#f0fdf4':wait?'#fefce8':'#fff7f7'};border:1px solid ${ok?'#bbf7d0':wait?'#fde68a':'#fecaca'};border-radius:14px;padding:1.25rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+              <span style="font-size:1.1rem">${icon}</span>
+              ${ok?badge(true,'Atingido',''):wait?'<span style="background:#fef3c7;color:#92400e;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.75rem;font-weight:700">⏳ Aguardando fim do trimestre</span>':badge(false,'','Não atingido')}
+            </div>
+            <div style="font-weight:700;color:#1e293b;margin-bottom:0.35rem;font-size:0.92rem">${titulo}</div>
+            <div style="font-size:0.8rem;color:#64748b">Meta: ${metaStr} &nbsp;|&nbsp; Real: ${realStr}</div>
+            <div style="margin-top:0.75rem;font-size:1.1rem;font-weight:800;color:${ok?'#065f46':'#94a3b8'}">${fc(premio)}</div>
+          </div>`;
+        };
+
+        // ── Indicadores ──
+        document.getElementById('opIndicadores').innerHTML =
+          rowInd('📞','OS Suporte PF', os_pf+' OS',     META_OS_PF,   pct_os_pf,    pct_os_pf  <=META_OS_PF)  +
+          rowInd('📞','OS Suporte PJ', os_pj+' OS',     META_OS_PJ,   pct_os_pj,    pct_os_pj  <=META_OS_PJ)  +
+          rowInd('📉','Churn PF',      canc_pf+' canc.',META_CHURN_PF,pct_churn_pf, pct_churn_pf<=META_CHURN_PF)+
+          rowInd('📉','Churn PJ',      canc_pj+' canc.',META_CHURN_PJ,pct_churn_pj, pct_churn_pj<=META_CHURN_PJ)+
+          rowInd('↩️','Retiradas',     retiradas+' ret.',META_RETIRADAS,pct_retiradas,pct_retiradas>=META_RETIRADAS,false)+
+          `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1rem 1.25rem">
+            <div style="font-size:0.75rem;color:#64748b;margin-bottom:0.5rem;font-weight:600">📋 BASE DE CLIENTES</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.85rem">
+              <span>👤 PF: <strong>${base_pf.toLocaleString('pt-BR')}</strong></span>
+              <span>🏢 PJ: <strong>${base_pj.toLocaleString('pt-BR')}</strong></span>
+              <span>🆓 Isentos: <strong>${base_isentos.toLocaleString('pt-BR')}</strong></span>
+              <span>📋 Contratos: <strong>${contratos.toLocaleString('pt-BR')}</strong></span>
+            </div>
+          </div>` +
+          `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:1rem 1.25rem">
+            <div style="font-size:0.75rem;color:#64748b;margin-bottom:0.5rem;font-weight:600">📊 FLUXO DE CAIXA — ${mesNome}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.85rem">
+              <span>💰 Faturamento: <strong>${fc(fat)}</strong></span>
+              <span>📊 EBITDA Aj.: <strong>${fc(ebitda)}</strong></span>
+              <span>🔧 Mat-Equip: <strong>${fc(matEquip)}</strong> <em style="color:#64748b">(${fp(fat>0?matEquip/fat:0)})</em></span>
+              <span>👥 Folha: <strong>${fc(folha)}</strong> <em style="color:#64748b">(${fp(fat>0?folha/fat:0)})</em></span>
+            </div>
+          </div>`;
+
+        // ── Novos Negócios ──
+        document.getElementById('opNovosNegocios').innerHTML =
+          rowLine('Novos PF', nn_pf, '#065f46') +
+          rowLine('Novos PJ', nn_pj, '#065f46') +
+          rowLine('UpGrade', upgrade, '#065f46') +
+          rowLine('Reativação', reat, '#065f46') +
+          `<div style="display:flex;justify-content:space-between;padding:0.75rem 0;font-size:0.95rem">
+            <strong style="color:#065f46">TOTAL NOVOS</strong>
+            <strong style="color:#065f46">${fc(nn_total)}</strong>
+          </div>`;
+
+        // ── Cancelamentos ──
+        document.getElementById('opCancelamentos').innerHTML =
+          rowLine('Cancelamentos PF', val_canc_pf, '#991b1b') +
+          rowLine('Cancelamentos PJ', val_canc_pj, '#991b1b') +
+          rowLine('DownGrade', downgrade, '#991b1b') +
+          `<div style="display:flex;justify-content:space-between;padding:0.75rem 0;font-size:0.95rem">
+            <strong style="color:#991b1b">TOTAL CANC.</strong>
+            <strong style="color:#991b1b">${fc(canc_total)}</strong>
+          </div>`;
+
+        // ── Resultado ──
+        const resOk = resultado > 0;
+        document.getElementById('opResultadoCard').innerHTML =
+          `<div style="background:${resOk?'linear-gradient(135deg,#065f46,#059669)':'linear-gradient(135deg,#991b1b,#dc2626)'};border-radius:16px;padding:1.25rem 1.75rem;color:white;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:0.85rem;opacity:0.85;font-weight:600">${resOk?'📈':'📉'} RESULTADO LÍQUIDO (Novos − Cancelamentos)</div>
+              <div style="font-size:1.75rem;font-weight:800;margin-top:0.25rem">${fc(resultado)}</div>
+            </div>
+            <div style="text-align:right;font-size:0.82rem;opacity:0.85">
+              <div>Novos: ${fc(nn_total)}</div>
+              <div>Canc.: ${fc(canc_total)}</div>
+              <div style="margin-top:0.35rem">Churn Fin.: <strong>${fp(churnFin)}</strong></div>
+            </div>
+          </div>`;
+
+        // ── Comissões Mensais ──
+        document.getElementById('opComissoesMensais').innerHTML =
+          rowComissao('OS Suporte PF',     comOS_PF,    pct_os_pf   <=META_OS_PF,    fp(PREMIO_OS_PF*100)+'% EBITDA') +
+          rowComissao('OS Suporte PJ',     comOS_PJ,    pct_os_pj   <=META_OS_PJ,    fp(PREMIO_OS_PJ*100)+'% EBITDA') +
+          rowComissao('Churn PF',          comChurn_PF, pct_churn_pf<=META_CHURN_PF,  fp(PREMIO_CHURN_PF*100)+'% EBITDA') +
+          rowComissao('Churn PJ',          comChurn_PJ, pct_churn_pj<=META_CHURN_PJ,  fp(PREMIO_CHURN_PJ*100)+'% EBITDA') +
+          rowComissao('Retiradas',         comRetiradas,pct_retiradas>=META_RETIRADAS,fp(PREMIO_RETIRADAS*100)+'% EBITDA') +
+          rowComissao('Resultado Positivo',comResPOS,   comResPOS>0, fp(PREMIO_RES_POS*100)+'% do resultado') +
+          rowComissao('Resultado Negativo',comResNEG,   false,       '-'+fp(PREMIO_RES_NEG*100)+'% do resultado') +
+          rowComissao('EBITDA Móvel',      comEbitda,   comEbitda>0, fp(PREMIO_EBITDA_MOV*100)+'% EBITDA');
+
+        document.getElementById('opTotalMensal').innerHTML =
+          `<div style="background:linear-gradient(135deg,#1e3a8a,#7c3aed);border-radius:14px;padding:1.25rem 1.75rem;color:white;display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:0.9rem;font-weight:600;opacity:0.9">💼 TOTAL MENSAL — ${mesNome} ${ano}</div>
+            <div style="font-size:1.6rem;font-weight:800">${fc(totalMensal)}</div>
+          </div>`;
+
+        // ── Bônus Trimestral ──
+        const trimNome = trim ? trim.n : '';
+        document.getElementById('opBonusTrimestral').innerHTML =
+          bonCard('📊','Resultado Acumulado ≥ '+fc(META_RESULT_TRIM),
+            fc(META_RESULT_TRIM), fc(resultadoAcum), bonRes, bonResOk) +
+          bonCard('📉','Churn Financeiro Acumulado ≤ '+fp(META_CHURN_FIN_TRIM),
+            fp(META_CHURN_FIN_TRIM), fp(churnFinAcum), bonChurn, bonChurnOk) +
+          bonCard('🔧', 'Mat-Equip % Fat. ≤ '+fp(metaMatEquip),
+            fp(metaMatEquip), fp(matEquipPct), bonMat, bonMatOk) +
+          bonCard('👥','Folha % Fat. ≤ '+fp(metaFolha),
+            fp(metaFolha), fp(folhaPct), bonFolha, bonFolhaOk) +
+          bonCard('💹','EBITDA Trim. positivo',
+            '> 0', fc(ebitdaAcum), bonEbitda, bonEbitdaOk);
+
+        if(isTrimFim) {
+          document.getElementById('opBonusTrimestral').innerHTML +=
+            `<div style="grid-column:1/-1;background:linear-gradient(135deg,#d97706,#f59e0b);border-radius:14px;padding:1.25rem 1.75rem;color:white;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:0.9rem;font-weight:600;opacity:0.9">🏅 TOTAL BÔNUS TRIMESTRAL — ${trimNome}</div>
+              <div style="font-size:1.6rem;font-weight:800">${fc(totalTrim)}</div>
+            </div>`;
+        }
+
+        } catch(err) {
+          console.error('renderComissaoOp erro:', err);
+          ['opIndicadores','opNovosNegocios','opCancelamentos','opResultadoCard',
+           'opComissoesMensais','opTotalMensal','opBonusTrimestral'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el && !el.innerHTML) el.innerHTML = '<div style="color:#dc2626;padding:1rem">Erro: '+err.message+'</div>';
+          });
+        }
+      })(); // end async
+    }
+
   </script>
 </body>
 </html>
