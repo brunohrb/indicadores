@@ -388,10 +388,13 @@
           <div style="background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);padding:2rem 2.5rem;border-radius:20px;color:white;margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
             <div>
               <h1 style="margin:0;font-size:2rem">🤖 IA Estratégica</h1>
-              <p style="margin:0.3rem 0 0;opacity:0.85;font-size:0.9rem">Análises com dados reais da TEXNET • <span style="background:rgba(255,255,255,0.15);padding:0.15rem 0.6rem;border-radius:20px;font-size:0.8rem">Powered by Claude</span></p>
+              <p style="margin:0.3rem 0 0;opacity:0.85;font-size:0.9rem">Análises inteligentes com dados reais da TEXNET • <span style="background:rgba(255,255,255,0.15);padding:0.15rem 0.6rem;border-radius:20px;font-size:0.8rem">GPT-4o</span></p>
             </div>
-            <div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:0.5rem 1rem;font-size:0.82rem;color:rgba(255,255,255,0.8)">
-              ✦ Sem API Key necessária
+            <div style="display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.12);border-radius:12px;padding:0.5rem 1rem">
+              <span style="font-size:0.8rem;color:rgba(255,255,255,0.7);white-space:nowrap">🔑 OpenAI Key:</span>
+              <input type="password" id="openaiApiKey" placeholder="sk-proj-..." style="background:transparent;border:none;color:white;font-size:0.82rem;width:220px;outline:none" oninput="iaKeyStatus()">
+              <button onclick="salvarApiKey()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:white;border-radius:6px;padding:0.25rem 0.8rem;font-size:0.78rem;cursor:pointer;font-weight:600">💾</button>
+              <span id="iaKeyBadge" style="font-size:0.75rem;color:rgba(255,255,255,0.65)"></span>
             </div>
           </div>
 
@@ -1393,7 +1396,6 @@
         alertas:     'Analise os dados e gere ALERTAS INTELIGENTES priorizados: CRITICO (acao imediata), ATENCAO (monitorar), POSITIVO (destaques). Verifique: custos acima do padrao ISP, margem EBITDA fora do benchmark 25-35%, concentracao de receita, anomalias.\n\nDADOS:\n'+contexto,
         chat: ''
       };
-;
 
       let userPrompt = prompts[tipo];
       if(tipo === 'chat') {
@@ -1409,22 +1411,32 @@
         mes: '📅 Relatorio de '+mesNome+'/2026',
         previsoes: '🔮 Previsoes Proximos Meses',
         alertas: '⚠️ Alertas Inteligentes',
-        chat: '💬 Resposta Claude'
+        chat: '💬 Resposta GPT-4o'
       };
+
+      const apiKey = localStorage.getItem('openaiKey') || '';
+      if(!apiKey || !apiKey.startsWith('sk-')) {
+        document.getElementById('openaiApiKey')?.focus();
+        alert('Cole sua API Key do ChatGPT no campo no topo e clique 💾');
+        return;
+      }
 
       document.getElementById('iaLoading').style.display='block';
       document.getElementById('iaResultado').style.display='none';
-      document.getElementById('iaLoadingMsg').textContent = 'Claude esta analisando os dados de '+mesNome+'/2026...';
+      document.getElementById('iaLoadingMsg').textContent = 'GPT-4o analisando os dados de '+mesNome+'/2026...';
 
       try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer '+apiKey
+          },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
+            model: 'gpt-4o',
             max_tokens: 2000,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: userPrompt }]
+            temperature: 0.7,
+            messages: [{role:'system',content:systemPrompt},{role:'user',content:userPrompt}]
           })
         });
 
@@ -1434,7 +1446,7 @@
         }
 
         const data = await response.json();
-        const texto = data.content?.[0]?.text || 'Sem resposta.';
+        const texto = data.choices?.[0]?.message?.content || 'Sem resposta.';
 
         document.getElementById('iaLoading').style.display='none';
         document.getElementById('iaResultadoTitulo').textContent = titulos[tipo] || 'Resultado';
@@ -1450,10 +1462,24 @@
       }
     }
 
-    // Manter compatibilidade com carregarApiKey (chamado no showTab)
-    async function carregarApiKey() {}
-    function salvarApiKey() {}
-    function iaKeyStatus() {}
+    function iaKeyStatus() {
+      const v = document.getElementById('openaiApiKey')?.value || '';
+      const badge = document.getElementById('iaKeyBadge');
+      if(badge) badge.textContent = v.startsWith('sk-') ? '✓ válida' : '';
+    }
+    function salvarApiKey() {
+      const v = (document.getElementById('openaiApiKey')?.value || '').trim();
+      if(!v.startsWith('sk-')) { alert('Key inválida — deve começar com sk-'); return; }
+      localStorage.setItem('openaiKey', v);
+      const badge = document.getElementById('iaKeyBadge');
+      if(badge) { badge.textContent = '✓ salva!'; setTimeout(()=>{badge.textContent='✓ pronto';},1500); }
+    }
+    async function carregarApiKey() {
+      const k = localStorage.getItem('openaiKey');
+      const el = document.getElementById('openaiApiKey');
+      const badge = document.getElementById('iaKeyBadge');
+      if(k && el) { el.value = k; if(badge) badge.textContent = '✓ pronto'; }
+    }
     function onConsolidadoPeriodoChange() {
       const [ano,mes] = document.getElementById('consolidadoPeriodo').value.split('-');
       consolidadoMesSelecionado = mes;
