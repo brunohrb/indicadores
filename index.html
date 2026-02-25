@@ -140,7 +140,7 @@
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>IA Estratégica</span></div>
       <div class="nav-item" onclick="selectMenu(this,'diretoria')"><span class="nav-icon">⚙️</span><span>Parâmetros</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-financeiro')"><span class="nav-icon">💼</span><span>Comissão Financeiro</span></div>
-      <div class="nav-item" onclick="selectMenu(this,'comissao-operacional')"><span class="nav-icon">🏆</span><span>Comissão Operacional</span></div>
+      <div class="nav-item" onclick="selectMenu(this,'comissao-operacional')" style="white-space:nowrap"><span class="nav-icon">📈</span><span>Comissão Operacional</span></div>
     </nav>
     <div class="sidebar-footer">Sistema Financeiro TEXNET<br>© 2026 - v3.0</div>
   </div>
@@ -152,21 +152,17 @@
         <div><h1 class="page-title">Dashboard Financeiro</h1><p class="page-subtitle">Visão consolidada e fluxo de caixa detalhado</p></div>
         <span class="badge badge-success">✓ Atualizado</span>
       </div>
-      <div class="filters-container">
-        <div class="filter-group">
-          <label class="filter-label">Visualização:</label>
-          <select id="viewType" onchange="changeView()">
-            <option value="dashboard">Dashboard Geral</option>
-            <option value="consolidado">Fluxo de Caixa</option>
-            <option value="comparativo">Comparativo Anual</option>
-            <option value="powerbi">Relatório Power BI</option>
-            <option value="ia-estrategica">IA Estratégica</option>
-            <option value="diretoria">Parâmetros</option>
-            <option value="comissao-financeiro">Comissão Financeiro</option>
-            <option value="comissao-operacional">Comissão Operacional</option>
-          </select>
-        </div>
-      </div>
+      <!-- viewType hidden — navegação feita pelo sidebar -->
+      <select id="viewType" onchange="changeView()" style="display:none">
+        <option value="dashboard">Dashboard Geral</option>
+        <option value="consolidado">Fluxo de Caixa</option>
+        <option value="comparativo">Comparativo Anual</option>
+        <option value="powerbi">Relatório Power BI</option>
+        <option value="ia-estrategica">IA Estratégica</option>
+        <option value="diretoria">Parâmetros</option>
+        <option value="comissao-financeiro">Comissão Financeiro</option>
+        <option value="comissao-operacional">Comissão Operacional</option>
+      </select>
     </div>
 
     <div class="content">
