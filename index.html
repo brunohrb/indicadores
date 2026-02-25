@@ -166,28 +166,126 @@
             <option value="comissao-operacional">Comissão Operacional</option>
           </select>
         </div>
-        <div class="filter-group">
-          <label class="filter-label">Período:</label>
-          <input type="month" id="periodFilter" value="2026-01" onchange="updatePeriod()">
-        </div>
-        <button class="btn btn-primary" onclick="applyFilters()">Aplicar</button>
       </div>
     </div>
 
     <div class="content">
       <!-- Dashboard View -->
       <div id="dashboardView" class="view-container active">
-        <div class="stats-grid">
-          <div class="stat-card" style="--card-color:var(--success)"><div class="stat-header"><div><div class="stat-title">Receitas Totais</div><div class="stat-value positive-value">R$ 2.720.556,32</div></div><div class="stat-icon" style="background:#dcfce7;color:var(--success)">💰</div></div><div class="stat-footer"><span class="stat-change positive">↑ 12.5%</span><span style="color:var(--text-secondary)">vs mês anterior</span></div></div>
-          <div class="stat-card" style="--card-color:var(--danger)"><div class="stat-header"><div><div class="stat-title">Despesas Totais</div><div class="stat-value">R$ 1.888.295,00</div></div><div class="stat-icon" style="background:#fee2e2;color:var(--danger)">💸</div></div><div class="stat-footer"><span class="stat-change negative">↑ 8.3%</span><span style="color:var(--text-secondary)">vs mês anterior</span></div></div>
-          <div class="stat-card" style="--card-color:var(--primary)"><div class="stat-header"><div><div class="stat-title">EBITDA Ajustado</div><div class="stat-value positive-value">R$ 844.681,83</div></div><div class="stat-icon" style="background:#dbeafe;color:var(--primary)">📊</div></div><div class="stat-footer"><span class="stat-change positive">↑ 18.2%</span><span style="color:var(--text-secondary)">Margem: 31.0%</span></div></div>
-          <div class="stat-card" style="--card-color:var(--warning)"><div class="stat-header"><div><div class="stat-title">EBITDA</div><div class="stat-value">R$ 832.261,35</div></div><div class="stat-icon" style="background:#fef3c7;color:var(--warning)">💵</div></div><div class="stat-footer"><span style="color:var(--text-secondary)">Janeiro 2026</span></div></div>
+        <!-- Filtro mês/ano — sem botão, muda automaticamente -->
+        <div style="display:flex;align-items:center;gap:1.25rem;padding:1.5rem 2rem 0;flex-wrap:wrap">
+          <h2 style="margin:0;font-size:1.3rem;color:#1e293b">💰 Dashboard</h2>
+          <div style="display:flex;align-items:center;gap:0.5rem;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:0.4rem 0.75rem">
+            <label style="font-size:0.82rem;color:#64748b;font-weight:600">📅 Mês:</label>
+            <select id="dashMesFiltro" onchange="renderizarGraficos()" style="border:none;font-weight:700;font-size:0.9rem;color:#1e293b;background:transparent;cursor:pointer;outline:none">
+              <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
+              <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
+              <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
+              <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:0.4rem 0.75rem">
+            <label style="font-size:0.82rem;color:#64748b;font-weight:600">🗓 Ano:</label>
+            <select id="dashAnoFiltro" onchange="renderizarGraficos()" style="border:none;font-weight:700;font-size:0.9rem;color:#1e293b;background:transparent;cursor:pointer;outline:none">
+              <option value="2026">2026</option><option value="2025">2025</option>
+            </select>
+          </div>
+          <span id="dashPeriodoLabel" style="font-size:0.82rem;color:#64748b;font-style:italic"></span>
         </div>
-        <div class="chart-grid">
-          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Composição das Receitas</h3><p class="chart-subtitle">Distribuição por categoria</p></div><div class="chart-container"><canvas id="receitasChart"></canvas></div></div>
-          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Distribuição de Despesas</h3><p class="chart-subtitle">Por tipo</p></div><div class="chart-container"><canvas id="despesasChart"></canvas></div></div>
-          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Evolução Mensal 2026</h3><p class="chart-subtitle">Receitas vs Despesas</p></div><div class="chart-container"><canvas id="comparativoReceitasChart"></canvas></div></div>
-          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Top 10 Custos</h3><p class="chart-subtitle">Maiores custos operacionais</p></div><div class="chart-container"><canvas id="custosChart"></canvas></div></div>
+
+        <!-- KPI Cards com tooltip de detalhamento -->
+        <style>
+          .dash-card { position:relative; background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.07); padding:1.25rem 1.5rem; border-top:4px solid var(--dash-color,#2563eb); cursor:default; transition:box-shadow 0.2s; }
+          .dash-card:hover { box-shadow:0 6px 24px rgba(0,0,0,0.13); }
+          .dash-card:hover .dash-tooltip { display:block; }
+          .dash-tooltip { display:none; position:absolute; z-index:100; top:calc(100% + 8px); left:0; min-width:280px; max-width:360px; background:white; border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.18); padding:1rem; border:1px solid #e2e8f0; font-size:0.82rem; }
+          .dash-tooltip-row { display:flex; justify-content:space-between; padding:0.3rem 0; border-bottom:1px solid #f1f5f9; gap:1rem; }
+          .dash-tooltip-row:last-child { border-bottom:none; font-weight:700; }
+          .dash-tooltip-title { font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.5rem; padding-bottom:0.4rem; border-bottom:2px solid #e2e8f0; }
+        </style>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;padding:1.25rem 2rem 0">
+
+          <!-- Receitas -->
+          <div class="dash-card" style="--dash-color:#10b981">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:0.4rem">💰 RECEITAS TOTAIS</div>
+                <div style="font-size:1.65rem;font-weight:800;color:#10b981" id="dash_receitas">—</div>
+              </div>
+              <div style="font-size:1.8rem">💰</div>
+            </div>
+            <div style="margin-top:0.5rem;font-size:0.78rem;color:#64748b">
+              <span id="dash_receitas_var" style="font-weight:700"></span> vs mês anterior
+            </div>
+            <div class="dash-tooltip">
+              <div class="dash-tooltip-title">📋 Detalhamento Receitas</div>
+              <div id="dash_tooltip_receitas"></div>
+            </div>
+          </div>
+
+          <!-- Despesas -->
+          <div class="dash-card" style="--dash-color:#ef4444">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:0.4rem">💸 DESPESAS TOTAIS</div>
+                <div style="font-size:1.65rem;font-weight:800;color:#ef4444" id="dash_custos">—</div>
+                <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.2rem">Impostos + Custos + Despesas Operac.</div>
+              </div>
+              <div style="font-size:1.8rem">💸</div>
+            </div>
+            <div style="margin-top:0.5rem;font-size:0.78rem;color:#64748b">
+              <span id="dash_custos_var" style="font-weight:700"></span> vs mês anterior
+            </div>
+            <div class="dash-tooltip">
+              <div class="dash-tooltip-title">📋 Detalhamento Despesas</div>
+              <div id="dash_tooltip_despesas"></div>
+            </div>
+          </div>
+
+          <!-- EBITDA Ajustado -->
+          <div class="dash-card" style="--dash-color:#2563eb">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:0.4rem">📊 EBITDA AJUSTADO</div>
+                <div style="font-size:1.65rem;font-weight:800;color:#2563eb" id="dash_ebitda">—</div>
+              </div>
+              <div style="font-size:1.8rem">📊</div>
+            </div>
+            <div style="margin-top:0.5rem;font-size:0.78rem;color:#64748b">
+              Margem: <strong id="dash_ebitda_pct" style="color:#2563eb"></strong>
+            </div>
+            <div class="dash-tooltip">
+              <div class="dash-tooltip-title">📋 Composição EBITDA</div>
+              <div id="dash_tooltip_ebitda"></div>
+            </div>
+          </div>
+
+          <!-- Impostos -->
+          <div class="dash-card" style="--dash-color:#f59e0b">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:0.78rem;color:#64748b;font-weight:600;margin-bottom:0.4rem">🏛️ IMPOSTOS</div>
+                <div style="font-size:1.65rem;font-weight:800;color:#f59e0b" id="dash_impostos">—</div>
+              </div>
+              <div style="font-size:1.8rem">🏛️</div>
+            </div>
+            <div style="margin-top:0.5rem;font-size:0.78rem;color:#64748b">
+              <strong id="dash_impostos_pct" style="color:#d97706"></strong> das receitas
+            </div>
+            <div class="dash-tooltip">
+              <div class="dash-tooltip-title">📋 Detalhamento Impostos</div>
+              <div id="dash_tooltip_impostos"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-grid" style="padding:1.25rem 2rem">
+          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Composição das Receitas</h3><p class="chart-subtitle" id="dash_sub_rec">Distribuição por categoria</p></div><div class="chart-container"><canvas id="receitasChart"></canvas></div></div>
+          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Distribuição de Despesas</h3><p class="chart-subtitle" id="dash_sub_desp">Por tipo</p></div><div class="chart-container"><canvas id="despesasChart"></canvas></div></div>
+          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Evolução Mensal 2026</h3><p class="chart-subtitle">Receitas vs Custos+Despesas</p></div><div class="chart-container"><canvas id="comparativoReceitasChart"></canvas></div></div>
+          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Top 10 Custos</h3><p class="chart-subtitle" id="dash_sub_custos">Maiores custos operacionais</p></div><div class="chart-container"><canvas id="custosChart"></canvas></div></div>
         </div>
       </div>
 
@@ -1687,15 +1785,164 @@
     function renderizarGraficos() {
       Object.values(charts).forEach(c=>c.destroy&&c.destroy());
       charts = {};
-      const rec = dadosFinanceiros.receitas;
-      const recLabels = rec.map(r=>r.nome);
-      const recVals = rec.map(r=>r.jan);
-      charts.receitas = new Chart(document.getElementById('receitasChart'),{type:'doughnut',data:{labels:recLabels,datasets:[{data:recVals,backgroundColor:['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}}}});
-      const desp = dadosFinanceiros.despesas;
-      charts.despesas = new Chart(document.getElementById('despesasChart'),{type:'pie',data:{labels:desp.map(d=>d.nome),datasets:[{data:desp.map(d=>d.jan),backgroundColor:['#ef4444','#f97316','#eab308','#84cc16','#10b981','#06b6d4','#3b82f6']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}}}});
-      charts.comp = new Chart(document.getElementById('comparativoReceitasChart'),{type:'bar',data:{labels:MTHS_L,datasets:[{label:'Receitas',data:[2720556,560487,0,0,0,0,0,0,0,0,0,0],backgroundColor:'rgba(37,99,235,0.7)'},{label:'Custos',data:[1888295,300000,0,0,0,0,0,0,0,0,0,0],backgroundColor:'rgba(239,68,68,0.7)'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>'R$'+v.toLocaleString('pt-BR')}}}}});
-      const top10 = [...dadosFinanceiros.custos].sort((a,b)=>b.jan-a.jan).slice(0,10);
-      charts.custos = new Chart(document.getElementById('custosChart'),{type:'bar',data:{labels:top10.map(c=>c.nome.substr(0,20)),datasets:[{label:'Jan 2026',data:top10.map(c=>c.jan),backgroundColor:'rgba(245,158,11,0.7)'}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{beginAtZero:true}}}});
+
+      const MESES   = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+      const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const mesIdx  = parseInt(document.getElementById('dashMesFiltro')?.value ?? 0);
+      const mesKey  = MESES[mesIdx];
+      const mesAnterior = mesIdx > 0 ? MESES[mesIdx-1] : null;
+      const mesNome = MESES_N[mesIdx];
+      const ano     = document.getElementById('dashAnoFiltro')?.value ?? '2026';
+      const fc = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+      const fp = v => (v*100).toFixed(1).replace('.',',')+'%';
+
+      // Label período
+      const lbl = document.getElementById('dashPeriodoLabel');
+      if(lbl) lbl.textContent = mesNome+'/'+ano;
+
+      const df = dadosFinanceiros;
+
+      // === KPIs ===
+      const receitas  = df.receitas?.reduce((s,r)=>s+(r[mesKey]||0),0) || 0;
+      const custos    = df.custos?.reduce((s,r)=>s+(r[mesKey]||0),0) || 0;
+      const despesas  = df.despesas?.reduce((s,r)=>s+(r[mesKey]||0),0) || 0;
+      const impostos  = df.impostos?.reduce((s,r)=>s+(r[mesKey]||0),0) || 0;
+      const ebitdaItem= df.ebitda_ajustado?.find(r=>r.nome==='EBITDA (Ajustado)');
+      const ebitda    = ebitdaItem ? (ebitdaItem[mesKey]||0) : 0;
+      const custoTotal= custos + despesas;
+
+      // Vs mês anterior
+      const recAnterior = mesAnterior ? (df.receitas?.reduce((s,r)=>s+(r[mesAnterior]||0),0)||0) : 0;
+      const custAnterior= mesAnterior ? ((df.custos?.reduce((s,r)=>s+(r[mesAnterior]||0),0)||0)+(df.despesas?.reduce((s,r)=>s+(r[mesAnterior]||0),0)||0)) : 0;
+
+      const setKpi = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=fc(val); };
+      const setVar = (id, cur, prev) => {
+        const e = document.getElementById(id);
+        if(!e) return;
+        if(!prev || prev===0) { e.textContent=''; return; }
+        const pct = ((cur-prev)/prev)*100;
+        e.textContent = (pct>=0?'↑ ':'↓ ')+Math.abs(pct).toFixed(1)+'%';
+        e.className = 'stat-change '+(pct>=0?'positive':'negative');
+      };
+
+      setKpi('dash_receitas', receitas);
+      setKpi('dash_custos', custoTotal);
+      setKpi('dash_ebitda', ebitda);
+      setKpi('dash_impostos', impostos);
+
+      // Variação vs mês anterior com cor
+      const setVarSpan = (id, cur, prev) => {
+        const e = document.getElementById(id); if(!e) return;
+        if(!prev || prev===0) { e.textContent=''; return; }
+        const pct = ((cur-prev)/prev)*100;
+        e.style.color = pct>=0 ? '#10b981' : '#ef4444';
+        e.textContent = (pct>=0?'↑ ':'↓ ')+Math.abs(pct).toFixed(1)+'%';
+      };
+      setVarSpan('dash_receitas_var', receitas, recAnterior);
+      setVarSpan('dash_custos_var', custoTotal, custAnterior);
+
+      const ep = document.getElementById('dash_ebitda_pct');
+      if(ep) ep.textContent = receitas>0 ? fp(ebitda/receitas) : '—';
+      const ip = document.getElementById('dash_impostos_pct');
+      if(ip) ip.textContent = receitas>0 ? fp(impostos/receitas) : '—';
+
+      // === TOOLTIPS detalhamento ===
+      const toRow = (nome, val, bold=false) =>
+        `<div class="dash-tooltip-row${bold?' dash-tooltip-total':''}">
+          <span style="color:#374151;${bold?'font-weight:700':''}">${nome}</span>
+          <span style="color:${bold?'#1e293b':'#475569'};${bold?'font-weight:700':''}">${fc(val)}</span>
+        </div>`;
+
+      // Receitas tooltip
+      const tooltipRec = document.getElementById('dash_tooltip_receitas');
+      if(tooltipRec) {
+        tooltipRec.innerHTML = (df.receitas||[])
+          .filter(r=>(r[mesKey]||0)!==0)
+          .map(r=>toRow(r.nome, r[mesKey]||0))
+          .join('') + toRow('TOTAL', receitas, true);
+      }
+
+      // Despesas tooltip (Impostos + Custos + Despesas separados com subtotal)
+      const tooltipDesp = document.getElementById('dash_tooltip_despesas');
+      if(tooltipDesp) {
+        let html = '<div style="font-size:0.72rem;color:#ef4444;font-weight:700;margin-bottom:0.25rem">Impostos</div>';
+        html += (df.impostos||[]).filter(r=>(r[mesKey]||0)!==0).map(r=>toRow(r.nome,r[mesKey]||0)).join('');
+        html += '<div style="font-size:0.72rem;color:#f97316;font-weight:700;margin:0.5rem 0 0.25rem">Custos</div>';
+        html += (df.custos||[]).filter(r=>(r[mesKey]||0)!==0).map(r=>toRow(r.nome,r[mesKey]||0)).join('');
+        html += '<div style="font-size:0.72rem;color:#8b5cf6;font-weight:700;margin:0.5rem 0 0.25rem">Despesas Operacionais</div>';
+        html += (df.despesas||[]).filter(r=>(r[mesKey]||0)!==0).map(r=>toRow(r.nome,r[mesKey]||0)).join('');
+        html += toRow('TOTAL', custoTotal, true);
+        tooltipDesp.innerHTML = html;
+      }
+
+      // EBITDA tooltip
+      const tooltipEbitda = document.getElementById('dash_tooltip_ebitda');
+      if(tooltipEbitda) {
+        tooltipEbitda.innerHTML =
+          toRow('Receitas', receitas) +
+          toRow('(-) Impostos', -impostos) +
+          toRow('(-) Custos', -custos) +
+          toRow('(-) Despesas', -despesas) +
+          toRow('EBITDA Ajustado', ebitda, true);
+      }
+
+      // Impostos tooltip
+      const tooltipImp = document.getElementById('dash_tooltip_impostos');
+      if(tooltipImp) {
+        tooltipImp.innerHTML = (df.impostos||[])
+          .filter(r=>(r[mesKey]||0)!==0)
+          .map(r=>toRow(r.nome, r[mesKey]||0))
+          .join('') + toRow('TOTAL', impostos, true);
+      }
+
+      // Subtítulos dos gráficos
+      const setSub = (id, txt) => { const e=document.getElementById(id); if(e) e.textContent=txt; };
+      setSub('dash_sub_rec',   mesNome+'/'+ano+' — Distribuição por categoria');
+      setSub('dash_sub_desp',  mesNome+'/'+ano+' — Por tipo');
+      setSub('dash_sub_custos',mesNome+'/'+ano+' — Maiores custos');
+
+      const CORES = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'];
+
+      // === Gráfico Receitas ===
+      const recFiltrado = df.receitas?.filter(r=>(r[mesKey]||0)>0) || [];
+      charts.receitas = new Chart(document.getElementById('receitasChart'),{
+        type:'doughnut',
+        data:{labels:recFiltrado.map(r=>r.nome),datasets:[{data:recFiltrado.map(r=>r[mesKey]||0),backgroundColor:CORES}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}},tooltip:{callbacks:{label:ctx=>' '+fc(ctx.raw)}}}}
+      });
+
+      // === Gráfico Despesas ===
+      const despFiltrado = df.despesas?.filter(d=>(d[mesKey]||0)>0) || [];
+      charts.despesas = new Chart(document.getElementById('despesasChart'),{
+        type:'pie',
+        data:{labels:despFiltrado.map(d=>d.nome),datasets:[{data:despFiltrado.map(d=>d[mesKey]||0),backgroundColor:CORES}]},
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}},tooltip:{callbacks:{label:ctx=>' '+fc(ctx.raw)}}}}
+      });
+
+      // === Gráfico Evolução Mensal ===
+      const recMensal  = MESES.map(m=>df.receitas?.reduce((s,r)=>s+(r[m]||0),0)||0);
+      const custMensal = MESES.map(m=>(df.custos?.reduce((s,r)=>s+(r[m]||0),0)||0)+(df.despesas?.reduce((s,r)=>s+(r[m]||0),0)||0));
+      const ebitdaMensal = MESES.map(m=>{ const e=df.ebitda_ajustado?.find(r=>r.nome==='EBITDA (Ajustado)'); return e?(e[m]||0):0; });
+      charts.comp = new Chart(document.getElementById('comparativoReceitasChart'),{
+        type:'bar',
+        data:{
+          labels:MTHS_L,
+          datasets:[
+            {label:'Receitas',    data:recMensal,    backgroundColor:'rgba(37,99,235,0.75)', order:2},
+            {label:'Cust+Desp',   data:custMensal,   backgroundColor:'rgba(239,68,68,0.75)', order:2},
+            {label:'EBITDA Aj.',  data:ebitdaMensal, type:'line', borderColor:'#059669', backgroundColor:'rgba(5,150,105,0.1)', pointRadius:4, tension:0.3, fill:true, order:1, yAxisID:'y'}
+          ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{callback:v=>'R$'+Math.round(v/1000)+'k'}}},plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fc(ctx.raw)}}}}
+      });
+
+      // === Top 10 Custos ===
+      const top10 = [...(df.custos||[])].filter(c=>(c[mesKey]||0)>0).sort((a,b)=>(b[mesKey]||0)-(a[mesKey]||0)).slice(0,10);
+      charts.custos = new Chart(document.getElementById('custosChart'),{
+        type:'bar',
+        data:{labels:top10.map(c=>c.nome.length>22?c.nome.substr(0,20)+'…':c.nome),datasets:[{label:mesNome+'/'+ano,data:top10.map(c=>c[mesKey]||0),backgroundColor:'rgba(245,158,11,0.75)'}]},
+        options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>'R$'+Math.round(v/1000)+'k'}}},plugins:{tooltip:{callbacks:{label:ctx=>fc(ctx.raw)}}}}
+      });
     }
 
     // ==================== DIRETORIA ====================
