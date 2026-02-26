@@ -567,7 +567,7 @@
           <div style="background:white;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,0.06);padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
             <span style="font-size:0.85rem;color:#64748b;font-weight:600">📅 Período de análise:</span>
             <select id="iaMesFiltro" style="padding:0.4rem 0.75rem;border:1px solid #e2e8f0;border-radius:8px;font-size:0.9rem;font-weight:600;color:#1e293b">
-              <option value="0">Janeiro</option><option value="1" selected>Fevereiro</option><option value="2">Março</option>
+              <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
               <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
               <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
               <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
@@ -3732,20 +3732,43 @@
 
     // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', async () => {
-      // Define mês e ano atual como padrão nos seletores da Comissão
-      const hoje = new Date();
-      const mesFiltro = document.getElementById('comissaoMesFiltro');
-      const anoFiltro = document.getElementById('comissaoAnoFiltro');
-      if (mesFiltro) mesFiltro.value = String(hoje.getMonth()); // 0=Jan, 1=Fev...
-      if (anoFiltro) anoFiltro.value = String(hoje.getFullYear());
-      const opMesFiltro = document.getElementById('opMesFiltro');
-      const opAnoFiltro = document.getElementById('opAnoFiltro');
-      if (opMesFiltro) opMesFiltro.value = String(hoje.getMonth());
-      if (opAnoFiltro) opAnoFiltro.value = String(hoje.getFullYear());
+      // === Definir mês/ano atual em TODOS os filtros ===
+      const _hoje = new Date();
+      const _mes  = _hoje.getMonth();     // 0-11
+      const _ano  = _hoje.getFullYear();
+      const _mesStr = String(_mes + 1).padStart(2, '0');
+
+      // Dashboard
+      const _dashMes = document.getElementById('dashMesFiltro');
+      const _dashAno = document.getElementById('dashAnoFiltro');
+      if (_dashMes) _dashMes.value = String(_mes);
+      if (_dashAno) _dashAno.value = String(_ano);
+
+      // Comissão Financeiro
+      const _comMes = document.getElementById('comissaoMesFiltro');
+      const _comAno = document.getElementById('comissaoAnoFiltro');
+      if (_comMes) _comMes.value = String(_mes);
+      if (_comAno) _comAno.value = String(_ano);
+
+      // Comissão Operacional
+      const _opMes = document.getElementById('opMesFiltro');
+      const _opAno = document.getElementById('opAnoFiltro');
+      if (_opMes) _opMes.value = String(_mes);
+      if (_opAno) _opAno.value = String(_ano);
+
+      // Consolidado (input type=month: "YYYY-MM")
+      const _consEl = document.getElementById('consolidadoPeriodo');
+      if (_consEl) _consEl.value = `${_ano}-${_mesStr}`;
+
+      // Parâmetros/Diretoria
+      const _dirMes = document.getElementById('dirMes');
+      const _dirAno = document.getElementById('dirAno');
+      if (_dirMes) _dirMes.value = String(_mes);
+      if (_dirAno) _dirAno.value = String(_ano);
 
       await carregarParams();
+      await consolidadoInicializar();
       renderizarGraficos();
-      consolidadoInicializar();
       initParamFormatting();
     });
     // ==================== COMISSÃO OPERACIONAL ====================
