@@ -3312,8 +3312,10 @@
       'multa fidelidade':          { cat:'receitas', nome:'Multa fidelidade e equipamento' },
       'multa fidelidade e equipamento': { cat:'receitas', nome:'Multa fidelidade e equipamento' },
       'rendimentos financeiros':   { cat:'receitas', nome:'Rendimentos financeiros' },
-      'vendas canceladas':         { cat:'receitas', nome:'Vendas canceladas e estornos' },
+      'ativos imobilizados': { cat:'receitas', nome:'V. Ativos imobilizados' },
+      'ativos imobilizados': { cat:'receitas', nome:'V. Ativos imobilizados' },
       'vendas canceladas e estornos': { cat:'receitas', nome:'Vendas canceladas e estornos' },
+      'vendas canceladas':         { cat:'receitas', nome:'Vendas canceladas e estornos' },
       // IMPOSTOS
       'icms':                      { cat:'impostos', nome:'ICMS' },
       'cofins':                    { cat:'impostos', nome:'COFINS' },
@@ -3706,7 +3708,7 @@
     }
 
     // Auto-fetch na primeira visita do dia
-    const DADOS_VERSION = '2026-v9'; // Incrementar sempre que os dados hardcoded mudarem
+    const DADOS_VERSION = '2026-v10'; // Incrementar sempre que os dados hardcoded mudarem
 
     async function consolidadoInicializar() {
       syncAtualizarStatusUI();
