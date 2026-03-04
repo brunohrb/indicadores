@@ -1,4 +1,4 @@
-    // ==================== FECHAR MÊS ====================
+// ==================== FECHAR MÊS ====================
     async function fecharMes() {
       const mesIdx = parseInt(document.getElementById('comissaoMesFiltro')?.value ?? 0);
       const ano    = document.getElementById('comissaoAnoFiltro')?.value ?? '2026';
@@ -24,7 +24,9 @@
       const tarifas  = getTarifas(mesKey);
       const ebitda   = getEbitda(mesKey);
       const dirDados = await getDiretoriaDados(mesIdx, ano);
-      const reajuste = dirDados?.dados?.reajuste || 0;
+      const reajuste = dirDados?.dados
+        ? ((dirDados.dados.reajuste_pf || 0) + (dirDados.dados.reajuste_pj || 0)) || dirDados.dados.reajuste || 0
+        : 0;
 
       const metaJurosPerc   = params['param_metaJuros'] / 100;
       const txComissaoJuros = params['param_txComissaoJuros'] / 100;
@@ -272,7 +274,9 @@
       const dirDados = await getDiretoriaDados(mesIdx, ano);
       const hasDiretoria = !!(dirDados && dirDados.dados);
       const resultadoLiq = hasDiretoria ? (dirDados.dados.resultado || 0) : 0;
-      const reajuste     = hasDiretoria ? (dirDados.dados.reajuste || 0)  : 0;
+      const reajuste     = hasDiretoria
+        ? ((dirDados.dados.reajuste_pf || 0) + (dirDados.dados.reajuste_pj || 0)) || dirDados.dados.reajuste || 0
+        : 0;
 
       // Aviso diretoria
       const aviso = document.getElementById('comissaoAvisoDiretoria');
@@ -359,5 +363,3 @@
       } catch(e) { console.warn('carregarParams falhou:', e); }
       await reajusteCarregar();
     }
-
-
