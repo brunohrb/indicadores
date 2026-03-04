@@ -307,11 +307,25 @@
 
     async function getDiretoriaDados(mes, ano) {
       const mm = String(mes + 1).padStart(2, '0');
-      const key = 'diretoria_' + ano + '_' + mm;
-      try {
-        const raw = await sbStorage.get(key);
-        return raw ? JSON.parse(raw) : null;
-      } catch(e) { return null; }
+      // Tenta as duas chaves possíveis (nova e legada do diretoria.js)
+      const keys = [
+        'diretoria_' + ano + '_' + mm,
+        'ind_dados:' + ano + ':' + mm,
+      ];
+      for (const key of keys) {
+        try {
+          const raw = await sbStorage.get(key);
+          if (!raw) continue;
+          const parsed = JSON.parse(raw);
+          if (!parsed) continue;
+          // Normaliza estrutura plana {reajuste_pf,...} para {dados:{...}}
+          if (!parsed.dados && (parsed.reajuste_pf !== undefined || parsed.resultado !== undefined || parsed.base_pf !== undefined)) {
+            return { dados: parsed };
+          }
+          return parsed;
+        } catch(e) { continue; }
+      }
+      return null;
     }
 
     // Soma um campo de receitas para um mês
