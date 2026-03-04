@@ -1,4 +1,4 @@
-    // ==================== DIRETORIA ====================
+// ==================== DIRETORIA ====================
     const CAMPOS = [
       { key: 'base_pf',      label: 'Base Clientes PF'      },
       { key: 'base_pj',      label: 'Base Clientes PJ +PME' },
@@ -12,7 +12,8 @@
       { key: 'canc_pj',      label: 'Cancelam. PME + PJ'    },
       { key: 'retiradas',    label: 'Retiradas'             },
       { key: 'canc_sr',      label: 'Can S/ Retirada'       },
-      { key: 'canc_1a',      label: 'Canc. 1a Mensalidade'  },
+      { key: 'canc_1a',      label: 'QTD. Canc. 1 Men.'     },
+      { key: 'val_canc_1a',  label: 'Valor Canc. 1 Men.'    },
       { key: 'reat_ret',     label: 'Reativacoes Retirada'  },
       { key: 'nn',           label: 'Novos Negócios'        },
       { key: 'nn_pf',        label: 'Novos Negócios PF'     },
@@ -26,7 +27,8 @@
       { key: 'resultado',    label: 'Resultado Liquido'     },
       { key: 'juros45',      label: 'Juros < 45'            },
       { key: 'juros45m',     label: 'Juros >45'             },
-      { key: 'reajuste',     label: 'Reajuste Contratos'    },
+      { key: 'reajuste_pf',  label: 'Reajuste Contratos PF' },
+      { key: 'reajuste_pj',  label: 'Reajuste Contratos PJ' },
     ];
 
     function parseBR(s) {
@@ -54,15 +56,25 @@
         let VE = null;
         for (const w of ws) if (w.x>=530 && w.x<700 && /\d/.test(w.text)) { VE=parseBR(w.text); break; }
         const LD = ws.filter(w=>w.x>=800 && w.x<1080 && !['R$','(Em','branco)'].includes(w.text)).map(w=>w.text).join(' ').trim();
-        const negD = ws.some(w=>w.x>=1080 && (w.text==='-R$'||w.text.startsWith('-R$')));
+        const negD = ws.some(w=>w.x>=1080 && w.x<1300 && (w.text==='-R$'||w.text.startsWith('-R$')));
         let VD = null;
         for (const w of ws) {
-          if (w.x>=1080 && w.text!=='R$' && w.text!=='-R$' && !w.text.startsWith('(')) {
+          if (w.x>=1080 && w.x<1300 && w.text!=='R$' && w.text!=='-R$' && !w.text.startsWith('(')) {
             const v = parseBR(w.text);
             if (v!==null) { VD = negD ? -Math.abs(v) : v; break; }
           }
         }
-        return {y:l.y, LE, VE, LD, VD};
+        // Terceira coluna (Reajuste Contratos PJ, QTD. Canc. 1 Men., Valor Canc. 1 Men.)
+        const LC = ws.filter(w=>w.x>=1300 && w.x<1600 && !['R$','(Em','branco)'].includes(w.text) && !(w.text[0]>='0'&&w.text[0]<='9'&&(w.text.length>1||/[.,]/.test(w.text)))).map(w=>w.text).join(' ').trim();
+        const negC = ws.some(w=>w.x>=1600 && (w.text==='-R$'||w.text.startsWith('-R$')));
+        let VC = null;
+        for (const w of ws) {
+          if (w.x>=1600 && w.text!=='R$' && w.text!=='-R$' && !w.text.startsWith('(')) {
+            const v = parseBR(w.text);
+            if (v!==null) { VC = negC ? -Math.abs(v) : v; break; }
+          }
+        }
+        return {y:l.y, LE, VE, LD, VD, LC, VC, ws};
       });
       const getVal = (i, side) => {
         const v = rows[i]['V'+side];
@@ -74,6 +86,7 @@
       rows.forEach((r,i)=>{
         if (r.LE) mapa[r.LE] = getVal(i,'E');
         if (r.LD) mapa[r.LD] = getVal(i,'D');
+        if (r.LC) mapa[r.LC] = getVal(i,'C');
       });
       const n = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
       const get = lbl => {
@@ -81,20 +94,50 @@
         for (const [k,v] of Object.entries(mapa)) if (n(k).includes(n(lbl))||n(lbl).includes(n(k))) return v;
         return null;
       };
+      // Busca por linha: varre cada row procurando o label e pega o valor mais próximo à direita
+      const getProx = lbl => {
+        const nl = n(lbl);
+        const lblWords = nl.split(' ');
+        for (const row of rows) {
+          const ws = row.ws || [];  // ws já ordenado por x
+          for (let i=0; i<ws.length; i++) {
+            let match = true;
+            for (let j=0; j<lblWords.length; j++) {
+              if (!ws[i+j] || n(ws[i+j].text) !== lblWords[j]) { match=false; break; }
+            }
+            if (match) {
+              // encontrou o label — pega próximo token numérico à direita
+              for (let k=i+lblWords.length; k<ws.length; k++) {
+                if (ws[k].text === 'R$' || ws[k].text === '-R$') continue;
+                const neg = ws[k].text.startsWith('-') || (k>0 && ws[k-1].text==='-R$');
+                const v = parseBR(ws[k].text);
+                if (v !== null) return neg ? -Math.abs(v) : v;
+              }
+            }
+          }
+        }
+        return null;
+      };
+      // DEBUG TEMPORÁRIO
+      console.log('=== MAPA KEYS ===', Object.keys(mapa));
+      console.log('=== CHAVES COM Valor ===', Object.keys(mapa).filter(k=>k.toLowerCase().includes('valor')));
+      console.log('=== CHAVES COM Canc ===', Object.keys(mapa).filter(k=>k.toLowerCase().includes('canc')));
+      console.log('get Valor Canc. 1 Men.:', get('Valor Canc. 1 Men.'));
+      console.log('getProx Valor Canc. 1 Men.:', getProx('Valor Canc. 1 Men.'));
       return {
         base_pf: get('Basse Clientes PF'), base_pj: get('Base Clientes PJ'),
         base_isentos: get('Base Isentos'), contratos: get('Base de Contratos'),
         os_pf: get('OS Suporte PF'), os_pj: get('OS Suporte PJ'),
         nc_pf: get('Novos Clientes PF'), nc_pj: get('Novos Clientes PJ'),
         canc_pf: get('Cancelamento PF'), canc_pj: get('Cancelam.'),
-        retiradas: get('Retiradas'), canc_sr: get('Can S/'), canc_1a: get('Canc. 1a'),
+        retiradas: get('Retiradas'), canc_sr: get('Can S/'), canc_1a: get('QTD. Canc. 1 Men.') ?? getProx('QTD. Canc. 1 Men.') ?? get('Canc. 1a') ?? null,
         reat_ret: get('Reativacoes Retirada'), nn: get('Novos Negócios'),
         nn_pf: get('Novos Negócios PF'), nn_pj: get('Novos Negócios PJ'),
         upgrade: get('Upgrade'), reat: mapa['Reativacoes'] ?? mapa['Reativações'] ?? null,
         val_canc: mapa['Valor Cancelamento'] ?? null, val_canc_pf: get('Valor Cancelamento PF'),
-        val_canc_pj: get('Valor Canc.'), downgrade: get('Downgrade'),
+        val_canc_pj: get('Valor Canc. PJ') ?? get('Valor Canc.'), val_canc_1a: get('Valor Canc. 1 Men.') ?? getProx('Valor Canc. 1 Men.') ?? null, downgrade: get('Downgrade'),
         resultado: get('Resultado'), juros45: get('Juros < 45'),
-        juros45m: get('Juros >45'), reajuste: get('Reajuste Contratos') ?? get('Reajuste') ?? null,
+        juros45m: get('Juros >45'), reajuste_pf: get('Reajuste Contratos PF') ?? getProx('Reajuste Contratos PF') ?? null, reajuste_pj: get('Reajuste Contratos PJ') ?? getProx('Reajuste Contratos PJ') ?? null,
       };
     }
 
@@ -173,4 +216,69 @@
         div.appendChild(lbl); div.appendChild(inp); grid.appendChild(div);
       });
     }
+    // ======= SALVAR / CARREGAR INDICADORES NO SUPABASE =======
 
+    function indChave(mes, ano) {
+      const m = String(parseInt(mes)+1).padStart(2,'0');
+      return `ind_dados:${ano}:${m}`;
+    }
+
+    async function diretoriaVerificarMesAno() {
+      const mes = document.getElementById('dirMes')?.value ?? 0;
+      const ano = document.getElementById('dirAno')?.value ?? 2026;
+      const info = document.getElementById('dirStorageInfo');
+      if (!info) return;
+      info.textContent = '⏳ Verificando...';
+      try {
+        const existing = await sbStorage.get(indChave(mes, ano));
+        if (existing) {
+          const d = JSON.parse(existing);
+          const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+          info.innerHTML = `<span style="color:#059669;font-weight:700">✓ Já existe dado salvo para ${meses[mes]}/${ano}</span> — salvar substituirá.`;
+        } else {
+          info.innerHTML = `<span style="color:#64748b">Nenhum dado salvo ainda para este mês.</span>`;
+        }
+      } catch(e) {
+        info.textContent = '';
+      }
+    }
+
+    async function diretoriaAtualizarAviso(mes, ano) {
+      await diretoriaVerificarMesAno();
+    }
+
+    async function diretoriaCarregarInformacoes() {
+      const btn = document.getElementById('btnCarregarInfo');
+      const msg = document.getElementById('dirSalvoMsg');
+      if (!diretoriaDadosExtraidos) {
+        // Collect from grid inputs if no extracted data
+        diretoriaDadosExtraidos = {};
+        document.querySelectorAll('#diretoriaDataGrid input[data-key]').forEach(inp => {
+          diretoriaDadosExtraidos[inp.dataset.key] = parseBR(inp.value);
+        });
+      }
+      const mes = document.getElementById('dirMes')?.value ?? 0;
+      const ano = document.getElementById('dirAno')?.value ?? 2026;
+      const chave = indChave(mes, ano);
+      btn.disabled = true;
+      btn.textContent = '⏳ Salvando...';
+      try {
+        await sbStorage.set(chave, JSON.stringify(diretoriaDadosExtraidos));
+        msg.style.display = 'block';
+        msg.style.background = '#dcfce7';
+        msg.style.color = '#166534';
+        const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        msg.innerHTML = `✅ Dados de <strong>${meses[mes]}/${ano}</strong> salvos com sucesso no Supabase!`;
+        await diretoriaVerificarMesAno();
+        // Atualiza indicadores se a aba estiver visível
+        if (typeof carregarIndicadoresMes === 'function') carregarIndicadoresMes();
+      } catch(e) {
+        msg.style.display = 'block';
+        msg.style.background = '#fee2e2';
+        msg.style.color = '#991b1b';
+        msg.textContent = '❌ Erro ao salvar: ' + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '💾 Carregar Informações';
+      }
+    }

@@ -1,4 +1,4 @@
-    // ==================== INIT ====================
+// ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', async () => {
       // === Definir mês/ano atual em TODOS os filtros ===
       const _hoje = new Date();
@@ -128,7 +128,7 @@
         const val_canc_pf  = get('val_canc_pf', canc_pf * TICKET_PF);
         const val_canc_pj  = get('val_canc_pj', canc_pj * TICKET_PJ);
         const downgrade    = Math.abs(get('downgrade'));  // sempre positivo
-        const reajuste_op  = reajusteDedicado > 0 ? reajusteDedicado : (D['reajuste'] != null ? +D['reajuste'] : 0);
+        const reajuste_op  = reajusteDedicado > 0 ? reajusteDedicado : ((+D['reajuste_pf']||0) + (+D['reajuste_pj']||0)) > 0 ? ((+D['reajuste_pf']||0) + (+D['reajuste_pj']||0)) : (D['reajuste'] != null ? +D['reajuste'] : 0);
 
         // === INDICADORES ===
         const pct_os_pf     = contratos  > 0 ? os_pf   / contratos : 0;
@@ -389,4 +389,3 @@
     // ═══════════════════════════════════════════════════════
     let marcosContext = 'dashboard';
     let marcosHistory = [];
-

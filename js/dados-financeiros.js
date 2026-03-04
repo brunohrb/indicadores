@@ -117,7 +117,7 @@
       const v = document.getElementById('viewType').value;
       document.querySelectorAll('.view-container').forEach(c=>{c.classList.remove('active');c.style.display='none';});
       document.getElementById('marcosFloat').style.display = (v==='dashboard') ? 'block' : 'none';
-      const hideHeader = ['consolidado','comparativo','powerbi','ia-estrategica','diretoria','comissao-financeiro','comissao-operacional'];
+      const hideHeader = ['consolidado','comparativo','powerbi','ia-estrategica','diretoria','comissao-financeiro','comissao-operacional','indicadores'];
       document.getElementById('mainHeader').style.display = hideHeader.includes(v) ? 'none' : 'block';
       const show = id => { const el=document.getElementById(id); el.style.display='block'; el.classList.add('active'); };
       if (v==='dashboard') { show('dashboardView'); renderizarGraficos(); document.getElementById('marcosFloat').style.display='block'; }
@@ -125,6 +125,7 @@
       else if (v==='comparativo') { show('comparativoView'); renderComparisonCards(); renderCompTab('receitas-comp'); }
       else if (v==='powerbi') show('powerbiView');
       else if (v==='ia-estrategica') { show('iaEstrategicaView'); carregarApiKey(); }
+      else if (v==='indicadores') { show('indicadoresView'); renderIndicadores(); }
       else if (v==='diretoria') { show('diretoriaView'); carregarParams(); diretoriaCarregarUltimoMes(); }
       else if (v==='comissao-financeiro') { show('comissaoFinanceiroView'); carregarParams().then(()=>renderComissao()); }
       else if (v==='comissao-operacional') { show('comissaoOperacionalView'); carregarParams().then(()=>renderComissaoOp()); }
@@ -883,4 +884,111 @@
       ev.target.classList.add('active');
       renderComparisonCards();
       renderCompTab('receitas-comp');
+    }
+
+    // ===== INDICADORES =====
+    function renderIndicadores() {
+      const d = typeof diretoriaDadosExtraidos !== 'undefined' ? diretoriaDadosExtraidos : null;
+      const grid = document.getElementById('indicadoresGrid');
+      const semDados = document.getElementById('indicadoresSemDados');
+
+      const hasData = d && Object.values(d).some(v => v !== null && v !== undefined);
+      if (!hasData) {
+        grid.style.display = 'none';
+        semDados.style.display = 'block';
+        return;
+      }
+      semDados.style.display = 'none';
+      grid.style.display = 'block';
+
+      // Helper: format integer
+      const fN = v => (v === null || v === undefined) ? '—' : Number(v).toLocaleString('pt-BR');
+      // Helper: format currency
+      const fR = v => (v === null || v === undefined) ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+      // Helper: sum two values
+      const sum = (a, b) => {
+        if (a === null && b === null) return null;
+        return (a || 0) + (b || 0);
+      };
+      const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+
+      // Base de Clientes
+      const baseTotal = sum(d.base_pf, d.base_pj);
+      set('ind-base-total', fN(baseTotal));
+      set('ind-tt-base-pf', fN(d.base_pf));
+      set('ind-tt-base-pj', fN(d.base_pj));
+      set('ind-tt-base-total', fN(baseTotal));
+
+      // Contratos
+      set('ind-contratos', fN(d.contratos));
+
+      // Novos Clientes
+      const ncTotal = sum(d.nc_pf, d.nc_pj);
+      set('ind-nc-total', fN(ncTotal));
+      set('ind-tt-nc-pf', fN(d.nc_pf));
+      set('ind-tt-nc-pj', fN(d.nc_pj));
+      set('ind-tt-nc-total', fN(ncTotal));
+
+      // Cancelamentos
+      const cancTotal = sum(d.canc_pf, d.canc_pj);
+      set('ind-canc-total', fN(cancTotal));
+      set('ind-tt-canc-pf', fN(d.canc_pf));
+      set('ind-tt-canc-pj', fN(d.canc_pj));
+      set('ind-tt-canc-total', fN(cancTotal));
+
+      // Retiradas
+      set('ind-retiradas', fN(d.retiradas));
+
+      // Reativações
+      const reatTotal = sum(d.reat, d.reat_ret);
+      set('ind-reat-total', fN(reatTotal));
+      set('ind-tt-reat', fN(d.reat));
+      set('ind-tt-reat-ret', fN(d.reat_ret));
+      set('ind-tt-reat-total', fN(reatTotal));
+
+      // Novos Negócios
+      const nnTotal = sum(d.nn_pf, d.nn_pj);
+      set('ind-nn-total', fN(nnTotal));
+      set('ind-tt-nn-pf', fN(d.nn_pf));
+      set('ind-tt-nn-pj', fN(d.nn_pj));
+      set('ind-tt-nn-total', fN(nnTotal));
+
+      // Upgrade
+      set('ind-upgrade', fN(d.upgrade));
+
+      // Resultado
+      set('ind-resultado', fN(d.resultado));
+
+      // OS Suporte
+      const osTotal = sum(d.os_pf, d.os_pj);
+      set('ind-os-total', fN(osTotal));
+      set('ind-tt-os-pf', fN(d.os_pf));
+      set('ind-tt-os-pj', fN(d.os_pj));
+      set('ind-tt-os-total', fN(osTotal));
+
+      // Valor Cancelamento
+      const valCancTotal = d.val_canc !== null && d.val_canc !== undefined ? d.val_canc : sum(d.val_canc_pf, d.val_canc_pj);
+      set('ind-val-canc-total', fR(valCancTotal));
+      set('ind-tt-val-canc-pf', fR(d.val_canc_pf));
+      set('ind-tt-val-canc-pj', fR(d.val_canc_pj));
+      set('ind-tt-val-canc-total', fR(valCancTotal));
+
+      // Juros
+      const jurosTotal = sum(d.juros45, d.juros45m);
+      set('ind-juros-total', fN(jurosTotal));
+      set('ind-tt-juros45', fN(d.juros45));
+      set('ind-tt-juros45m', fN(d.juros45m));
+      set('ind-tt-juros-total', fN(jurosTotal));
+
+      // Reajuste
+      const reajusteTotal = sum(d.reajuste_pf, d.reajuste_pj);
+      set('ind-reajuste-total', fN(reajusteTotal));
+      set('ind-tt-reajuste-pf', fN(d.reajuste_pf));
+      set('ind-tt-reajuste-pj', fN(d.reajuste_pj));
+      set('ind-tt-reajuste-total', fN(reajusteTotal));
+
+      // Canc. 1º Mês
+      set('ind-canc-1a', fN(d.canc_1a));
+      set('ind-tt-canc-1a-qtd', fN(d.canc_1a));
+      set('ind-tt-canc-1a-val', fR(d.val_canc_1a));
     }

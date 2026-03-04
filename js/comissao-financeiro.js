@@ -256,18 +256,18 @@
     // Sincroniza reajuste de dados já extraídos (do PDF ou do Supabase)
     async function reajusteSincronizarDeDados(mesIdx, dados) {
       if (!dados) return;
-      const val = dados.reajuste != null ? +dados.reajuste : null;
+      const val_pf = dados.reajuste_pf != null ? +dados.reajuste_pf : 0;
+      const val_pj = dados.reajuste_pj != null ? +dados.reajuste_pj : 0;
+      const val = (val_pf + val_pj) > 0 ? (val_pf + val_pj) : null;
       if (val == null || val <= 0) return;
       try {
         const raw = await sbStorage.get(REAJUSTE_KEY);
         const rDados = raw ? JSON.parse(raw) : {};
-        // Só sobrescreve se não tiver valor manual
-        if (!rDados[MESES_KEYS[mesIdx]]) {
-          rDados[MESES_KEYS[mesIdx]] = val;
-          await sbStorage.set(REAJUSTE_KEY, JSON.stringify(rDados));
-          await reajusteCarregar();
-          console.log('✅ Reajuste sincronizado:', MESES_KEYS[mesIdx], '=', val);
-        }
+        // Sempre sobrescreve com o valor do PDF (PF + PJ)
+        rDados[MESES_KEYS[mesIdx]] = val;
+        await sbStorage.set(REAJUSTE_KEY, JSON.stringify(rDados));
+        await reajusteCarregar();
+        console.log('✅ Reajuste sincronizado:', MESES_KEYS[mesIdx], '=', val);
       } catch(e) { console.warn('Sync reajuste:', e); }
     }
 
@@ -279,8 +279,10 @@
       const rDados = raw ? JSON.parse(raw) : {};
       for (let m = 0; m <= 11; m++) {
         const dir = await diretoriaLerDados(m, ano);
-        if (dir && dir.dados && dir.dados.reajuste != null && dir.dados.reajuste > 0) {
-          rDados[MESES_KEYS[m]] = dir.dados.reajuste;
+        if (dir && dir.dados && (dir.dados.reajuste_pf != null || dir.dados.reajuste_pj != null)) {
+          const soma = (+dir.dados.reajuste_pf || 0) + (+dir.dados.reajuste_pj || 0);
+          if (soma > 0) rDados[MESES_KEYS[m]] = soma;
+          else if (dir.dados.reajuste != null && dir.dados.reajuste > 0) rDados[MESES_KEYS[m]] = dir.dados.reajuste; // fallback legado
           count++;
         }
       }
