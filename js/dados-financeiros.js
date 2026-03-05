@@ -1321,9 +1321,9 @@
       // Build header
       let thMeses = MESES.map((m,i) => {
         const hasData = dadosMeses[i] !== null;
-        return `<th style="text-align:right;padding:0.6rem 0.75rem;font-size:0.75rem;color:${hasData?'#1e3a8a':'#94a3b8'};font-weight:600;border-bottom:1px solid #e2e8f0;min-width:100px;white-space:nowrap">${m.substring(0,3).toUpperCase()}</th>`;
+        return `<th style="text-align:right;padding:0.5rem 0.4rem;font-size:0.72rem;color:${hasData?'#1e3a8a':'#94a3b8'};font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap">${m.substring(0,3).toUpperCase()}</th>`;
       }).join('');
-      let thTotal = `<th style="text-align:right;padding:0.6rem 1rem;font-size:0.75rem;color:#1e3a8a;font-weight:700;border-bottom:1px solid #e2e8f0;min-width:130px;white-space:nowrap;background:#eff6ff">TOTAL</th>`;
+      let thTotal = `<th style="text-align:right;padding:0.5rem 0.75rem;font-size:0.72rem;color:#1e3a8a;font-weight:700;border-bottom:1px solid #e2e8f0;white-space:nowrap;background:#eff6ff">TOTAL</th>`;
 
       let rows = '';
       indicadores.forEach((ind, idx) => {
@@ -1335,11 +1335,11 @@
           : null; // for num (base) total doesn't make sense, use last non-null
         const lastVal = [...vals].reverse().find(v => v !== null);
         const fw = ['nn','resultado','val_canc'].includes(ind.key) ? '700' : '500';
-        const tds = vals.map(v => `<td style="text-align:right;padding:0.55rem 0.75rem;border-bottom:1px solid #f1f5f9;font-size:0.82rem;color:#1e293b;font-weight:${fw}">${fmt(v,ind.tipo)}</td>`).join('');
+        const tds = vals.map(v => `<td style="text-align:right;padding:0.45rem 0.4rem;border-bottom:1px solid #f1f5f9;font-size:0.8rem;color:#1e293b;font-weight:${fw}">${fmt(v,ind.tipo)}</td>`).join('');
         const totalDisplay = isCur ? fmt(total, 'cur') : fmt(lastVal, 'num');
         const totalColor = isCur && total < 0 ? '#dc2626' : '#1e3a8a';
         rows += `<tr style="background:${bg}">
-          <td style="padding:0.55rem 1.25rem;border-bottom:1px solid #f1f5f9;font-size:0.83rem;color:#1e293b;font-weight:${fw};white-space:nowrap">${ind.label}</td>
+          <td style="padding:0.45rem 1rem;border-bottom:1px solid #f1f5f9;font-size:0.8rem;color:#1e293b;font-weight:${fw};white-space:nowrap">${ind.label}</td>
           ${tds}
           <td style="text-align:right;padding:0.55rem 1rem;border-bottom:1px solid #f1f5f9;font-size:0.83rem;font-weight:700;color:${totalColor};background:#eff6ff">${totalDisplay}</td>
         </tr>`;
@@ -1348,7 +1348,7 @@
       document.getElementById('demoTabela').innerHTML = rows;
       // Replace header row
       const thead = document.querySelector('#demonstrativoView thead tr');
-      if (thead) thead.innerHTML = `<th style="text-align:left;padding:0.75rem 1.25rem;font-size:0.82rem;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;min-width:180px">INDICADOR</th>${thMeses}${thTotal}`;
+      if (thead) thead.innerHTML = `<th style="text-align:left;padding:0.75rem 1rem;font-size:0.82rem;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;min-width:140px">INDICADOR</th>${thMeses}${thTotal}`;
     }
 
     // ===== DEMONSTRATIVO: TRIMESTRAL =====
