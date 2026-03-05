@@ -161,6 +161,53 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
+
+  <!-- ===== TELA DE LOGIN ===== -->
+  <div id="loginScreen" style="position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e3a8a);display:flex;align-items:center;justify-content:center;z-index:99999">
+    <div style="background:white;border-radius:20px;padding:2.5rem;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
+      <div style="text-align:center;margin-bottom:2rem">
+        <div style="font-size:2.5rem;font-weight:900;color:#1e3a8a;letter-spacing:-1px">TEXNET</div>
+        <div style="font-size:0.85rem;color:#64748b;margin-top:0.25rem">Dashboard Financeiro</div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.4rem">E-MAIL</label>
+        <input id="loginEmail" type="email" placeholder="seu@email.com.br" autocomplete="email"
+          style="width:100%;padding:0.75rem 1rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;outline:none;box-sizing:border-box;transition:border 0.2s"
+          onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"
+          onkeydown="if(event.key==='Enter')document.getElementById('loginSenha').focus()">
+      </div>
+      <div style="margin-bottom:1.5rem">
+        <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.4rem">SENHA</label>
+        <input id="loginSenha" type="password" placeholder="••••••••" autocomplete="current-password"
+          style="width:100%;padding:0.75rem 1rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;outline:none;box-sizing:border-box;transition:border 0.2s"
+          onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"
+          onkeydown="if(event.key==='Enter')fazerLogin()">
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1.25rem">
+        <input type="checkbox" id="loginLembrar" style="width:16px;height:16px;cursor:pointer;accent-color:#2563eb">
+        <label for="loginLembrar" style="font-size:0.85rem;color:#374151;cursor:pointer">Lembrar de mim</label>
+      </div>
+      <button onclick="fazerLogin()"
+        style="width:100%;padding:0.9rem;background:linear-gradient(135deg,#2563eb,#1e3a8a);color:white;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity 0.2s"
+        onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+        Entrar
+      </button>
+      <div id="loginErro" style="display:none;margin-top:1rem;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.85rem;text-align:center"></div>
+      <div id="loginLoading" style="display:none;margin-top:1rem;text-align:center;color:#64748b;font-size:0.85rem">⏳ Verificando...</div>
+    </div>
+  </div>
+
+  <!-- Badge usuário logado (canto superior direito do sidebar) -->
+  <div id="userBadge" style="display:none;position:fixed;bottom:1rem;left:0;width:260px;padding:0.75rem 1rem;border-top:1px solid #334155;z-index:1000">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div id="userNome" style="font-size:0.82rem;font-weight:700;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px"></div>
+        <div id="userPerfil" style="font-size:0.72rem;color:#94a3b8;margin-top:1px"></div>
+      </div>
+      <button onclick="fazerLogout()" style="background:rgba(255,255,255,0.1);border:none;color:#94a3b8;padding:0.3rem 0.6rem;border-radius:6px;cursor:pointer;font-size:0.75rem" title="Sair">Sair</button>
+    </div>
+  </div>
+
   <!-- Hamburguer mobile -->
   <button id="menuToggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
   <div id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -1046,12 +1093,21 @@
 
           <!-- Header -->
           <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);padding:2rem 2.5rem;border-radius:20px;color:white;margin-bottom:2rem">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem">
               <div>
                 <h1 style="margin:0;font-size:2rem">📉 Demonstrativo</h1>
-                <p style="margin:0.5rem 0 0;opacity:0.9;font-size:0.95rem">Comparativo mês atual × mesmo mês do ano anterior</p>
+                <p style="margin:0.5rem 0 0;opacity:0.9;font-size:0.95rem" id="demoSubtitulo">Comparativo mês atual × mesmo mês do ano anterior</p>
               </div>
-              <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+            </div>
+            <!-- Modo tabs -->
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem">
+              <button id="demoTabMxM"  onclick="demoSetModo('mxm')"  style="padding:0.5rem 1.25rem;border:2px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.9);color:#1e3a8a;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer">📆 Mês × Mês</button>
+              <button id="demoTabAnual" onclick="demoSetModo('anual')" style="padding:0.5rem 1.25rem;border:2px solid rgba(255,255,255,0.4);background:transparent;color:white;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer">📅 Mês a Mês Anual</button>
+              <button id="demoTabTrim" onclick="demoSetModo('trim')"  style="padding:0.5rem 1.25rem;border:2px solid rgba(255,255,255,0.4);background:transparent;color:white;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer">📊 Trimestral</button>
+            </div>
+            <!-- Filtros — mudam por modo -->
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+              <div id="demoFiltroMxM" style="display:flex;gap:0.75rem">
                 <select id="demoMesFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
                   <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
                   <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
@@ -1059,8 +1115,23 @@
                   <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
                 </select>
                 <select id="demoAnoFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
-                  <option value="2026">2026</option>
-                  <option value="2025">2025</option>
+                  <option value="2026">2026</option><option value="2025">2025</option>
+                </select>
+              </div>
+              <div id="demoFiltroAnual" style="display:none;gap:0.75rem">
+                <select id="demoAnoAnualFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
+                  <option value="2026">2026</option><option value="2025">2025</option>
+                </select>
+              </div>
+              <div id="demoFiltroTrim" style="display:none;gap:0.75rem">
+                <select id="demoTrimFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
+                  <option value="1">Q1 — Jan/Fev/Mar</option>
+                  <option value="2">Q2 — Abr/Mai/Jun</option>
+                  <option value="3">Q3 — Jul/Ago/Set</option>
+                  <option value="4">Q4 — Out/Nov/Dez</option>
+                </select>
+                <select id="demoAnoTrimFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
+                  <option value="2026">2026</option><option value="2025">2025</option>
                 </select>
               </div>
             </div>
