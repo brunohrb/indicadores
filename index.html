@@ -223,7 +223,7 @@
       <div class="nav-item" onclick="selectMenu(this,'powerbi')"><span class="nav-icon">📊</span><span>Relatório Power BI</span></div>
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Marcos Juca</span></div>
       <div class="nav-item" onclick="selectMenu(this,'indicadores')"><span class="nav-icon">📊</span><span>Indicadores</span></div>
-      <div class="nav-item" onclick="selectMenu(this,'demonstrativo')"><span class="nav-icon">📉</span><span>Demonstrativo</span></div>
+      <div class="nav-item" onclick="selectMenu(this,'demonstrativo');setTimeout(function(){if(typeof dreRender==='function')dreRender();},120)"><span class="nav-icon">📉</span><span>Demonstrativo</span></div>
       <div class="nav-item" onclick="selectMenu(this,'diretoria')"><span class="nav-icon">⚙️</span><span>Parâmetros</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-financeiro')"><span class="nav-icon">💼</span><span>Comissão Financeiro</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-operacional')" style="white-space:nowrap"><span class="nav-icon">📈</span><span>Comissão Operacional</span></div>
@@ -1089,202 +1089,87 @@
 
       <!-- Demonstrativo View -->
       <div id="demonstrativoView" class="view-container" style="display:none">
-        <!-- DRE STYLES -->
-        <style>
-          #dreWrap { background:#060b17; min-height:calc(100vh - 60px); font-family:'Courier New',Courier,monospace; color:#e2e8f0; }
-          .dre-header { background:linear-gradient(135deg,#0f172a,#0c1a30); border-bottom:1px solid #1e3a5f; padding:1.1rem 1.5rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem; }
-          .dre-title-block { display:flex; align-items:center; gap:0.75rem; }
-          .dre-accent { width:3px; height:28px; background:linear-gradient(180deg,#22d3ee,#4ade80); border-radius:2px; }
-          .dre-title { font-size:1.05rem; font-weight:700; letter-spacing:0.04em; color:#f1f5f9; }
-          .dre-sub { font-size:0.68rem; color:#475569; letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
-          .dre-ctrl { display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap; }
-          .dre-ybtn { padding:0.35rem 0.8rem; border-radius:5px; border:1px solid; cursor:pointer; font-size:0.72rem; font-weight:700; font-family:inherit; letter-spacing:0.05em; transition:all 0.2s; background:transparent; border-color:#1e3a5f; color:#64748b; }
-          .dre-ybtn.on { background:#1d4ed8; border-color:#3b82f6; color:#fff; }
-          .dre-sep { width:1px; height:18px; background:#1e3a5f; }
-          .dre-sel { background:#0f172a; border:1px solid #1e3a5f; color:#94a3b8; border-radius:5px; padding:0.35rem 0.65rem; font-size:0.72rem; font-family:inherit; cursor:pointer; }
-          .dre-vbtn { padding:0.35rem 0.8rem; border-radius:5px; border:1px solid; cursor:pointer; font-size:0.72rem; font-weight:600; font-family:inherit; transition:all 0.2s; background:transparent; border-color:#1e3a5f; color:#475569; }
-          .dre-vbtn.on { background:rgba(74,222,128,0.1); border-color:#4ade80; color:#4ade80; }
-          /* KPI strip */
-          .dre-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.85rem; padding:1rem 1.5rem; background:#060b17; }
-          .dre-kpi { background:#0a1628; border:1px solid rgba(255,255,255,0.04); border-radius:9px; padding:0.9rem 1.1rem; border-top:2px solid var(--kc); transition:box-shadow 0.2s; }
-          .dre-kpi:hover { box-shadow:0 0 16px var(--kc, #22d3ee)18; }
-          .dre-kpi-lbl { font-size:0.63rem; color:#475569; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:0.3rem; }
-          .dre-kpi-val { font-size:1.15rem; font-weight:700; color:var(--kc); line-height:1.1; }
-          .dre-kpi-sub { font-size:0.62rem; color:#334155; margin-top:0.3rem; }
-          .dre-kpi-bar { height:3px; background:#0f172a; border-radius:2px; margin-top:0.65rem; }
-          .dre-kpi-fill { height:100%; border-radius:2px; background:var(--kc); opacity:0.6; transition:width 0.9s ease; }
-          /* Views */
-          .dre-body { padding:1rem 1.5rem; }
-          .dre-panel { background:#0a1628; border:1px solid #1e3a5f; border-radius:11px; overflow:hidden; margin-bottom:1.25rem; }
-          .dre-panel-head { padding:0.85rem 1.25rem; border-bottom:1px solid #0f172a; background:#0f1f3a; font-size:0.72rem; font-weight:700; color:#64748b; letter-spacing:0.1em; text-transform:uppercase; }
-          /* DRE table */
-          .dre-line { display:flex; align-items:center; padding:0.7rem 1.25rem; border-bottom:1px solid #050d18; cursor:default; transition:background 0.1s; }
-          .dre-line:hover { background:rgba(255,255,255,0.02); }
-          .dre-line.expand { cursor:pointer; }
-          .dre-line.sub { padding-left:3rem; background:#050d1a; }
-          .dre-line.sub:hover { background:#060f1e; }
-          .dre-line.hidden { display:none; }
-          .dre-chevron { font-size:0.55rem; color:#475569; width:12px; transition:transform 0.2s; flex-shrink:0; }
-          .dre-chevron.open { transform:rotate(90deg); }
-          .dre-line-lbl { flex:1; font-size:0.78rem; letter-spacing:0.01em; }
-          .dre-line-pct { font-size:0.65rem; color:#334155; min-width:48px; text-align:right; padding-right:1.25rem; }
-          .dre-line-val { font-size:0.82rem; font-weight:700; min-width:130px; text-align:right; }
-          .dre-bar-wrap { width:80px; height:3px; background:#0f172a; border-radius:2px; margin:0 0.75rem; flex-shrink:0; }
-          .dre-bar-fill { height:100%; border-radius:2px; transition:width 0.8s ease; }
-          /* Result line footer */
-          .dre-result-footer { padding:0.6rem 1.25rem; background:rgba(74,222,128,0.04); border-top:1px solid rgba(74,222,128,0.15); display:flex; justify-content:space-around; font-size:0.68rem; color:#475569; flex-wrap:wrap; gap:0.5rem; }
-          /* Grid layout */
-          .dre-grid2 { display:grid; grid-template-columns:2fr 1fr; gap:1.25rem; }
-          @media(max-width:900px) { .dre-grid2 { grid-template-columns:1fr; } }
-          /* Side widgets */
-          .dre-widget { background:#0a1628; border:1px solid #1e3a5f; border-radius:11px; padding:1.1rem; margin-bottom:1.25rem; }
-          .dre-widget-title { font-size:0.65rem; color:#475569; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.9rem; }
-          /* Waterfall */
-          .wf-row { margin-bottom:0.45rem; }
-          .wf-lbl { display:flex; justify-content:space-between; font-size:0.67rem; color:#64748b; margin-bottom:2px; }
-          .wf-lbl b { color:var(--wc); }
-          .wf-track { height:4px; background:#0f172a; border-radius:2px; }
-          .wf-fill { height:100%; border-radius:2px; background:var(--wc); transition:width 0.9s ease; }
-          /* Month grid */
-          .dre-months { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:0.6rem; }
-          .dre-mcard { background:#0a1628; border:1px solid #1e3a5f; border-radius:7px; padding:0.6rem 0.75rem; cursor:pointer; transition:all 0.2s; }
-          .dre-mcard:hover { border-color:#4ade80; }
-          .dre-mcard-m { font-size:0.62rem; color:#475569; margin-bottom:2px; }
-          .dre-mcard-v { font-size:0.88rem; font-weight:700; }
-          .dre-mcard-e { font-size:0.6rem; color:#334155; margin-top:2px; }
-          /* 3yr cards */
-          .dre-yr3 { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.25rem; }
-          @media(max-width:700px){ .dre-yr3 { grid-template-columns:1fr; } }
-          .dre-ycard { background:#0a1628; border:1px solid #1e3a5f; border-radius:11px; padding:1.1rem; cursor:pointer; transition:all 0.2s; }
-          .dre-ycard.on { border-color:#3b82f6; box-shadow:0 0 18px rgba(59,130,246,0.12); }
-          .dre-ycard-yr { font-size:1.3rem; font-weight:800; color:#334155; margin-bottom:0.75rem; }
-          .dre-ycard.on .dre-ycard-yr { color:#60a5fa; }
-          .dre-ycard-row { margin-bottom:0.4rem; }
-          .dre-ycard-lbl { font-size:0.62rem; color:#475569; margin-bottom:1px; }
-          .dre-ycard-num { font-size:0.95rem; font-weight:700; }
-          .dre-ycard-var { font-size:0.62rem; margin-top:1px; }
-          /* Comparison table */
-          .dre-ctbl { width:100%; border-collapse:collapse; }
-          .dre-ctbl th { padding:0.55rem 1rem; text-align:right; font-size:0.65rem; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; border-bottom:1px solid #0f172a; background:#0f1f3a; }
-          .dre-ctbl th:first-child { text-align:left; }
-          .dre-ctbl td { padding:0.55rem 1rem; font-size:0.75rem; border-bottom:1px solid #050d18; }
-          .dre-ctbl td:first-child { text-align:left; }
-          .dre-ctbl td:not(:first-child) { text-align:right; font-variant-numeric:tabular-nums; }
-          .dre-ctbl tr:hover td { background:rgba(255,255,255,0.015); }
-          .dre-ctbl tr.hi td { background:rgba(74,222,128,0.04); }
-        </style>
+        <div style="padding:1.5rem;width:100%;box-sizing:border-box">
 
-        <div id="dreWrap">
-          <!-- HEADER -->
-          <div class="dre-header">
-            <div class="dre-title-block">
-              <div class="dre-accent"></div>
+          <!-- Header -->
+          <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);padding:2rem 2.5rem;border-radius:20px;color:white;margin-bottom:2rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem">
               <div>
-                <div class="dre-title">📉 DEMONSTRATIVO DE RESULTADO — DRE</div>
-                <div class="dre-sub" id="drePeriodoSub">Acumulado Anual 2025</div>
+                <h1 style="margin:0;font-size:2rem">📉 Demonstrativo</h1>
+                <p style="margin:0.5rem 0 0;opacity:0.9;font-size:0.95rem" id="demoSubtitulo">Comparativo mês atual × mesmo mês do ano anterior</p>
               </div>
             </div>
-            <div class="dre-ctrl">
-              <button class="dre-ybtn" id="dreY23" onclick="dreSetAno('2023')">2023</button>
-              <button class="dre-ybtn" id="dreY24" onclick="dreSetAno('2024')">2024</button>
-              <button class="dre-ybtn on" id="dreY25" onclick="dreSetAno('2025')">2025</button>
-              <div class="dre-sep"></div>
-              <select class="dre-sel" id="dreMesSel" onchange="dreRender()">
-                <option value="total">Acumulado</option>
-                <option value="jan">Janeiro</option><option value="fev">Fevereiro</option>
-                <option value="mar">Março</option><option value="abr">Abril</option>
-                <option value="mai">Maio</option><option value="jun">Junho</option>
-                <option value="jul">Julho</option><option value="ago">Agosto</option>
-                <option value="set">Setembro</option><option value="out">Outubro</option>
-                <option value="nov">Novembro</option><option value="dez">Dezembro</option>
-              </select>
-              <div class="dre-sep"></div>
-              <button class="dre-vbtn on" id="dreVdre" onclick="dreSetView('dre')">DRE</button>
-              <button class="dre-vbtn" id="dreVevo" onclick="dreSetView('evo')">Evolução</button>
-              <button class="dre-vbtn" id="dreV3y" onclick="dreSetView('3y')">3 Anos</button>
+            <!-- Modo tabs -->
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem">
+              <button id="demoTabMxM"  onclick="demoSetModo('mxm')"  style="padding:0.5rem 1.25rem;border:2px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.9);color:#1e3a8a;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer">📆 Mês × Mês</button>
+              <button id="demoTabAnual" onclick="demoSetModo('anual')" style="padding:0.5rem 1.25rem;border:2px solid rgba(255,255,255,0.4);background:transparent;color:white;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer">📅 Mês a Mês Anual</button>
+              <button id="demoTabTrim" onclick="demoSetModo('trim')"  style="padding:0.5rem 1.25rem;border:2px solid rgba(255,255,255,0.4);background:transparent;color:white;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer">📊 Trimestral</button>
+              <button id="demoTabDRE"  onclick="dreAbrirPainel()"    style="padding:0.5rem 1.25rem;border:2px solid rgba(255,255,255,0.4);background:transparent;color:white;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:0.4rem">📉 DRE <span style="font-size:0.68rem;background:rgba(255,255,255,0.2);border-radius:4px;padding:0.1rem 0.4rem">NOVO</span></button>
+            </div>
+            <!-- Filtros — mudam por modo -->
+            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+              <div id="demoFiltroMxM" style="display:flex;gap:0.75rem">
+                <select id="demoMesFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
+                  <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
+                  <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
+                  <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
+                  <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+                </select>
+                <select id="demoAnoFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
+                  <option value="2026">2026</option><option value="2025">2025</option>
+                </select>
+              </div>
+              <div id="demoFiltroAnual" style="display:none;gap:0.75rem">
+                <select id="demoAnoAnualFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
+                  <option value="2026">2026</option><option value="2025">2025</option>
+                </select>
+              </div>
+              <div id="demoFiltroTrim" style="display:none;gap:0.75rem">
+                <select id="demoTrimFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
+                  <option value="1">Q1 — Jan/Fev/Mar</option>
+                  <option value="2">Q2 — Abr/Mai/Jun</option>
+                  <option value="3">Q3 — Jul/Ago/Set</option>
+                  <option value="4">Q4 — Out/Nov/Dez</option>
+                </select>
+                <select id="demoAnoTrimFiltro" onchange="carregarDemonstrativo()" style="padding:0.5rem 0.75rem;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;color:#1e293b;background:white;cursor:pointer">
+                  <option value="2026">2026</option><option value="2025">2025</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <!-- KPI STRIP -->
-          <div class="dre-kpis" id="dreKpis"></div>
-
-          <!-- BODY -->
-          <div class="dre-body">
-
-            <!-- VIEW: DRE -->
-            <div id="dreViewDre">
-              <div class="dre-grid2">
-                <!-- Tabela DRE -->
-                <div>
-                  <div class="dre-panel">
-                    <div class="dre-panel-head">Demonstração do Resultado — <span id="dreTblPeriodo"></span></div>
-                    <div id="dreTblBody"></div>
-                  </div>
-                </div>
-                <!-- Widgets laterais -->
-                <div>
-                  <div class="dre-widget">
-                    <div class="dre-widget-title">🌊 Cascata do Resultado</div>
-                    <div id="dreWaterfall"></div>
-                  </div>
-                  <div class="dre-widget" style="text-align:center">
-                    <div class="dre-widget-title">🎯 Margem EBITDA</div>
-                    <svg id="dreGaugeSvg" width="170" height="95" viewBox="0 0 170 95">
-                      <path d="M18 82 A67 67 0 0 1 152 82" fill="none" stroke="#0f172a" stroke-width="14" stroke-linecap="round"/>
-                      <path id="dreGaugeArc" d="M18 82 A67 67 0 0 1 152 82" fill="none" stroke="url(#gGrad)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 1000"/>
-                      <defs><linearGradient id="gGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#f87171"/><stop offset="40%" stop-color="#fbbf24"/>
-                        <stop offset="70%" stop-color="#4ade80"/><stop offset="100%" stop-color="#22d3ee"/>
-                      </linearGradient></defs>
-                      <text id="dreGaugeTxt" x="85" y="76" text-anchor="middle" font-size="20" font-weight="700" fill="#4ade80" font-family="monospace">—</text>
-                    </svg>
-                    <div style="font-size:0.65rem;color:#475569;margin-top:-0.3rem">Benchmark ISP: <b style="color:#fbbf24">25–35%</b></div>
-                    <div id="dreGaugeStatus" style="margin-top:0.6rem;padding:0.35rem 0.7rem;border-radius:5px;font-size:0.68rem;font-weight:700;display:inline-block"></div>
-                  </div>
-                  <div class="dre-widget">
-                    <div class="dre-widget-title">📊 Composição das Saídas</div>
-                    <div id="dreComposicao"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- VIEW: EVOLUÇÃO -->
-            <div id="dreViewEvo" style="display:none">
-              <div class="dre-panel" style="padding:1.1rem">
-                <div style="font-size:0.8rem;font-weight:700;color:#f1f5f9;margin-bottom:0.4rem">Evolução Mensal <span id="dreEvoAno"></span></div>
-                <div style="font-size:0.65rem;color:#475569;margin-bottom:1rem">Receita × Custos+Despesas × EBITDA</div>
-                <div style="position:relative;height:280px"><canvas id="dreChartEvo"></canvas></div>
-              </div>
-              <div class="dre-panel" style="padding:1.1rem">
-                <div style="font-size:0.8rem;font-weight:700;color:#f1f5f9;margin-bottom:0.4rem">Margem EBITDA Mensal (%)</div>
-                <div style="font-size:0.65rem;color:#475569;margin-bottom:1rem">Linha amarela = mínimo benchmark ISP (25%)</div>
-                <div style="position:relative;height:200px"><canvas id="dreChartMarg"></canvas></div>
-              </div>
-              <div class="dre-months" id="dreMonthGrid"></div>
-            </div>
-
-            <!-- VIEW: 3 ANOS -->
-            <div id="dreView3y" style="display:none">
-              <div class="dre-yr3" id="dreYrCards"></div>
-              <div class="dre-panel" style="padding:1.1rem;margin-bottom:1.25rem">
-                <div style="font-size:0.8rem;font-weight:700;color:#f1f5f9;margin-bottom:0.4rem">EBITDA Mensal — 3 Anos Comparativo</div>
-                <div style="position:relative;height:260px"><canvas id="dreChart3y"></canvas></div>
-              </div>
-              <div class="dre-panel">
-                <div class="dre-panel-head">DRE Comparativa — Acumulado Anual</div>
-                <div style="overflow-x:auto">
-                  <table class="dre-ctbl">
-                    <thead><tr id="dreCmpHead"></tr></thead>
-                    <tbody id="dreCmpBody"></tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
+          <!-- Sem dados -->
+          <div id="demoSemDados" style="text-align:center;padding:4rem 2rem;background:white;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,0.08)">
+            <div style="font-size:3rem;margin-bottom:1rem">📭</div>
+            <h3 style="color:#1e3a8a;margin:0 0 0.5rem">Sem dados para exibir</h3>
+            <p id="demoSemDadosMsg" style="color:#64748b;margin:0">Carregando...</p>
           </div>
+
+          <!-- Grid comparativo -->
+          <div id="demoGrid" style="display:none">
+            <!-- Resumo topo -->
+            <div id="demoResumo" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem"></div>
+            <!-- Tabela completa -->
+            <div style="background:white;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,0.08);overflow:hidden"><div style="overflow-x:auto">
+              <div style="padding:1.25rem 1.5rem;border-bottom:2px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between">
+                <h3 style="margin:0;color:#1e293b;font-size:1rem">Detalhamento completo</h3>
+                <span id="demoPeríodoLabel" style="font-size:0.85rem;color:#64748b;font-weight:500"></span>
+              </div>
+              <table style="width:100%;border-collapse:collapse">
+                <thead>
+                  <tr style="background:#f8fafc">
+                    <th style="text-align:left;padding:0.75rem 1.25rem;font-size:0.82rem;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;min-width:200px">INDICADOR</th>
+                    <th id="demoColAno" style="text-align:right;padding:0.75rem 1rem;font-size:0.82rem;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;min-width:160px;white-space:nowrap">ANO ATUAL</th>
+                    <th id="demoColAnterior" style="text-align:right;padding:0.75rem 1rem;font-size:0.82rem;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;min-width:160px;white-space:nowrap">ANO ANTERIOR</th>
+                    <th style="text-align:right;padding:0.75rem 1.25rem;font-size:0.82rem;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;min-width:100px;white-space:nowrap">VARIAÇÃO</th>
+                  </tr>
+                </thead>
+                <tbody id="demoTabela"></tbody>
+              </table></div>
+            </div>
+          </div>
+
         </div>
-
       </div>
       <!-- Parâmetros View -->
       <div id="diretoriaView" class="view-container" style="display:none">
@@ -2371,441 +2256,515 @@
   <script src="js/consolidado.js"></script>
   <script src="js/init-operacional.js"></script>
 
-  <!-- ═══════════════════════════════════════════════ -->
-  <!--  DEMONSTRATIVO DRE — LÓGICA COMPLETA           -->
-  <!-- ═══════════════════════════════════════════════ -->
-  <script>
-  // ── DADOS ─────────────────────────────────────────
-  const DRE_MESES_KEY = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  const DRE_MESES_N   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-  const DRE_D = {
-    '2023': {
-      receitas: [{nome:"Aluguel/Link",jan:2033310.68,fev:1946593.87,mar:2190804.62,abr:1980281.99,mai:2194970.94,jun:2225343.14,jul:2164586.34,ago:2136402.5,set:2255795.85,out:2292584.56,nov:2214730.61,dez:2377648.2},{nome:"R. Financeiras",jan:5177.45,fev:6770.97,mar:3604.26,abr:4376.62,mai:6833.62,jun:11010.92,jul:15087.3,ago:14194.83,set:23012.78,out:18853.87,nov:21327.34,dez:21472.86},{nome:"V. Ativos",jan:4229.77,fev:12990.0,mar:26855.0,abr:21535.0,mai:26524.01,jun:6930.0,jul:0.0,ago:7602.0,set:8236.85,out:3192.85,nov:4130.0,dez:0.0}],
-      impostos: [{nome:"ICMS",jan:74760.07,fev:76280.06,mar:68548.32,abr:72557.74,mai:42481.57,jun:38781.44,jul:34978.09,ago:30516.23,set:30121.5,out:24489.39,nov:33643.18,dez:29585.66},{nome:"ICMS Div.",jan:18994.83,fev:12050.46,mar:10640.61,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0},{nome:"COFINS",jan:37609.56,fev:38425.81,mar:38500.18,abr:39090.66,mai:29867.32,jun:32606.23,jul:32868.25,ago:33486.15,set:32580.78,out:34466.99,nov:36833.62,dez:35912.93},{nome:"PIS",jan:8148.74,fev:8325.59,mar:8341.71,abr:8469.64,mai:6471.25,jun:7066.32,jul:7121.46,ago:7255.33,set:7059.17,out:7471.76,nov:7986.36,dez:7787.59},{nome:"IRPJ",jan:146484.43,fev:0,mar:0,abr:139918.05,mai:0,jun:0,jul:100569.82,ago:0,set:0,out:104574.02,nov:0,dez:0},{nome:"CSLL",jan:54894.4,fev:0,mar:0,abr:52530.53,mai:0,jun:0,jul:39280.33,ago:0,set:0,out:39806.65,nov:0,dez:0},{nome:"ISS",jan:5924.0,fev:9180.98,mar:6605.68,abr:12884.09,mai:12914.31,jun:20963.11,jul:15493.72,ago:10658.02,set:11253.67,out:10381.21,nov:11840.76,dez:11442.04},{nome:"ISS Div.",jan:7649.96,fev:5290.26,mar:7150.03,abr:9497.02,mai:8966.21,jun:10413.66,jul:12048.24,ago:12324.03,set:11685.9,out:13732.9,nov:11650.69,dez:14437.41},{nome:"FUST/FUNTTEL",jan:4694.2,fev:4773.89,mar:4776.19,abr:4817.58,mai:3055.35,jun:3334.96,jul:3273.34,ago:2892.7,set:2899.0,out:2834.73,nov:3236.34,dez:2967.87}],
-      custos: [{nome:"Kit Instalação",jan:142728.52,fev:138468.66,mar:231402.99,abr:233626.89,mai:255093.04,jun:190470.89,jul:157300.29,ago:103432.64,set:49024.45,out:96502.87,nov:86818.38,dez:74163.95},{nome:"Materiais de Rede",jan:100680.33,fev:102955.02,mar:84379.57,abr:80304.66,mai:92004.87,jun:83734.37,jul:65824.91,ago:51676.51,set:102489.23,out:100501.43,nov:61247.6,dez:69682.01},{nome:"Links de Dados",jan:101247.94,fev:105696.02,mar:143859.11,abr:59391.12,mai:98789.0,jun:67081.9,jul:77597.13,ago:86579.12,set:47027.64,out:90692.15,nov:75418.96,dez:100509.01},{nome:"Alugueis/Postes",jan:44667.96,fev:44720.32,mar:49371.52,abr:44720.32,mai:4651.2,jun:103394.24,jul:49371.52,ago:49371.52,set:0,out:98743.04,nov:49371.52,dez:2312.0},{nome:"Comissões",jan:31644.13,fev:33604.98,mar:46356.61,abr:44922.78,mai:38988.53,jun:64249.78,jul:36878.72,ago:44867.73,set:29317.47,out:42954.57,nov:54020.53,dez:45545.97},{nome:"Folha - Direta",jan:480116.48,fev:478962.09,mar:518900.84,abr:441522.52,mai:434194.98,jun:471540.67,jul:473664.07,ago:452481.22,set:490466.21,out:467054.2,nov:559170.44,dez:618395.43},{nome:"Comb. Técnico",jan:27456.82,fev:30610.92,mar:30319.38,abr:28053.96,mai:18843.98,jun:18738.03,jul:32043.73,ago:37635.94,set:30381.5,out:20039.17,nov:26724.97,dez:26138.64},{nome:"Tercerização",jan:599.89,fev:260.0,mar:2700.0,abr:1900.0,mai:14311.31,jun:20654.88,jul:28938.34,ago:22657.36,set:22256.32,out:19995.69,nov:23625.58,dez:16497.65},{nome:"Custos Lastmile",jan:8424.06,fev:9724.7,mar:10161.44,abr:16190.17,mai:20142.2,jun:23535.45,jul:24226.26,ago:29609.14,set:34789.21,out:35891.92,nov:33614.93,dez:33556.17}],
-      despesas: [{nome:"Propaganda",jan:53926.27,fev:44695.89,mar:53280.87,abr:40029.12,mai:49856.16,jun:44944.63,jul:45806.83,ago:56919.43,set:32942.51,out:48303.35,nov:60815.32,dez:55598.74},{nome:"Serv. Terceiros",jan:47646.47,fev:51861.95,mar:38267.84,abr:40998.22,mai:36214.24,jun:32306.02,jul:29795.89,ago:29527.95,set:29209.25,out:28525.95,nov:36059.45,dez:41569.59},{nome:"Folha - Adm",jan:77637.31,fev:115144.68,mar:100624.16,abr:90545.97,mai:94748.25,jun:76825.6,jul:87555.6,ago:80275.86,set:123124.0,out:88286.67,nov:83190.3,dez:69854.37},{nome:"Pró-Labore",jan:204304.32,fev:133196.43,mar:232046.07,abr:120412.85,mai:140231.52,jun:112026.42,jul:208569.48,ago:140398.7,set:91544.32,out:173228.2,nov:182163.35,dez:183540.61},{nome:"Sistema",jan:24494.5,fev:23395.33,mar:22861.47,abr:24528.51,mai:22026.96,jun:22227.35,jul:19825.08,ago:21610.53,set:21595.77,out:22527.63,nov:22200.72,dez:19690.71},{nome:"Taxas Boleto",jan:27579.36,fev:27334.59,mar:22798.16,abr:22331.16,mai:18503.88,jun:17851.56,jul:17430.68,ago:16196.46,set:15914.75,out:14289.52,nov:13952.72,dez:14881.97},{nome:"Desp. Aluguel",jan:22718.84,fev:24055.32,mar:24055.32,abr:24214.77,mai:24216.43,jun:24098.87,jul:24474.87,ago:22330.45,set:22199.97,out:22199.97,nov:22004.97,dez:22482.31},{nome:"Desp. Judiciais",jan:28283.09,fev:20841.24,mar:248.0,abr:4500.0,mai:4500.0,jun:20564.2,jul:13590.09,ago:5015.49,set:5021.25,out:7026.15,nov:7031.2,dez:6703.66}],
-    },
-    '2024': {
-      receitas: [{nome:"Link de Internet",jan:2296418.75,fev:2246205.34,mar:2240969.34,abr:2391638.71,mai:2400146.98,jun:2388827.26,jul:2467265.87,ago:2430822.58,set:2450297.05,out:2499580.29,nov:2434265.42,dez:2521573.61},{nome:"Juros/Multa",jan:45838.7,fev:44729.3,mar:43775.38,abr:47612.19,mai:45305.8,jun:41288.12,jul:47039.04,ago:42357.84,set:32561.79,out:31732.0,nov:33249.76,dez:44646.56},{nome:"Eventos",jan:1520.0,fev:0,mar:0,abr:6000.0,mai:2200.0,jun:3550.0,jul:7790.0,ago:4820.0,set:18763.9,out:9204.0,nov:13230.6,dez:19020.4},{nome:"R. Financeiras",jan:9509.51,fev:6744.59,mar:8722.45,abr:8325.75,mai:6376.68,jun:4183.04,jul:7989.34,ago:7384.25,set:8748.23,out:7492.37,nov:812.97,dez:844.05}],
-      impostos: [{nome:"ICMS",jan:36455.94,fev:43300.61,mar:35468.81,abr:30515.11,mai:33781.1,jun:0,jul:0,ago:0,set:0,out:5104.58,nov:20458.03,dez:24375.3},{nome:"COFINS",jan:40248.95,fev:40517.31,mar:34986.42,abr:39950.72,mai:37474.52,jun:38382.94,jul:43667.84,ago:45016.21,set:44243.26,out:41140.92,nov:42197.73,dez:44550.12},{nome:"PIS",jan:8729.25,fev:8780.09,mar:7580.81,abr:8656.06,mai:8119.83,jun:8316.91,jul:9450.6,ago:9738.69,set:9569.16,out:8913.87,nov:9142.88,dez:9652.57},{nome:"IRPJ",jan:104957.27,fev:0,mar:0,abr:112700.97,mai:0,jun:0,jul:36538.71,ago:36904.09,set:37221.99,out:112018.4,nov:0,dez:0},{nome:"CSLL",jan:39944.61,fev:0,mar:0,abr:42732.35,mai:0,jun:0,jul:13891.97,ago:14030.51,set:14151.38,out:42721.0,nov:0,dez:0},{nome:"ISS",jan:12348.32,fev:13850.41,mar:12066.06,abr:12214.08,mai:12711.35,jun:10563.75,jul:11955.4,ago:16266.26,set:16607.98,out:13984.31,nov:13389.3,dez:14461.47},{nome:"ISS Div.",jan:16089.72,fev:12544.2,mar:13925.57,abr:13050.59,mai:13651.15,jun:13377.37,jul:13977.68,ago:19271.39,set:19377.31,out:16841.93,nov:17250.14,dez:19416.1},{nome:"FUST/FUNTTEL",jan:3330.64,fev:3343.99,mar:3454.99,abr:3261.01,mai:3279.93,jun:3290.94,jul:3243.79,ago:3257.53,set:3406.45,out:3682.24,nov:4784.77,dez:5040.55}],
-      custos: [{nome:"Kit Instalação",jan:131105.34,fev:151790.59,mar:128013.53,abr:193758.13,mai:191730.26,jun:153199.62,jul:194324.23,ago:243236.35,set:203855.13,out:186381.55,nov:147165.32,dez:125678.94},{nome:"Materiais de Rede",jan:61156.71,fev:51499.21,mar:47779.84,abr:52466.74,mai:43319.5,jun:52769.3,jul:42625.73,ago:57442.08,set:65333.4,out:71366.99,nov:66772.94,dez:59494.94},{nome:"Links de Dados / Voip",jan:80539.67,fev:84823.52,mar:24320.01,abr:92199.5,mai:95225.0,jun:59801.29,jul:57535.87,ago:60294.36,set:60972.34,out:61091.52,nov:52533.96,dez:56930.69},{nome:"Vtal",jan:0,fev:26804.91,mar:47958.2,abr:51962.86,mai:55102.73,jun:56403.65,jul:54974.71,ago:52642.08,set:53177.09,out:52296.52,nov:54787.32,dez:55611.65},{nome:"Comissões",jan:48221.17,fev:51826.44,mar:33569.41,abr:26823.63,mai:36510.72,jun:41343.32,jul:33369.87,ago:56702.27,set:61152.13,out:52925.24,nov:35028.03,dez:44534.34},{nome:"Folha - Direta",jan:536742.69,fev:683041.05,mar:558657.28,abr:595850.56,mai:590829.95,jun:634516.91,jul:621824.36,ago:654484.24,set:624825.96,out:634353.97,nov:712332.85,dez:813838.36},{nome:"Comb. Técnico",jan:28249.4,fev:21447.05,mar:31047.17,abr:31967.72,mai:22494.94,jun:24221.26,jul:37720.24,ago:37755.89,set:24965.4,out:29821.02,nov:24100.22,dez:30515.31},{nome:"Custos Lastmile",jan:35416.1,fev:37449.61,mar:26715.09,abr:33815.58,mai:31373.83,jun:28404.22,jul:37159.36,ago:34320.66,set:32992.96,out:29827.85,nov:26184.92,dez:37278.74},{nome:"Investimento/POP",jan:1382.75,fev:19044.93,mar:15022.86,abr:15980.46,mai:15686.1,jun:25440.83,jul:24181.03,ago:21301.61,set:45090.43,out:36092.96,nov:37998.4,dez:34692.02}],
-      despesas: [{nome:"Propaganda",jan:45324.4,fev:55346.48,mar:50289.55,abr:55935.47,mai:45191.03,jun:53430.57,jul:71189.37,ago:59904.16,set:43074.94,out:50968.31,nov:44242.05,dez:53218.58},{nome:"Serv. Terceiros",jan:32197.2,fev:38797.27,mar:36462.56,abr:35394.07,mai:30983.1,jun:50318.82,jul:32969.02,ago:29789.1,set:27225.66,out:30642.25,nov:33190.59,dez:40422.25},{nome:"Pró-Labore",jan:199175.51,fev:201983.51,mar:202516.06,abr:204212.09,mai:198625.39,jun:199255.1,jul:200810.66,ago:201005.09,set:200328.43,out:200000.0,nov:200000.0,dez:200000.0},{nome:"Sistema",jan:21341.51,fev:24665.99,mar:25478.35,abr:26264.03,mai:20602.87,jun:20898.18,jul:22190.05,ago:24079.28,set:19468.59,out:19362.87,nov:20033.45,dez:18934.0},{nome:"Taxas Boleto",jan:14275.38,fev:14384.98,mar:14786.53,abr:17288.08,mai:15823.48,jun:13974.91,jul:14624.91,ago:13209.5,set:13144.53,out:14088.34,nov:13153.12,dez:13158.13},{nome:"Desp. Aluguel",jan:20550.93,fev:25595.5,mar:24349.61,abr:25018.14,mai:24363.82,jun:24763.82,jul:25371.68,ago:25371.68,set:26577.93,out:26826.39,nov:26851.39,dez:27095.39},{nome:"Desp. Judiciais",jan:5040.34,fev:0,mar:677.03,abr:25594.88,mai:12932.88,jun:895.6,jul:900.32,ago:3106.47,set:573.51,out:0,nov:1673.08,dez:0}],
-    },
-    '2025': {
-      receitas: [{nome:"Link Pessoa Física",jan:1363399.16,fev:1367967.95,mar:1418508.41,abr:1390498.57,mai:1430991.92,jun:1413512.4,jul:1466625.21,ago:1418820.85,set:1455501.47,out:1457362.84,nov:1413065.73,dez:1510923.43},{nome:"Link Pessoa Jurídica",jan:1107509.73,fev:1111562.08,mar:1082138.31,abr:1097961.87,mai:1116194.38,jun:1121342.48,jul:1141569.18,ago:1127690.44,set:1168813.56,out:1162242.0,nov:1140248.57,dez:1200934.81},{nome:"Juros/Multa",jan:46455.66,fev:43118.57,mar:48273.02,abr:47701.9,mai:53235.77,jun:49520.08,jul:48019.0,ago:51576.45,set:54044.9,out:55880.89,nov:55082.99,dez:58569.49},{nome:"Taxa de instalação",jan:18611.23,fev:16540.68,mar:604.16,abr:6812.2,mai:2454.0,jun:2571.66,jul:3900.0,ago:4606.34,set:5797.89,out:2522.38,nov:2136.15,dez:1358.1},{nome:"Eventos",jan:5515.0,fev:4750.0,mar:3567.0,abr:6364.2,mai:12812.2,jun:15415.0,jul:7570.0,ago:14750.0,set:10677.8,out:17100.0,nov:23643.44,dez:3750.0},{nome:"Rendimentos financeiros",jan:4015.77,fev:490.05,mar:2429.12,abr:3601.85,mai:3428.85,jun:3292.8,jul:4061.8,ago:2246.13,set:2503.13,out:3119.32,nov:1429.28,dez:1247.07}],
-      impostos: [{nome:"ICMS",jan:30597.6,fev:34726.14,mar:38336.96,abr:34174.7,mai:37871.45,jun:37074.49,jul:25594.9,ago:62012.2,set:61168.11,out:70567.87,nov:74433.94,dez:79760.87},{nome:"COFINS",jan:46634.52,fev:43957.41,mar:39340.17,abr:39463.09,mai:39771.8,jun:40321.67,jul:40931.46,ago:35228.16,set:35286.4,out:39361.52,nov:43803.62,dez:46406.86},{nome:"PIS",jan:10104.19,fev:9524.16,mar:8523.76,abr:8543.69,mai:8615.59,jun:8698.4,jul:8859.9,ago:7623.38,set:7633.73,out:8518.02,nov:8415.05,dez:10034.41},{nome:"IRPJ",jan:103897.71,fev:0,mar:0,abr:99206.19,mai:0,jun:0,jul:96821.55,ago:0,set:0,out:89161.15,nov:0,dez:0},{nome:"CSLL",jan:39564.49,fev:0,mar:0,abr:37875.92,mai:0,jun:0,jul:37017.52,ago:0,set:0,out:34258.01,nov:0,dez:0},{nome:"ISS",jan:18254.95,fev:16458.99,mar:10223.78,abr:10345.86,mai:10294.69,jun:9618.5,jul:10295.88,ago:10295.18,set:7796.86,out:6595.62,nov:8769.05,dez:6702.33},{nome:"ISS Retido",jan:18971.32,fev:16757.53,mar:14251.95,abr:14218.51,mai:14047.6,jun:14886.84,jul:12708.36,ago:1764.23,set:2189.75,out:1629.33,nov:0,dez:1791.96},{nome:"FUST/FUNTTEL",jan:5485.12,fev:5593.1,mar:5782.24,abr:5593.15,mai:5829.49,jun:5810.05,jul:6349.68,ago:6758.96,set:7321.15,out:9070.8,nov:10037.3,dez:13262.5}],
-      custos: [{nome:"Kit Instalação",jan:260689.26,fev:261971.69,mar:229352.38,abr:191538.93,mai:194621.58,jun:174329.82,jul:46599.08,ago:91329.61,set:95091.81,out:145298.6,nov:177552.88,dez:186721.54},{nome:"Materiais de Rede",jan:80070.44,fev:75688.68,mar:51552.31,abr:46816.63,mai:44844.9,jun:43536.07,jul:75324.87,ago:57887.22,set:44451.61,out:44260.3,nov:43230.57,dez:50269.82},{nome:"Links de Dados / Voip",jan:59397.16,fev:67442.76,mar:44781.95,abr:58651.37,mai:50353.87,jun:42924.0,jul:64260.58,ago:59004.83,set:67519.9,out:54092.81,nov:54207.57,dez:57993.04},{nome:"Vtal",jan:53187.19,fev:55129.82,mar:59791.89,abr:60174.32,mai:59708.46,jun:63167.29,jul:61909.34,ago:58057.25,set:61713.74,out:62083.24,nov:63968.44,dez:62320.71},{nome:"Comissões de vendas",jan:26857.73,fev:36100.59,mar:21581.04,abr:22696.7,mai:39158.8,jun:40844.88,jul:29618.21,ago:33704.96,set:40727.97,out:35862.08,nov:36114.07,dez:32095.3},{nome:"Folha - Direta",jan:676621.22,fev:623295.17,mar:638485.38,abr:622564.54,mai:664955.52,jun:697697.14,jul:708888.5,ago:649727.33,set:689457.84,out:718786.99,nov:781146.5,dez:938629.63},{nome:"Comb. Técnico",jan:33115.04,fev:26065.99,mar:15188.51,abr:29337.96,mai:33559.17,jun:17862.89,jul:31492.89,ago:34102.45,set:35197.72,out:33381.95,nov:32416.3,dez:31734.54},{nome:"Custos Lastmile",jan:31619.06,fev:31827.15,mar:21296.57,abr:41642.14,mai:31689.2,jun:32259.55,jul:32906.77,ago:35443.08,set:24952.79,out:32166.61,nov:33319.1,dez:34306.46},{nome:"Alugueis de Torre e POP",jan:14642.08,fev:13133.7,mar:11642.08,abr:11642.08,mai:11079.97,jun:13364.19,jul:12776.07,ago:11879.56,set:13317.29,out:12648.42,nov:12680.49,dez:12680.49}],
-      despesas: [{nome:"Propaganda",jan:57703.72,fev:56459.77,mar:51978.86,abr:59044.44,mai:42723.97,jun:55702.52,jul:56697.48,ago:52041.28,set:55282.37,out:59741.95,nov:60539.89,dez:58408.7},{nome:"Serv. Terceiros",jan:45684.95,fev:57215.07,mar:55893.27,abr:41946.49,mai:46395.68,jun:49064.55,jul:45430.51,ago:48059.47,set:51099.71,out:46396.34,nov:56093.38,dez:55474.13},{nome:"Pró-Labore",jan:200000.0,fev:200000.0,mar:200000.0,abr:200000.0,mai:200000.0,jun:200000.0,jul:200000.0,ago:200000.0,set:200000.0,out:200000.0,nov:200000.0,dez:200000.0},{nome:"Sistema",jan:19957.06,fev:20462.59,mar:22396.91,abr:21213.21,mai:21614.81,jun:23063.08,jul:21784.74,ago:21618.04,set:24268.0,out:26234.84,nov:23853.24,dez:24537.26},{nome:"Taxas Boleto",jan:12716.89,fev:13153.68,mar:12764.07,abr:13021.55,mai:13117.45,jun:13028.18,jul:12988.97,ago:12938.22,set:13102.98,out:13107.44,nov:12823.5,dez:13279.59},{nome:"Desp. Aluguel",jan:30065.29,fev:30065.29,mar:30065.29,abr:30065.29,mai:30065.29,jun:30065.29,jul:31065.29,ago:31065.29,set:31065.29,out:31065.29,nov:31065.29,dez:31065.29},{nome:"Desp. Judiciais",jan:17040.0,fev:4012.24,mar:5316.06,abr:5316.06,mai:5316.06,jun:7316.06,jul:7316.06,ago:6316.06,set:4316.06,out:4816.06,nov:5000.0,dez:5000.0}],
-    }
-  };
+  <!-- ===================== DRE PAINEL ===================== -->
+  <div id="drePainelOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;overflow-y:auto;padding:1.5rem 1rem">
+    <div id="drePainel" style="max-width:1400px;margin:0 auto;background:#060b17;border-radius:16px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.7);font-family:'Segoe UI',sans-serif">
 
-  // ── ESTADO ─────────────────────────────────────────
-  let dreAno = '2025';
-  let dreMes = 'total';
-  let dreView = 'dre';
-  let dreExpandidos = {};
-  let dreChartEvoInst = null;
-  let dreChartMargInst = null;
-  let dreChart3yInst = null;
-
-  // ── HELPERS ────────────────────────────────────────
-  function dreSumMes(arr, m) { return arr.reduce((s,r)=>s+(r[m]||0),0); }
-  function dreSumAll(arr) { return DRE_MESES_KEY.reduce((s,m)=>s+dreSumMes(arr,m),0); }
-  function dreGet(arr) { return dreMes==='total' ? dreSumAll(arr) : dreSumMes(arr,dreMes); }
-
-  function dreCalc(data) {
-    const receita  = dreGet(data.receitas);
-    const impostos = dreGet(data.impostos);
-    const recLiq   = receita - impostos;
-    const custos   = dreGet(data.custos);
-    const lucBruto = recLiq - custos;
-    const despesas = dreGet(data.despesas);
-    const ebitda   = lucBruto - despesas;
-    return { receita, impostos, recLiq, custos, lucBruto, despesas, ebitda,
-      margBruta:  receita>0 ? lucBruto/receita : 0,
-      margEbitda: receita>0 ? ebitda/receita   : 0,
-      cargaTrib:  receita>0 ? impostos/receita : 0,
-    };
-  }
-
-  function dreFc(v) {
-    const n = Math.abs(v);
-    let s;
-    if(n>=1e6) s=(v<0?'-':'')+(n/1e6).toFixed(2).replace('.',',')+'M';
-    else if(n>=1e3) s=(v<0?'-':'')+(n/1e3).toFixed(1).replace('.',',')+'k';
-    else s=v.toFixed(2).replace('.',',');
-    return 'R$ '+s;
-  }
-  function dreFp(v) { return (v*100).toFixed(1).replace('.',',')+' %'; }
-
-  function dreMesLabel() {
-    if(dreMes==='total') return 'Acumulado '+dreAno;
-    return DRE_MESES_N[DRE_MESES_KEY.indexOf(dreMes)]+'/'+dreAno;
-  }
-
-  // ── CONTROLES ──────────────────────────────────────
-  function dreSetAno(a) {
-    dreAno = a;
-    ['2023','2024','2025'].forEach(y => {
-      const el = document.getElementById('dreY'+y.slice(2));
-      if(el) el.classList.toggle('on', y===a);
-    });
-    dreRender();
-  }
-
-  function dreSetView(v) {
-    dreView = v;
-    ['dre','evo','3y'].forEach(k => {
-      const btn = document.getElementById('dreV'+k);
-      if(btn) btn.classList.toggle('on', k===v);
-      const view = document.getElementById('dreView'+k.charAt(0).toUpperCase()+k.slice(1));
-      if(view) view.style.display = k===v ? '' : 'none';
-    });
-    dreRender();
-  }
-
-  function dreRender() {
-    const selEl = document.getElementById('dreMesSel');
-    if(selEl) dreMes = selEl.value;
-    const subEl = document.getElementById('drePeriodoSub');
-    if(subEl) subEl.textContent = dreMesLabel();
-
-    const data = DRE_D[dreAno];
-    if(!data) return;
-    const dre = dreCalc(data);
-
-    dreRenderKpis(dre);
-    if(dreView==='dre') dreRenderDre(data, dre);
-    if(dreView==='evo') dreRenderEvo(data);
-    if(dreView==='3y')  dreRender3y();
-  }
-
-  // ── KPI STRIP ──────────────────────────────────────
-  function dreRenderKpis(dre) {
-    const kpis = [
-      {l:'Receita Bruta',    v:dre.receita,  c:'#22d3ee', sub:'100%'},
-      {l:'Impostos',         v:dre.impostos, c:'#f87171', sub:dreFp(dre.cargaTrib)+' da receita'},
-      {l:'Custos Operac.',   v:dre.custos,   c:'#fb923c', sub:dreFp(dre.custos/dre.receita)+' da receita'},
-      {l:'Despesas Operac.', v:dre.despesas, c:'#a78bfa', sub:dreFp(dre.despesas/dre.receita)+' da receita'},
-      {l:'EBITDA',           v:dre.ebitda,   c:'#4ade80', sub:'Margem: '+dreFp(dre.margEbitda), hi:true},
-    ];
-    const el = document.getElementById('dreKpis');
-    if(!el) return;
-    el.innerHTML = kpis.map(k=>`
-      <div class="dre-kpi" style="--kc:${k.c};${k.hi?'background:rgba(74,222,128,0.06);':''}">
-        <div class="dre-kpi-lbl">${k.l}</div>
-        <div class="dre-kpi-val">${dreFc(k.v)}</div>
-        <div class="dre-kpi-sub">${k.sub}</div>
-        <div class="dre-kpi-bar">
-          <div class="dre-kpi-fill" style="width:${dre.receita>0?Math.min(100,(k.v/dre.receita)*100):0}%"></div>
+      <!-- HEADER -->
+      <div style="background:linear-gradient(135deg,#060b17,#0c1a30);padding:1.1rem 1.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;border-bottom:1px solid #1e3a5f">
+        <div style="display:flex;align-items:center;gap:.75rem">
+          <div style="width:3px;height:28px;background:linear-gradient(180deg,#22d3ee,#4ade80);border-radius:2px"></div>
+          <div>
+            <div style="font-size:1rem;font-weight:800;color:#f1f5f9;letter-spacing:.04em">📉 DEMONSTRATIVO DE RESULTADO — DRE</div>
+            <div id="dreSubLabel" style="font-size:.65rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-top:1px">Acumulado Anual 2025</div>
+          </div>
         </div>
-      </div>`).join('');
-  }
+        <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+          <button class="dre-yb" id="dreY23" onclick="dreSetAno('2023')">2023</button>
+          <button class="dre-yb" id="dreY24" onclick="dreSetAno('2024')">2024</button>
+          <button class="dre-yb dre-yb-on" id="dreY25" onclick="dreSetAno('2025')">2025</button>
+          <div style="width:1px;height:18px;background:#1e3a5f;flex-shrink:0"></div>
+          <select id="dreMesSel" onchange="dreRender()" style="background:#0f172a;border:1px solid #1e3a5f;color:#94a3b8;border-radius:6px;padding:.35rem .65rem;font-size:.75rem;cursor:pointer">
+            <option value="total">Acumulado</option>
+            <option value="jan">Janeiro</option><option value="fev">Fevereiro</option>
+            <option value="mar">Março</option><option value="abr">Abril</option>
+            <option value="mai">Maio</option><option value="jun">Junho</option>
+            <option value="jul">Julho</option><option value="ago">Agosto</option>
+            <option value="set">Setembro</option><option value="out">Outubro</option>
+            <option value="nov">Novembro</option><option value="dez">Dezembro</option>
+          </select>
+          <div style="width:1px;height:18px;background:#1e3a5f;flex-shrink:0"></div>
+          <button class="dre-vb dre-vb-on" id="dreVBdre" onclick="dreSetView('dre')">📋 DRE</button>
+          <button class="dre-vb" id="dreVBevo" onclick="dreSetView('evo')">📈 Evolução</button>
+          <button class="dre-vb" id="dreVB3y" onclick="dreSetView('3y')">🔄 3 Anos</button>
+          <div style="width:1px;height:18px;background:#1e3a5f;flex-shrink:0"></div>
+          <button onclick="drepFechar()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#94a3b8;width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:1rem;transition:all .2s" onmouseover="this.style.background='rgba(239,68,68,.2)';this.style.color='#f87171'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='#94a3b8'">✕</button>
+        </div>
+      </div>
 
-  // ── DRE TABLE ─────────────────────────────────────
-  function dreRenderDre(data, dre) {
-    // Período
-    const pEl = document.getElementById('dreTblPeriodo');
-    if(pEl) pEl.textContent = dreMesLabel();
+      <!-- BODY -->
+      <div style="padding:1.25rem">
+        <!-- KPIs -->
+        <div id="dreKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:.9rem;margin-bottom:1.25rem"></div>
 
-    const colStyle = {
-      receita:  {color:'#22d3ee', bg:'rgba(34,211,238,0.06)',  border:'rgba(34,211,238,0.25)'},
-      deducao:  {color:'#f87171', bg:'rgba(248,113,113,0.05)', border:'rgba(248,113,113,0.18)'},
-      subtotal: {color:'#94a3b8', bg:'rgba(148,163,184,0.04)', border:'rgba(148,163,184,0.12)'},
-      resultado:{color:'#4ade80', bg:'rgba(74,222,128,0.09)',  border:'rgba(74,222,128,0.3)'},
-    };
-
-    const lines = [
-      {id:'receita',  label:'Receita Bruta',              valor:dre.receita,  pct:1,                        tipo:'receita',  sub:data.receitas},
-      {id:'impostos', label:'(-) Impostos e Deduções',    valor:-dre.impostos,pct:dre.cargaTrib,             tipo:'deducao',  sub:data.impostos},
-      {id:'recLiq',   label:'= Receita Líquida',          valor:dre.recLiq,   pct:dre.recLiq/dre.receita,   tipo:'subtotal'},
-      {id:'custos',   label:'(-) Custos Operacionais',    valor:-dre.custos,  pct:dre.custos/dre.receita,   tipo:'deducao',  sub:data.custos},
-      {id:'lucBruto', label:'= Lucro Bruto',              valor:dre.lucBruto, pct:dre.margBruta,             tipo:'subtotal'},
-      {id:'despesas', label:'(-) Despesas Operacionais',  valor:-dre.despesas,pct:dre.despesas/dre.receita,  tipo:'deducao',  sub:data.despesas},
-      {id:'ebitda',   label:'= EBITDA',                   valor:dre.ebitda,   pct:dre.margEbitda,            tipo:'resultado'},
-    ];
-
-    const body = document.getElementById('dreTblBody');
-    if(!body) return;
-
-    body.innerHTML = lines.map(ln => {
-      const cs = colStyle[ln.tipo];
-      const hasSub = !!ln.sub;
-      const isOpen = dreExpandidos[ln.id];
-      const pctBar = Math.min(100,Math.abs(ln.pct)*100);
-      let subHtml = '';
-      if(hasSub && isOpen) {
-        const items = ln.sub.map(s=>({
-          nome:s.nome,
-          val: dreMes==='total' ? DRE_MESES_KEY.reduce((a,m)=>a+(s[m]||0),0) : (s[dreMes]||0)
-        })).filter(s=>s.val!==0).sort((a,b)=>Math.abs(b.val)-Math.abs(a.val));
-        subHtml = items.map(s=>`
-          <div class="dre-line sub">
-            <span style="width:12px"></span>
-            <div style="flex:1;display:flex;justify-content:space-between">
-              <span class="dre-line-lbl" style="color:#64748b;font-size:0.75rem">${s.nome}</span>
-              <div style="display:flex;gap:1rem;align-items:center">
-                <span style="font-size:0.65rem;color:#334155">${dre.receita>0?dreFp(Math.abs(s.val)/dre.receita):'—'}</span>
-                <span class="dre-line-val" style="color:#94a3b8;font-size:0.75rem">${dreFc(Math.abs(s.val))}</span>
+        <!-- VIEW: DRE -->
+        <div id="dreViewDRE">
+          <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem">
+            <!-- Tabela DRE -->
+            <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;overflow:hidden">
+              <div style="padding:.85rem 1.5rem;background:#0f1f3a;border-bottom:1px solid #0f172a">
+                <span style="font-size:.72rem;font-weight:700;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase">Demonstração de Resultado</span>
+                <span id="dreTblLbl" style="font-size:.68rem;color:#22d3ee;margin-left:.75rem;font-weight:600"></span>
               </div>
+              <div id="dreTbody"></div>
             </div>
-          </div>`).join('');
-      }
-      const footerHtml = ln.tipo==='resultado' ? `
-        <div class="dre-result-footer">
-          <span>Margem Bruta: <b style="color:#22d3ee">${dreFp(dre.margBruta)}</b></span>
-          <span>Margem EBITDA: <b style="color:#4ade80">${dreFp(dre.margEbitda)}</b></span>
-          <span>Carga Tributária: <b style="color:#f87171">${dreFp(dre.cargaTrib)}</b></span>
-        </div>` : '';
-      const isBig = ln.tipo==='subtotal'||ln.tipo==='resultado';
-      return `
-        <div>
-          <div class="dre-line${hasSub?' expand':''}"
-               style="background:${cs.bg};border-left:3px solid ${cs.border}"
-               ${hasSub?`onclick="dreToggle('${ln.id}')" `:''}> 
-            ${hasSub?`<span class="dre-chevron${isOpen?' open':''}" id="chev_${ln.id}">▶</span>`:'<span style="width:12px"></span>'}
-            <div style="flex:1">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <span class="dre-line-lbl" style="color:${cs.color};font-size:${isBig?'0.88':'0.81'}rem;font-weight:${isBig?700:500}">${ln.label}</span>
-                <div style="display:flex;gap:1rem;align-items:center">
-                  <span class="dre-line-pct">${dreFp(Math.abs(ln.pct))}</span>
-                  <span class="dre-line-val" style="color:${cs.color};font-size:${isBig?'0.95':'0.85'}rem">${dreFc(ln.valor)}</span>
-                </div>
+            <!-- Lado direito: waterfall + gauge + composição -->
+            <div style="display:flex;flex-direction:column;gap:1rem">
+              <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:1.1rem">
+                <div style="font-size:.68rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.85rem">🌊 Cascata do Resultado</div>
+                <div id="dreWaterfall"></div>
               </div>
-              ${!isBig?`<div style="height:2px;background:#0f172a;border-radius:1px;margin-top:4px"><div style="height:100%;border-radius:1px;background:${cs.color};width:${pctBar}%;opacity:0.5"></div></div>`:''}
+              <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:1.1rem;text-align:center">
+                <div style="font-size:.68rem;color:#475569;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">🎯 Margem EBITDA</div>
+                <svg id="dreGaugeSvg" width="160" height="95" viewBox="0 0 160 95" style="display:block;margin:0 auto">
+                  <path d="M 15 80 A 65 65 0 0 1 145 80" fill="none" stroke="#1e293b" stroke-width="14" stroke-linecap="round"/>
+                  <path id="dreGaugeFill" d="M 15 80 A 65 65 0 0 1 145 80" fill="none" stroke="url(#dg)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 1000"/>
+                  <defs><linearGradient id="dg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f87171"/><stop offset="40%" stop-color="#fbbf24"/><stop offset="70%" stop-color="#4ade80"/><stop offset="100%" stop-color="#22d3ee"/></linearGradient></defs>
+                  <text id="dreGaugeTxt" x="80" y="74" text-anchor="middle" font-size="20" font-weight="700" fill="#4ade80" font-family="monospace">—</text>
+                </svg>
+                <div style="font-size:.65rem;color:#475569;margin-top:-.25rem">Benchmark ISP: <span style="color:#fbbf24">25–35%</span></div>
+                <div id="dreGaugeStatus" style="margin-top:.6rem;padding:.35rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700"></div>
+              </div>
             </div>
           </div>
-          ${subHtml}${footerHtml}
-        </div>`;
-    }).join('');
-
-    // Waterfall
-    dreRenderWaterfall(dre);
-    // Gauge
-    dreRenderGauge(dre);
-    // Composição
-    dreRenderComposicao(dre);
-  }
-
-  function dreToggle(id) {
-    dreExpandidos[id] = !dreExpandidos[id];
-    const ch = document.getElementById('chev_'+id);
-    if(ch) ch.classList.toggle('open', dreExpandidos[id]);
-    const data = DRE_D[dreAno];
-    const dre  = dreCalc(data);
-    dreRenderDre(data, dre);
-  }
-
-  // ── WATERFALL ─────────────────────────────────────
-  function dreRenderWaterfall(dre) {
-    const wf = [
-      {l:'Receita',     v:dre.receita,  max:dre.receita, c:'#22d3ee'},
-      {l:'(-) Impostos',v:dre.impostos, max:dre.receita, c:'#f87171'},
-      {l:'Rec. Líq.',   v:dre.recLiq,   max:dre.receita, c:'#60a5fa'},
-      {l:'(-) Custos',  v:dre.custos,   max:dre.receita, c:'#fb923c'},
-      {l:'Luc. Bruto',  v:dre.lucBruto, max:dre.receita, c:'#818cf8'},
-      {l:'(-) Desp.',   v:dre.despesas, max:dre.receita, c:'#a78bfa'},
-      {l:'EBITDA',      v:dre.ebitda,   max:dre.receita, c:'#4ade80', bold:true},
-    ];
-    const el = document.getElementById('dreWaterfall');
-    if(!el) return;
-    el.innerHTML = wf.map(w=>`
-      <div class="wf-row" style="--wc:${w.c}">
-        <div class="wf-lbl"><span style="color:${w.bold?w.c:'#64748b'};font-weight:${w.bold?700:400}">${w.l}</span><b>${dreFc(w.v)}</b></div>
-        <div class="wf-track"><div class="wf-fill" style="width:${w.max>0?Math.min(100,(w.v/w.max)*100):0}%;height:${w.bold?6:4}px"></div></div>
-      </div>`).join('');
-  }
-
-  // ── GAUGE ─────────────────────────────────────────
-  function dreRenderGauge(dre) {
-    const pct = Math.min(dre.margEbitda*100, 100);
-    const arc = document.getElementById('dreGaugeArc');
-    if(arc) arc.setAttribute('stroke-dasharray', `${pct*2.15} 1000`);
-    const txt = document.getElementById('dreGaugeTxt');
-    if(txt) txt.textContent = dreFp(dre.margEbitda);
-    const st = document.getElementById('dreGaugeStatus');
-    if(st) {
-      const m = dre.margEbitda*100;
-      if(m>=35) { st.style.background='rgba(74,222,128,0.15)'; st.style.color='#4ade80'; st.textContent='✅ Excelente'; }
-      else if(m>=25) { st.style.background='rgba(251,191,36,0.15)'; st.style.color='#fbbf24'; st.textContent='⚠️ Dentro do Benchmark'; }
-      else { st.style.background='rgba(248,113,113,0.15)'; st.style.color='#f87171'; st.textContent='🔴 Abaixo do Benchmark'; }
-    }
-  }
-
-  // ── COMPOSIÇÃO ────────────────────────────────────
-  function dreRenderComposicao(dre) {
-    const el = document.getElementById('dreComposicao');
-    if(!el) return;
-    const total = dre.impostos + dre.custos + dre.despesas;
-    const items = [
-      {l:'Impostos', v:dre.impostos, c:'#f87171'},
-      {l:'Custos',   v:dre.custos,   c:'#fb923c'},
-      {l:'Despesas', v:dre.despesas, c:'#a78bfa'},
-    ];
-    el.innerHTML = items.map(i=>`
-      <div style="margin-bottom:0.5rem">
-        <div style="display:flex;justify-content:space-between;font-size:0.68rem;margin-bottom:2px">
-          <span style="color:${i.c}">${i.l}</span>
-          <span style="color:#64748b">${dreFc(i.v)} · ${total>0?dreFp(i.v/total):'-'}</span>
         </div>
-        <div style="height:4px;background:#0f172a;border-radius:2px">
-          <div style="height:100%;border-radius:2px;background:${i.c};width:${total>0?Math.min(100,(i.v/total)*100):0}%"></div>
+
+        <!-- VIEW: EVOLUÇÃO -->
+        <div id="dreViewEVO" style="display:none">
+          <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:1.25rem;margin-bottom:1.1rem">
+            <div style="font-size:.82rem;font-weight:700;color:#f1f5f9;margin-bottom:.25rem">Evolução Mensal <span id="dreEvoAnoLbl"></span></div>
+            <div style="font-size:.7rem;color:#64748b;margin-bottom:1rem">Receita vs Custos+Despesas vs EBITDA</div>
+            <div style="position:relative;height:280px"><canvas id="dreChartEvo"></canvas></div>
+          </div>
+          <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:1.25rem;margin-bottom:1.1rem">
+            <div style="font-size:.82rem;font-weight:700;color:#f1f5f9;margin-bottom:.25rem">Margem EBITDA Mensal (%)</div>
+            <div style="font-size:.7rem;color:#64748b;margin-bottom:1rem">Linha amarela = benchmark mínimo ISP (25%)</div>
+            <div style="position:relative;height:220px"><canvas id="dreChartMarg"></canvas></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.6rem" id="dreMthGrid"></div>
         </div>
-      </div>`).join('');
+
+        <!-- VIEW: 3 ANOS -->
+        <div id="dreView3Y" style="display:none">
+          <div id="dre3Cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.1rem"></div>
+          <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:1.25rem;margin-bottom:1.1rem">
+            <div style="font-size:.82rem;font-weight:700;color:#f1f5f9;margin-bottom:1rem">EBITDA Mensal — Comparativo 3 Anos</div>
+            <div style="position:relative;height:280px"><canvas id="dreChart3y"></canvas></div>
+          </div>
+          <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;overflow:hidden">
+            <div style="padding:.85rem 1.5rem;background:#0f1f3a;border-bottom:1px solid #0f172a">
+              <span style="font-size:.72rem;font-weight:700;color:#94a3b8;letter-spacing:.1em;text-transform:uppercase">DRE Comparativa — Acumulado Anual</span>
+            </div>
+            <div style="overflow-x:auto"><table id="dre3Tbl" style="width:100%;border-collapse:collapse"></table></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .dre-yb{padding:.35rem .85rem;border-radius:6px;border:1px solid #1e3a5f;cursor:pointer;font-size:.73rem;font-weight:700;background:transparent;color:#64748b;transition:all .2s;font-family:'Segoe UI',sans-serif}
+    .dre-yb-on{background:#1d4ed8!important;border-color:#3b82f6!important;color:#fff!important}
+    .dre-vb{padding:.35rem .85rem;border-radius:6px;border:1px solid #1e3a5f;cursor:pointer;font-size:.72rem;font-weight:600;background:transparent;color:#475569;transition:all .2s;font-family:'Segoe UI',sans-serif}
+    .dre-vb-on{background:rgba(74,222,128,.12)!important;border-color:#4ade80!important;color:#4ade80!important}
+    @media(max-width:800px){#dreViewDRE>div{grid-template-columns:1fr!important}#dre3Cards{grid-template-columns:1fr!important}}
+  </style>
+
+  <script>
+  // ================================================================
+  // DRE — Vanilla JS, zero dependências externas
+  // ================================================================
+  var _dreAno  = '2025';
+  var _dreView = 'dre';
+  var _dreCharts = {};
+  var _DRE_MK = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  var _DRE_MN = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  var _DRE_MF = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  function _dreFC(v){
+    if(v==null||isNaN(v))return'—';
+    var a=Math.abs(v);
+    if(a>=1e6)return(v<0?'-':'')+'R$ '+(a/1e6).toFixed(2).replace('.',',')+'M';
+    if(a>=1e3)return(v<0?'-':'')+'R$ '+(a/1e3).toFixed(1).replace('.',',')+'k';
+    return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function _dreFCFull(v){
+    if(v==null||isNaN(v))return'—';
+    return(v<0?'-':'')+'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function _dreFP(v){return(v*100).toFixed(1).replace('.',',')+' %';}
+  function _dreNum(v){return Number(v)||0;}
+  function _dreSum(arr,m){
+    if(!arr||!arr.length)return 0;
+    if(m==='total')return _DRE_MK.reduce(function(s,k){return s+arr.reduce(function(a,r){return a+_dreNum(r[k]);},0);},0);
+    return arr.reduce(function(s,r){return s+_dreNum(r[m]);},0);
+  }
+  function _dreData(ano){
+    try{
+      var map={'2023':typeof dadosFinanceiros2023!=='undefined'?dadosFinanceiros2023:null,
+               '2024':typeof dadosFinanceiros2024!=='undefined'?dadosFinanceiros2024:null,
+               '2025':typeof dadosFinanceiros2025!=='undefined'?dadosFinanceiros2025:null};
+      return map[ano]||null;
+    }catch(e){return null;}
+  }
+  function _dreCalc(d,m){
+    var rec=_dreSum(d.receitas,m), imp=_dreSum(d.impostos,m), cus=_dreSum(d.custos,m), desp=_dreSum(d.despesas,m);
+    var recLiq=rec-imp, lucBruto=recLiq-cus, ebitda=lucBruto-desp;
+    return{rec:rec,imp:imp,cus:cus,desp:desp,recLiq:recLiq,lucBruto:lucBruto,ebitda:ebitda,
+      margE:rec>0?ebitda/rec:0,margB:rec>0?lucBruto/rec:0,tribPct:rec>0?imp/rec:0};
+  }
+  function _dreDestroyCharts(){
+    Object.values(_dreCharts).forEach(function(c){if(c&&c.destroy)c.destroy();});
+    _dreCharts={};
   }
 
-  // ── EVOLUÇÃO MENSAL ────────────────────────────────
-  function dreRenderEvo(data) {
-    const anoEl = document.getElementById('dreEvoAno');
-    if(anoEl) anoEl.textContent = dreAno;
+  // ── ABRIR/FECHAR ──────────────────────────────────────
+  window.dreAbrirPainel = function(){
+    var btns=document.querySelectorAll('#demonstrativoView button[id^="demoTab"]');
+    btns.forEach(function(b){b.style.background='transparent';b.style.color='white';});
+    var bDRE=document.getElementById('demoTabDRE');
+    if(bDRE){bDRE.style.background='rgba(255,255,255,.9)';bDRE.style.color='#1e3a8a';}
+    var ov=document.getElementById('drePainelOverlay');
+    if(ov){ov.style.display='block';document.body.style.overflow='hidden';}
+    dreRender();
+  };
+  window.drepFechar = function(){
+    var ov=document.getElementById('drePainelOverlay');
+    if(ov)ov.style.display='none';
+    document.body.style.overflow='';
+    _dreDestroyCharts();
+    if(typeof demoSetModo==='function')demoSetModo('mxm');
+  };
 
-    const labels = DRE_MESES_N;
-    const receitas=[],ebitdas=[],margens=[],custosDep=[];
-    DRE_MESES_KEY.forEach(m=>{
-      const d = dreCalc({receitas:data.receitas,impostos:data.impostos,custos:data.custos,despesas:data.despesas});
-      // per month
-      const tmpData = {receitas:data.receitas,impostos:data.impostos,custos:data.custos,despesas:data.despesas};
-      const prev = dreMes; dreMes=m;
-      const dm = dreCalc(tmpData); dreMes=prev;
-      receitas.push(dm.receita);
-      ebitdas.push(dm.ebitda);
-      margens.push(+(dm.margEbitda*100).toFixed(1));
-      custosDep.push(dm.custos+dm.despesas);
+  // ── CONTROLES ─────────────────────────────────────────
+  window.dreSetAno = function(ano){
+    _dreAno=ano;
+    ['2023','2024','2025'].forEach(function(a){
+      var el=document.getElementById('dreY'+a.slice(2));
+      if(!el)return;
+      el.className=a===ano?'dre-yb dre-yb-on':'dre-yb';
     });
+    dreRender();
+  };
+  window.dreSetView = function(v){
+    _dreView=v;
+    ['dre','evo','3y'].forEach(function(k){
+      var el=document.getElementById('dreViewDRE'===k?'dreViewDRE':k==='evo'?'dreViewEVO':'dreView3Y');
+      if(el)el.style.display=v===k?'block':'none';
+      var btn=document.getElementById('dreVB'+k);
+      if(btn)btn.className=v===k?'dre-vb dre-vb-on':'dre-vb';
+    });
+    // Re-render charts
+    _dreDestroyCharts();
+    dreRender();
+  };
 
-    // Chart Evolução
-    const ctxEvo = document.getElementById('dreChartEvo');
-    if(ctxEvo) {
-      if(dreChartEvoInst) dreChartEvoInst.destroy();
-      dreChartEvoInst = new Chart(ctxEvo, {
-        type:'bar',
-        data:{ labels,
-          datasets:[
-            {label:'Receita',data:receitas,backgroundColor:'rgba(34,211,238,0.25)',borderColor:'#22d3ee',borderWidth:2,type:'line',fill:true,tension:0.4,pointRadius:3},
-            {label:'Custos+Despesas',data:custosDep,backgroundColor:'rgba(248,113,113,0.4)',borderRadius:4},
-            {label:'EBITDA',data:ebitdas,backgroundColor:'rgba(74,222,128,0.6)',borderRadius:4},
-          ]
-        },
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
-          scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',font:{size:10},callback:v=>'R$'+(Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'k')},grid:{color:'#1e293b'}}}}
-      });
-    }
+  // ── RENDER PRINCIPAL ──────────────────────────────────
+  window.dreRender = function(){
+    var mes=(document.getElementById('dreMesSel')||{}).value||'total';
+    var d=_dreData(_dreAno);
+    var lbl=mes==='total'?('Acumulado Anual '+_dreAno):(_DRE_MF[_DRE_MK.indexOf(mes)]+'/'+_dreAno);
+    var sub=document.getElementById('dreSubLabel');if(sub)sub.textContent=lbl;
+    var tblLbl=document.getElementById('dreTblLbl');if(tblLbl)tblLbl.textContent='— '+lbl;
 
-    // Chart Margem
-    const ctxMarg = document.getElementById('dreChartMarg');
-    if(ctxMarg) {
-      if(dreChartMargInst) dreChartMargInst.destroy();
-      dreChartMargInst = new Chart(ctxMarg, {
-        type:'line',
-        data:{ labels,
-          datasets:[
-            {label:'Margem EBITDA (%)',data:margens,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,0.1)',fill:true,tension:0.4,pointRadius:4,pointBackgroundColor:'#4ade80'},
-            {label:'Benchmark 25%',data:labels.map(()=>25),borderColor:'#fbbf24',borderDash:[6,4],borderWidth:1.5,pointRadius:0},
-          ]
-        },
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
-          scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',font:{size:10},callback:v=>v+'%'},grid:{color:'#1e293b'}}}}
-      });
+    if(!d){
+      var kEl=document.getElementById('dreKpis');
+      if(kEl)kEl.innerHTML='<p style="color:#475569;padding:1rem">Dados de '+_dreAno+' não disponíveis.</p>';
+      return;
     }
+    var c=_dreCalc(d,mes);
+    _dreRenderKpis(c);
+    if(_dreView==='dre')_dreRenderTbl(d,c,mes);
+    if(_dreView==='evo')_dreRenderEvo(d);
+    if(_dreView==='3y')_dreRender3y(mes);
+  };
 
-    // Month grid
-    const grid = document.getElementById('dreMonthGrid');
-    if(grid) {
-      const prev = dreMes;
-      grid.innerHTML = DRE_MESES_KEY.map((m,i)=>{
-        dreMes=m;
-        const dm = dreCalc(data);
-        dreMes=prev;
-        const clr = dm.margEbitda>=0.35?'#4ade80':dm.margEbitda>=0.25?'#fbbf24':'#f87171';
-        return `<div class="dre-mcard" onclick="dreClickMes('${m}')">
-          <div class="dre-mcard-m">${DRE_MESES_N[i]}</div>
-          <div class="dre-mcard-v" style="color:${clr}">${dreFc(dm.ebitda)}</div>
-          <div class="dre-mcard-e">${dreFp(dm.margEbitda)}</div>
-        </div>`;
-      }).join('');
-    }
+  // ── KPIs ─────────────────────────────────────────────
+  function _dreRenderKpis(c){
+    var el=document.getElementById('dreKpis');if(!el)return;
+    var kpis=[
+      {l:'💰 Receita Bruta',v:c.rec,sub:'100%',color:'#22d3ee',w:100},
+      {l:'🏛️ Impostos',v:c.imp,sub:_dreFP(c.tribPct)+' da receita',color:'#f87171',w:c.rec?c.imp/c.rec*100:0},
+      {l:'⚙️ Custos Operac.',v:c.cus,sub:_dreFP(c.rec?c.cus/c.rec:0)+' da receita',color:'#fb923c',w:c.rec?c.cus/c.rec*100:0},
+      {l:'📋 Despesas Operac.',v:c.desp,sub:_dreFP(c.rec?c.desp/c.rec:0)+' da receita',color:'#a78bfa',w:c.rec?c.desp/c.rec*100:0},
+      {l:'📈 EBITDA',v:c.ebitda,sub:'Margem: '+_dreFP(c.margE),color:c.ebitda>=0?'#4ade80':'#f87171',w:c.rec?Math.abs(c.ebitda)/c.rec*100:0,hi:true}
+    ];
+    el.innerHTML=kpis.map(function(k){
+      var bg=k.hi?'linear-gradient(135deg,rgba(74,222,128,.08),rgba(16,185,129,.04))':'#0f172a';
+      return '<div style="background:'+bg+';border:1px solid '+k.color+'30;border-top:2px solid '+k.color+';border-radius:10px;padding:.9rem 1.1rem">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.35rem">'+
+        '<span style="font-size:.66rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em">'+k.l+'</span></div>'+
+        '<div style="font-size:1.2rem;font-weight:800;color:'+k.color+';margin-bottom:.2rem">'+_dreFC(k.v)+'</div>'+
+        '<div style="font-size:.66rem;color:#475569">'+k.sub+'</div>'+
+        '<div style="height:3px;background:#1e293b;border-radius:2px;margin-top:.65rem">'+
+        '<div style="height:100%;border-radius:2px;background:'+k.color+';width:'+Math.min(100,Math.max(0,k.w||0)).toFixed(1)+'%;opacity:.7"></div></div></div>';
+    }).join('');
   }
 
-  function dreClickMes(m) {
-    const sel = document.getElementById('dreMesSel');
-    if(sel) { sel.value=m; }
-    dreMes=m;
-    dreSetView('dre');
+  // ── TABELA DRE ────────────────────────────────────────
+  function _dreRenderTbl(d,c,mes){
+    var el=document.getElementById('dreTbody');if(!el)return;
+    var lines=[
+      {id:'rec',  l:'Receita Bruta',         v:c.rec,     pct:1,       color:'#22d3ee',sub:d.receitas,neg:false},
+      {id:'imp',  l:'(-) Impostos',           v:-c.imp,    pct:c.tribPct,color:'#f87171',sub:d.impostos,neg:true},
+      {id:'rliq', l:'= Receita Líquida',      v:c.recLiq,  pct:c.rec>0?c.recLiq/c.rec:0,color:'#60a5fa',isSub:true},
+      {id:'cus',  l:'(-) Custos Operacionais',v:-c.cus,    pct:c.rec>0?c.cus/c.rec:0,color:'#fb923c',sub:d.custos,neg:true},
+      {id:'lb',   l:'= Lucro Bruto',          v:c.lucBruto,pct:c.margB, color:'#818cf8',isSub:true},
+      {id:'desp', l:'(-) Despesas Operac.',   v:-c.desp,   pct:c.rec>0?c.desp/c.rec:0,color:'#a78bfa',sub:d.despesas,neg:true},
+      {id:'ebit', l:'= EBITDA',               v:c.ebitda,  pct:c.margE, color:'#4ade80',isRes:true}
+    ];
+    var html='';
+    lines.forEach(function(ln){
+      var bar=Math.min(100,Math.abs(ln.pct)*100).toFixed(1);
+      var hasSub=!!ln.sub;
+      var bold=ln.isSub||ln.isRes;
+      html+='<div id="dreLn_'+ln.id+'" onclick="'+(hasSub?'_dreTglRow("'+ln.id+'")':'')+'" style="'+
+        'padding:.85rem 1.5rem;background:rgba('+(ln.color.replace('#','').match(/../g).map(function(h){return parseInt(h,16)}).join(','))+',0.04);'+
+        'border-left:3px solid '+ln.color+'33;border-bottom:1px solid #0f172a;'+
+        (hasSub?'cursor:pointer;':'')+'display:flex;align-items:center;gap:.6rem">'+
+        '<span id="dreArrow_'+ln.id+'" style="font-size:.6rem;color:#475569;width:12px;flex-shrink:0;transition:transform .2s">'+(hasSub?'▶':'')+'</span>'+
+        '<div style="flex:1">'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;'+((!ln.isSub&&!ln.isRes)?'margin-bottom:3px':'')+'">'+
+        '<span style="font-size:'+(bold?.88:.82)+'rem;font-weight:'+(bold?700:400)+';color:'+ln.color+';letter-spacing:.01em">'+ln.l+'</span>'+
+        '<div style="display:flex;gap:1.25rem;align-items:center">'+
+        '<span style="font-size:.68rem;color:#334155">'+_dreFP(Math.abs(ln.pct))+'</span>'+
+        '<span style="font-size:'+(bold?.95:.86)+'rem;font-weight:700;color:'+ln.color+';min-width:135px;text-align:right;font-family:\'Courier New\',monospace">'+_dreFCFull(ln.v)+'</span>'+
+        '</div></div>'+
+        ((!ln.isSub&&!ln.isRes)?'<div style="height:2px;background:#0f172a;border-radius:1px"><div style="height:100%;border-radius:1px;background:'+ln.color+';width:'+bar+'%;opacity:.45"></div></div>':'')+
+        '</div></div>';
+      // Sub-items
+      if(hasSub){
+        var subItems=ln.sub.map(function(s){
+          var sv=mes==='total'?_DRE_MK.reduce(function(a,m){return a+_dreNum(s[m]);},0):_dreNum(s[mes]);
+          return{nome:s.nome,val:sv};
+        }).filter(function(s){return s.val!==0;}).sort(function(a,b){return Math.abs(b.val)-Math.abs(a.val);});
+        subItems.forEach(function(s,j){
+          html+='<div id="dreSub_'+ln.id+'_'+j+'" class="dreSub" style="display:none;padding:.5rem 1.5rem .5rem 3.5rem;background:#050d1a;border-bottom:1px solid #0a1020">'+
+            '<div style="display:flex;justify-content:space-between;align-items:center">'+
+            '<span style="font-size:.75rem;color:#64748b">'+s.nome+'</span>'+
+            '<span style="font-size:.75rem;color:#94a3b8;font-family:\'Courier New\',monospace">'+_dreFCFull(Math.abs(s.val))+
+            ' <span style="color:#334155;font-size:.66rem">'+_dreFP(c.rec>0?Math.abs(s.val)/c.rec:0)+'</span></span>'+
+            '</div></div>';
+        });
+      }
+      // EBITDA summary bar
+      if(ln.isRes){
+        html+='<div style="padding:.55rem 1.5rem;background:rgba(74,222,128,.04);border-top:1px solid rgba(74,222,128,.15)">'+
+          '<div style="display:flex;justify-content:space-around;font-size:.68rem;color:#64748b">'+
+          '<span>Marg. Líquida: <b style="color:#4ade80">'+_dreFP(c.margE)+'</b></span>'+
+          '<span>Marg. Bruta: <b style="color:#22d3ee">'+_dreFP(c.margB)+'</b></span>'+
+          '<span>Carga Trib.: <b style="color:#f87171">'+_dreFP(c.tribPct)+'</b></span>'+
+          '</div></div>';
+      }
+    });
+    el.innerHTML=html;
+    // Waterfall
+    _dreRenderWF(c);
+    // Gauge
+    _dreRenderGauge(c.margE);
   }
 
-  // ── 3 ANOS ────────────────────────────────────────
-  function dreRender3y() {
-    // Year cards
-    const cards = document.getElementById('dreYrCards');
-    if(cards) {
-      cards.innerHTML = ['2023','2024','2025'].map(y=>{
-        const d = dreCalc(DRE_D[y]);
-        return `<div class="dre-ycard${y===dreAno?' on':''}" onclick="dreSetAno('${y}')">
-          <div class="dre-ycard-yr">${y}</div>
-          <div class="dre-ycard-row"><div class="dre-ycard-lbl">Receita</div><div class="dre-ycard-num" style="color:#22d3ee">${dreFc(d.receita)}</div></div>
-          <div class="dre-ycard-row"><div class="dre-ycard-lbl">EBITDA</div><div class="dre-ycard-num" style="color:#4ade80">${dreFc(d.ebitda)}</div></div>
-          <div class="dre-ycard-var" style="color:#64748b">Margem: ${dreFp(d.margEbitda)}</div>
-        </div>`;
-      }).join('');
-    }
-
-    // Chart 3 anos
-    const ctx3 = document.getElementById('dreChart3y');
-    if(ctx3) {
-      if(dreChart3yInst) dreChart3yInst.destroy();
-      const ds = ['2023','2024','2025'].map((y,i)=>({
-        label:y,
-        data: DRE_MESES_KEY.map(m=>{ const prev=dreMes; dreMes=m; const v=dreCalc(DRE_D[y]).ebitda; dreMes=prev; return v; }),
-        borderColor:['#f87171','#fbbf24','#4ade80'][i],
-        backgroundColor:`rgba(${['248,113,113','251,191,36','74,222,128'][i]},0.08)`,
-        fill:true,tension:0.4,pointRadius:3,
-      }));
-      dreChart3yInst = new Chart(ctx3,{type:'line',data:{labels:DRE_MESES_N,datasets:ds},
-        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},
-          scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',font:{size:10},callback:v=>'R$'+(Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':(v/1e3).toFixed(0)+'k')},grid:{color:'#1e293b'}}}}
-      });
-    }
-
-    // Tabela comparativa acumulada
-    const head = document.getElementById('dreCmpHead');
-    const body2 = document.getElementById('dreCmpBody');
-    if(head && body2) {
-      const anos = ['2023','2024','2025'];
-      const calcs = anos.map(y=>{ const prev=dreMes; dreMes='total'; const v=dreCalc(DRE_D[y]); dreMes=prev; return v; });
-      head.innerHTML = '<th>Indicador</th>'+anos.map(y=>`<th>${y}</th>`).join('')+'<th>Var. 24/25</th>';
-      const rows = [
-        {l:'Receita Bruta',  fn:d=>d.receita},
-        {l:'(-) Impostos',   fn:d=>d.impostos},
-        {l:'Receita Líquida',fn:d=>d.recLiq,  hi:true},
-        {l:'(-) Custos',     fn:d=>d.custos},
-        {l:'Lucro Bruto',    fn:d=>d.lucBruto,hi:true},
-        {l:'(-) Despesas',   fn:d=>d.despesas},
-        {l:'EBITDA',         fn:d=>d.ebitda,  hi:true,big:true},
-        {l:'Margem EBITDA',  fn:d=>d.margEbitda, fmt:'pct'},
-      ];
-      body2.innerHTML = rows.map(r=>{
-        const vals = calcs.map(d=>r.fn(d));
-        const var2425 = vals[1]>0 ? (vals[2]-vals[1])/Math.abs(vals[1]) : 0;
-        const color = var2425>=0?'#4ade80':'#f87171';
-        return `<tr class="${r.hi?'hi':''}">
-          <td style="font-weight:${r.big?700:400};color:${r.big?'#4ade80':'inherit'}">${r.l}</td>
-          ${vals.map(v=>`<td style="color:${r.big?'#4ade80':''}">${r.fmt==='pct'?dreFp(v):dreFc(v)}</td>`).join('')}
-          <td style="color:${color}">${(var2425>=0?'+':'')}${dreFp(var2425)}</td>
-        </tr>`;
-      }).join('');
-    }
-  }
-
-  // ── INIT ──────────────────────────────────────────
-  // Inicializa quando o menu Demonstrativo é clicado
-  const _origSelectMenu = window.selectMenu;
-  window.selectMenu = function(el, page) {
-    if(_origSelectMenu) _origSelectMenu(el, page);
-    if(page === 'demonstrativo') {
-      setTimeout(dreRender, 50);
+  window._dreTglRow = function(id){
+    var arrow=document.getElementById('dreArrow_'+id);
+    var open=arrow&&arrow.style.transform==='rotate(90deg)';
+    if(arrow)arrow.style.transform=open?'':'rotate(90deg)';
+    var j=0;
+    while(true){
+      var el=document.getElementById('dreSub_'+id+'_'+j);
+      if(!el)break;
+      el.style.display=open?'none':'block';
+      j++;
     }
   };
+
+  function _dreRenderWF(c){
+    var el=document.getElementById('dreWaterfall');if(!el)return;
+    var items=[
+      {l:'Receita Bruta',v:c.rec,c:'#22d3ee'},
+      {l:'(-) Impostos',v:c.imp,c:'#f87171'},
+      {l:'Rec. Líquida',v:c.recLiq,c:'#60a5fa'},
+      {l:'(-) Custos',v:c.cus,c:'#fb923c'},
+      {l:'Lucro Bruto',v:c.lucBruto,c:'#818cf8'},
+      {l:'(-) Despesas',v:c.desp,c:'#a78bfa'},
+      {l:'EBITDA',v:c.ebitda,c:'#4ade80',bold:true}
+    ];
+    el.innerHTML=items.map(function(w){
+      var pct=c.rec>0?Math.min(100,Math.abs(w.v)/c.rec*100).toFixed(1):0;
+      return '<div style="margin-bottom:.45rem">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:2px">'+
+        '<span style="font-size:.68rem;color:'+(w.bold?w.c:'#64748b')+';font-weight:'+(w.bold?700:400)+'">'+w.l+'</span>'+
+        '<span style="font-size:.68rem;color:'+w.c+';font-weight:700">'+_dreFC(w.v)+'</span></div>'+
+        '<div style="height:'+(w.bold?6:3)+'px;background:#0f172a;border-radius:3px">'+
+        '<div style="height:100%;border-radius:3px;background:'+w.c+';width:'+pct+'%;'+(w.bold?'box-shadow:0 0 6px '+w.c+'60':'')+'"></div></div></div>';
+    }).join('');
+  }
+
+  function _dreRenderGauge(marg){
+    var fill=document.getElementById('dreGaugeFill');
+    var txt=document.getElementById('dreGaugeTxt');
+    var status=document.getElementById('dreGaugeStatus');
+    if(!fill||!txt)return;
+    var pct=Math.max(0,Math.min(100,marg*100));
+    fill.setAttribute('stroke-dasharray',pct*2.04+' 1000');
+    txt.textContent=(marg*100).toFixed(1).replace('.',',')+' %';
+    var statusTxt=marg>=0.35?'✅ Excelente':marg>=0.25?'✅ Dentro da meta':marg>=0.15?'⚠️ Atenção':'🔴 Abaixo do benchmark';
+    var statusColor=marg>=0.25?'#4ade80':marg>=0.15?'#fbbf24':'#f87171';
+    txt.setAttribute('fill',statusColor);
+    if(status){status.textContent=statusTxt;status.style.color=statusColor;
+      status.style.background='rgba('+(marg>=0.25?'74,222,128':marg>=0.15?'251,191,36':'248,113,113')+',0.1)';
+      status.style.border='1px solid '+statusColor+'40';}
+  }
+
+  // ── EVOLUÇÃO ─────────────────────────────────────────
+  function _dreRenderEvo(d){
+    var lbl=document.getElementById('dreEvoAnoLbl');if(lbl)lbl.textContent=_dreAno;
+    if(typeof Chart==='undefined')return;
+    // Evo chart
+    var ctx1=document.getElementById('dreChartEvo');
+    if(ctx1){
+      if(_dreCharts.evo){_dreCharts.evo.destroy();}
+      var rVals=_DRE_MK.map(function(m){return _dreSum(d.receitas,m);});
+      var cVals=_DRE_MK.map(function(m){return _dreSum(d.custos,m)+_dreSum(d.despesas,m);});
+      var eVals=_DRE_MK.map(function(m){var c2=_dreCalc(d,m);return c2.ebitda;});
+      _dreCharts.evo=new Chart(ctx1,{type:'bar',data:{labels:_DRE_MN,datasets:[
+        {label:'Receita',data:rVals,backgroundColor:'rgba(34,211,238,.3)',order:2,borderRadius:3},
+        {label:'Custos+Desp.',data:cVals,backgroundColor:'rgba(248,113,113,.4)',order:2,borderRadius:3},
+        {label:'EBITDA',data:eVals,type:'line',borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,.08)',
+         pointRadius:4,tension:.3,fill:true,order:1,yAxisID:'y',borderWidth:2}
+      ]},options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#64748b',font:{size:10}}},tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+_dreFC(c.raw);}}}},
+        scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#0f172a'}},
+                y:{ticks:{color:'#475569',callback:function(v){return 'R$'+(v/1000).toFixed(0)+'k';}},grid:{color:'rgba(255,255,255,.02)'}}}}});
+    }
+    // Margem chart
+    var ctx2=document.getElementById('dreChartMarg');
+    if(ctx2){
+      if(_dreCharts.marg){_dreCharts.marg.destroy();}
+      var mVals=_DRE_MK.map(function(m){var c2=_dreCalc(d,m);return c2.margE*100;});
+      var bench25=Array(12).fill(25);
+      var bench35=Array(12).fill(35);
+      _dreCharts.marg=new Chart(ctx2,{type:'line',data:{labels:_DRE_MN,datasets:[
+        {label:'Margem %',data:mVals,borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,.08)',
+         pointRadius:4,tension:.3,fill:true,borderWidth:2.5},
+        {label:'Meta 25%',data:bench25,borderColor:'#fbbf24',backgroundColor:'transparent',
+         borderDash:[5,4],pointRadius:0,borderWidth:1.5},
+        {label:'Ótimo 35%',data:bench35,borderColor:'#22d3ee',backgroundColor:'transparent',
+         borderDash:[5,4],pointRadius:0,borderWidth:1.5}
+      ]},options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#64748b',font:{size:10},boxWidth:12}}},
+        scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#0f172a'}},
+                y:{ticks:{color:'#475569',callback:function(v){return v.toFixed(0)+'%';}},grid:{color:'rgba(255,255,255,.02)'}}}}});
+    }
+    // Month grid
+    var grid=document.getElementById('dreMthGrid');
+    if(grid){
+      grid.innerHTML=_DRE_MK.map(function(m,i){
+        var c2=_dreCalc(d,m);var mg=c2.margE*100;
+        var col=mg>=25?'rgba(74,222,128,.2)':mg>=15?'rgba(251,191,36,.2)':'rgba(248,113,113,.2)';
+        var tc=mg>=25?'#4ade80':mg>=15?'#fbbf24':'#f87171';
+        return '<div onclick="document.getElementById(\'dreMesSel\').value=\''+m+'\';dreSetView(\'dre\')" '+
+          'style="background:#0a1628;border:1px solid '+col+';border-radius:8px;padding:.6rem .8rem;cursor:pointer">'+
+          '<div style="font-size:.62rem;color:#475569;margin-bottom:2px">'+_DRE_MF[i]+'</div>'+
+          '<div style="font-size:.9rem;font-weight:700;color:'+tc+'">'+mg.toFixed(1)+'%</div>'+
+          '<div style="font-size:.63rem;color:#334155;margin-top:1px">'+_dreFC(c2.ebitda)+'</div></div>';
+      }).join('');
+    }
+  }
+
+  // ── 3 ANOS ───────────────────────────────────────────
+  function _dreRender3y(mes){
+    var anos=['2023','2024','2025'];
+    var calcs=anos.map(function(a){var d=_dreData(a);return d?_dreCalc(d,mes):null;});
+    // Cards
+    var cardsEl=document.getElementById('dre3Cards');
+    if(cardsEl){
+      cardsEl.innerHTML=anos.map(function(a,i){
+        var c2=calcs[i];
+        if(!c2)return'<div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:1.1rem"><div style="color:#334155;font-size:1.3rem;font-weight:800">'+a+'</div><div style="color:#334155;font-size:.75rem;margin-top:.5rem">Sem dados</div></div>';
+        var prev=i>0?calcs[i-1]:null;
+        var vRec=prev?((c2.rec-prev.rec)/Math.abs(prev.rec)*100):null;
+        var vEb=prev?((c2.ebitda-prev.ebitda)/Math.abs(prev.ebitda)*100):null;
+        var active=a===_dreAno;
+        return '<div onclick="dreSetAno(\''+a+'\')" style="background:'+(active?'linear-gradient(135deg,#0f1f3a,#0a1628)':'#0a1628')+
+          ';border:1px solid '+(active?'#3b82f6':'#1e3a5f')+';border-radius:12px;padding:1.1rem;cursor:pointer;'+
+          (active?'box-shadow:0 0 20px rgba(59,130,246,.15)':'')+' transition:all .2s">'+
+          '<div style="display:flex;justify-content:space-between;margin-bottom:.85rem">'+
+          '<span style="font-size:1.35rem;font-weight:800;color:'+(active?'#60a5fa':'#334155')+'">'+a+'</span>'+
+          (active?'<span style="background:#1d4ed8;color:#fff;border-radius:4px;padding:2px 8px;font-size:.62rem;font-weight:700">ATIVO</span>':'')+
+          '</div>'+
+          '<div style="margin-bottom:.45rem"><div style="font-size:.62rem;color:#475569;margin-bottom:1px">RECEITA TOTAL</div>'+
+          '<div style="font-size:1rem;font-weight:700;color:#22d3ee">'+_dreFC(c2.rec)+'</div>'+
+          (vRec!==null?'<div style="font-size:.65rem;color:'+(vRec>=0?'#4ade80':'#f87171')+'">'+(vRec>=0?'↑':'↓')+Math.abs(vRec).toFixed(1)+'% vs '+(parseInt(a)-1)+'</div>':'')+
+          '</div>'+
+          '<div><div style="font-size:.62rem;color:#475569;margin-bottom:1px">EBITDA TOTAL</div>'+
+          '<div style="font-size:1rem;font-weight:700;color:'+(c2.ebitda>=0?'#4ade80':'#f87171')+'">'+_dreFC(c2.ebitda)+'</div>'+
+          (vEb!==null?'<div style="font-size:.65rem;color:'+(vEb>=0?'#4ade80':'#f87171')+'">'+(vEb>=0?'↑':'↓')+Math.abs(vEb).toFixed(1)+'% vs '+(parseInt(a)-1)+'</div>':'')+
+          '<div style="height:2px;background:#0f172a;border-radius:1px;margin-top:.5rem"><div style="height:100%;background:#4ade80;border-radius:1px;width:'+Math.min(100,(c2.margE*100).toFixed(1))+'%"></div></div>'+
+          '<div style="font-size:.63rem;color:#64748b;margin-top:3px">Margem: <b style="color:#4ade80">'+_dreFP(c2.margE)+'</b></div>'+
+          '</div></div>';
+      }).join('');
+    }
+    // Bar chart
+    if(typeof Chart!=='undefined'){
+      var ctx3=document.getElementById('dreChart3y');
+      if(ctx3){
+        if(_dreCharts.y3){_dreCharts.y3.destroy();}
+        var rArr=calcs.map(function(c2){return c2?c2.rec:0;});
+        var dArr=calcs.map(function(c2){return c2?(c2.imp+c2.cus+c2.desp):0;});
+        var eArr=calcs.map(function(c2){return c2?c2.ebitda:0;});
+        _dreCharts.y3=new Chart(ctx3,{type:'bar',data:{labels:anos,datasets:[
+          {label:'Receitas',data:rArr,backgroundColor:'rgba(34,211,238,.5)',borderRadius:6},
+          {label:'Desp. Totais',data:dArr,backgroundColor:'rgba(248,113,113,.4)',borderRadius:6},
+          {label:'EBITDA',data:eArr,type:'line',borderColor:'#4ade80',backgroundColor:'rgba(74,222,128,.1)',
+           pointRadius:7,fill:false,borderWidth:2.5,tension:.3}
+        ]},options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{labels:{color:'#64748b',font:{size:10}}}},
+          scales:{x:{ticks:{color:'#475569'},grid:{color:'#0f172a'}},
+                  y:{ticks:{color:'#475569',callback:function(v){return 'R$'+(v/1000).toFixed(0)+'k';}},grid:{color:'rgba(255,255,255,.02)'}}}}});
+      }
+    }
+    // Table
+    var tbl=document.getElementById('dre3Tbl');
+    if(tbl){
+      var thStyle='padding:.65rem 1.1rem;text-align:right;font-size:.68rem;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #0f172a;background:#0f1f3a';
+      var head='<thead><tr>'+
+        '<th style="'+thStyle+';text-align:left">Linha</th>'+
+        anos.map(function(a){return'<th style="'+thStyle+';color:'+(a===_dreAno?'#60a5fa':'#64748b')+'">'+a+'</th>';}).join('')+
+        '<th style="'+thStyle+'">Δ 24→25</th></tr></thead>';
+      var rows=[
+        {l:'Receita Bruta',fn:function(c2){return c2.rec;},c:'#22d3ee'},
+        {l:'(-) Impostos',fn:function(c2){return c2.imp;},c:'#f87171',neg:true},
+        {l:'= Receita Líquida',fn:function(c2){return c2.recLiq;},c:'#60a5fa',bold:true},
+        {l:'(-) Custos Operac.',fn:function(c2){return c2.cus;},c:'#fb923c',neg:true},
+        {l:'= Lucro Bruto',fn:function(c2){return c2.lucBruto;},c:'#818cf8',bold:true},
+        {l:'(-) Despesas',fn:function(c2){return c2.desp;},c:'#a78bfa',neg:true},
+        {l:'= EBITDA',fn:function(c2){return c2.ebitda;},c:'#4ade80',bold:true,hi:true},
+        {l:'Margem EBITDA',isPct:true,fn:function(c2){return c2.margE;},c:'#4ade80'}
+      ];
+      var tdBase='padding:.6rem 1.1rem;font-size:.77rem;border-bottom:1px solid #0a1020;text-align:right;font-family:\'Courier New\',monospace';
+      var body='<tbody>'+rows.map(function(row){
+        var vals=calcs.map(function(c2){return c2?row.fn(c2):null;});
+        var delta=!row.isPct&&vals[1]&&vals[2]?((vals[2]-vals[1])/Math.abs(vals[1])*100):null;
+        var dColor=delta===null?'#475569':delta>=0?'#4ade80':'#f87171';
+        return '<tr style="background:'+(row.hi?'rgba(74,222,128,.04)':'transparent')+'">'+
+          '<td style="'+tdBase+';text-align:left;color:'+row.c+';font-weight:'+(row.bold?700:400)+';font-family:\'Segoe UI\',sans-serif">'+row.l+'</td>'+
+          vals.map(function(v){return'<td style="'+tdBase+';color:'+row.c+';font-weight:'+(row.bold?700:400)+'">'+
+            (v===null?'—':row.isPct?_dreFP(v):(row.neg?'-':'')+_dreFC(v))+'</td>';}).join('')+
+          '<td style="'+tdBase+';color:'+dColor+';font-weight:700">'+(row.isPct?'—':delta===null?'—':(delta>=0?'↑':'↓')+Math.abs(delta).toFixed(1)+'%')+'</td></tr>';
+      }).join('')+'</tbody>';
+      tbl.innerHTML=head+body;
+    }
+  }
+
+  // Close on overlay background click
+  document.addEventListener('DOMContentLoaded',function(){
+    var ov=document.getElementById('drePainelOverlay');
+    if(ov)ov.addEventListener('click',function(e){if(e.target===this)drepFechar();});
+  });
   </script>
+
+
 </body>
 </html>
