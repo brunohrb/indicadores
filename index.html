@@ -2274,6 +2274,7 @@
           <button class="dre-yb" id="dreY23" onclick="dreSetAno('2023')">2023</button>
           <button class="dre-yb" id="dreY24" onclick="dreSetAno('2024')">2024</button>
           <button class="dre-yb dre-yb-on" id="dreY25" onclick="dreSetAno('2025')">2025</button>
+          <button class="dre-yb" id="dreY26" onclick="dreSetAno('2026')">2026</button>
           <div style="width:1px;height:18px;background:#1e3a5f;flex-shrink:0"></div>
           <select id="dreMesSel" onchange="dreRender()" style="background:#0f172a;border:1px solid #1e3a5f;color:#94a3b8;border-radius:6px;padding:.35rem .65rem;font-size:.75rem;cursor:pointer">
             <option value="total">Acumulado</option>
@@ -2347,7 +2348,7 @@
 
         <!-- VIEW: 3 ANOS -->
         <div id="dreView3Y" style="display:none">
-          <div id="dre3Cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.1rem"></div>
+          <div id="dre3Cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.1rem"></div>
           <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:1.25rem;margin-bottom:1.1rem">
             <div style="font-size:.82rem;font-weight:700;color:#f1f5f9;margin-bottom:1rem">EBITDA Mensal — Comparativo 3 Anos</div>
             <div style="position:relative;height:280px"><canvas id="dreChart3y"></canvas></div>
@@ -2405,13 +2406,33 @@
     try{
       var map={'2023':typeof dadosFinanceiros2023!=='undefined'?dadosFinanceiros2023:null,
                '2024':typeof dadosFinanceiros2024!=='undefined'?dadosFinanceiros2024:null,
-               '2025':typeof dadosFinanceiros2025!=='undefined'?dadosFinanceiros2025:null};
+               '2025':typeof dadosFinanceiros2025!=='undefined'?dadosFinanceiros2025:null,
+               '2026':typeof dadosFinanceiros!=='undefined'?dadosFinanceiros:null};
       return map[ano]||null;
     }catch(e){return null;}
   }
+  function _dreSum1(arr,m){
+    // soma um array de itens para um mes especifico
+    if(!arr||!arr.length)return 0;
+    if(m==='total')return _DRE_MK.reduce(function(s,k){return s+arr.reduce(function(a,r){return a+_dreNum(r[k]);},0);},0);
+    return arr.reduce(function(s,r){return s+_dreNum(r[m]);},0);
+  }
   function _dreCalc(d,m){
     var rec=_dreSum(d.receitas,m), imp=_dreSum(d.impostos,m), cus=_dreSum(d.custos,m), desp=_dreSum(d.despesas,m);
-    var recLiq=rec-imp, lucBruto=recLiq-cus, ebitda=lucBruto-desp;
+    var recLiq=rec-imp, lucBruto=recLiq-cus;
+    // Prioridade: ebitda_ajustado > ebitda > calculo bottom-up
+    var ebitda;
+    var eaArr = d.ebitda_ajustado||[];
+    var eArr  = d.ebitda||[];
+    var eaItem = eaArr.find(function(r){return r.nome&&r.nome.indexOf('Ajustado')>=0;}) || eaArr[0];
+    var eItem  = eArr[0];
+    if(eaItem){
+      ebitda = m==='total' ? _DRE_MK.reduce(function(s,k){return s+_dreNum(eaItem[k]);},0) : _dreNum(eaItem[m]);
+    } else if(eItem){
+      ebitda = m==='total' ? _DRE_MK.reduce(function(s,k){return s+_dreNum(eItem[k]);},0) : _dreNum(eItem[m]);
+    } else {
+      ebitda = lucBruto - desp;
+    }
     return{rec:rec,imp:imp,cus:cus,desp:desp,recLiq:recLiq,lucBruto:lucBruto,ebitda:ebitda,
       margE:rec>0?ebitda/rec:0,margB:rec>0?lucBruto/rec:0,tribPct:rec>0?imp/rec:0};
   }
@@ -2441,7 +2462,7 @@
   // ── CONTROLES ─────────────────────────────────────────
   window.dreSetAno = function(ano){
     _dreAno=ano;
-    ['2023','2024','2025'].forEach(function(a){
+    ['2023','2024','2025','2026'].forEach(function(a){
       var el=document.getElementById('dreY'+a.slice(2));
       if(!el)return;
       el.className=a===ano?'dre-yb dre-yb-on':'dre-yb';
@@ -2675,7 +2696,7 @@
 
   // ── 3 ANOS ───────────────────────────────────────────
   function _dreRender3y(mes){
-    var anos=['2023','2024','2025'];
+    var anos=['2023','2024','2025','2026'];
     var calcs=anos.map(function(a){var d=_dreData(a);return d?_dreCalc(d,mes):null;});
     // Cards
     var cardsEl=document.getElementById('dre3Cards');
@@ -2732,7 +2753,7 @@
       var head='<thead><tr>'+
         '<th style="'+thStyle+';text-align:left">Linha</th>'+
         anos.map(function(a){return'<th style="'+thStyle+';color:'+(a===_dreAno?'#60a5fa':'#64748b')+'">'+a+'</th>';}).join('')+
-        '<th style="'+thStyle+'">Δ 24→25</th></tr></thead>';
+        '<th style="'+thStyle+'">Δ 25→26</th></tr></thead>';
       var rows=[
         {l:'Receita Bruta',fn:function(c2){return c2.rec;},c:'#22d3ee'},
         {l:'(-) Impostos',fn:function(c2){return c2.imp;},c:'#f87171',neg:true},
@@ -2746,7 +2767,7 @@
       var tdBase='padding:.6rem 1.1rem;font-size:.77rem;border-bottom:1px solid #0a1020;text-align:right;font-family:\'Courier New\',monospace';
       var body='<tbody>'+rows.map(function(row){
         var vals=calcs.map(function(c2){return c2?row.fn(c2):null;});
-        var delta=!row.isPct&&vals[1]&&vals[2]?((vals[2]-vals[1])/Math.abs(vals[1])*100):null;
+        var n=vals.length;var delta=!row.isPct&&vals[n-2]&&vals[n-1]?((vals[n-1]-vals[n-2])/Math.abs(vals[n-2])*100):null;
         var dColor=delta===null?'#475569':delta>=0?'#4ade80':'#f87171';
         return '<tr style="background:'+(row.hi?'rgba(74,222,128,.04)':'transparent')+'">'+
           '<td style="'+tdBase+';text-align:left;color:'+row.c+';font-weight:'+(row.bold?700:400)+';font-family:\'Segoe UI\',sans-serif">'+row.l+'</td>'+
