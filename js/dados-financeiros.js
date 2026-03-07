@@ -151,11 +151,7 @@
       else if (v==='indicadores') { show('indicadoresView'); renderIndicadores(); }
       else if (v==='demonstrativo') {
         show('demonstrativoView');
-        // Define mês e ano atual como padrão
-        const _m = document.getElementById('demoMesFiltro');
-        const _a = document.getElementById('demoAnoFiltro');
-        if (_m && !_m._init) { _m.value = new Date().getMonth(); _a.value = new Date().getFullYear(); _m._init = true; }
-        carregarDemonstrativo();
+        setTimeout(function() { if (typeof carregarDemonstrativo === 'function') carregarDemonstrativo(); }, 100);
       }
       else if (v==='diretoria') { show('diretoriaView'); carregarParams(); diretoriaCarregarUltimoMes(); filtrarHist2025('Dezembro'); }
       else if (v==='comissao-financeiro') { show('comissaoFinanceiroView'); carregarParams().then(()=>renderComissao()); }
