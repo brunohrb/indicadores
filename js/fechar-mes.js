@@ -133,7 +133,7 @@
       const cards = [
         { icon:'💰', label:'Faturamento Base',   val: fatTotal,  cor:'#2563eb', sub:'Total Receitas (Fluxo de Caixa)' },
         { icon:'📋', label:'Juros/Multa',         val: juros,     cor:'#10b981', sub:'Receita de juros' },
-        { icon:'🏦', label:'Tarifas Bancárias',   val: tarifas,   cor:'#f59e0b', sub:'Despesa bancária' },
+        { icon:'🏦', label:'Tarifas Bancárias',   val: tarifas,   cor:'#f59e0b', sub:'Despesas Operac. / Taxas Boleto' },
         { icon:'🔵', label:'Reajuste Contratual', val: reajuste,  cor:'#8b5cf6', sub:'Fonte: PDF Diretoria' },
         { icon:'📊', label:'EBITDA (Ajustado)',   val: ebitda,    cor:'#059669', sub:'EBITDA c/ ajustes' },
       ];
