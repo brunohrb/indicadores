@@ -344,10 +344,10 @@
       const j = dadosFinanceiros.receitas.find(r => r.nome === 'Juros/Multa');
       return j ? (j[mesKey] || 0) : 0;
     }
-    function getTarifas(mesKey) {
-      const t = dadosFinanceiros.despesas.find(r => r.nome === 'Tarifas bancárias');
-      return t ? (t[mesKey] || 0) : 0;
-    }
+function getTarifas(mesKey) {
+  const t = dadosFinanceiros.despesas.find(r => r.nome === 'Taxas Boleto');
+  return t ? (t[mesKey] || 0) : 0;
+}
     function getEbitda(mesKey) {
       // Usa o valor direto "EBITDA (Ajustado)" da planilha — não recalcula
       const e = dadosFinanceiros.ebitda_ajustado.find(r => r.nome === 'EBITDA (Ajustado)');
