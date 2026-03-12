@@ -68,12 +68,10 @@ const dadosFinanceiros2023 = {
         { nome:"EBITDA (Ajustado)",jan:139832.06,fev:319843.74,mar:375228.27,abr:268177.14,mai:664944.42,jun:637561.14,jul:442558.13,ago:720254.07,set:966730.33,out:615266.63,nov:673957.23,dez:818281.58,total:6642910.78 }
       ],
   ajustes: [
-        { nome:"Investimento",jan:199357.23,fev:188651.81,mar:175818.33,abr:36333.92,mai:56482.66,jun:34980.69,jul:35838.8,ago:30432.59,set:44798.78,out:144507.54,nov:153953.01,dez:115918.83,total:1217074.19 },
         { nome:"Veículos",jan:11034.52,fev:11115.69,mar:11008.36,abr:10953.28,mai:28432.09,jun:10658.54,jul:11204.99,ago:6201.63,set:15357.83,out:47692.74,nov:7916.5,dez:7937.98,total:179514.15 },
         { nome:"Equipamentos/TI",jan:0.0,fev:0.0,mar:7277.58,abr:8284.03,mai:9313.3,jun:6225.72,jul:5562.6,ago:6074.7,set:7600.48,out:2806.13,nov:-599.3,dez:3605.62,total:56150.86 },
         { nome:"Ativos imobilizado",jan:14240.17,fev:25952.06,mar:19188.63,abr:17096.61,mai:18737.27,jun:18096.43,jul:19071.21,ago:18156.26,set:21840.47,out:20789.14,nov:73416.28,dez:19041.95,total:285626.48 },
         { nome:"Aq. de provedor",jan:174082.54,fev:151584.06,mar:138343.76,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:73219.53,nov:73219.53,dez:85333.28,total:695782.7 },
-        { nome:"Empr/Finac/Parcel",jan:143161.62,fev:111799.19,mar:118609.52,abr:157703.0,mai:140758.14,jun:151140.2,jul:135322.85,ago:199346.63,set:437194.32,out:652792.87,nov:188145.23,dez:1232852.12,total:3668825.69 },
         { nome:"Empréstimos",jan:69164.85,fev:101763.61,mar:101663.27,abr:91041.46,mai:91033.14,jun:133860.5,jul:91039.94,ago:91039.67,set:91044.23,out:89716.65,nov:85378.15,dez:79153.36,total:1115898.83 },
         { nome:"Reneg. Débitos",jan:17737.46,fev:1100.0,mar:1100.0,abr:0.0,mai:0.0,jun:7793.67,jul:0.0,ago:31174.68,set:0.0,out:0.0,nov:7793.67,dez:0.0,total:66699.48 },
         { nome:"Sócios ou Retiradas",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:295490.2,out:520000.0,nov:0.0,dez:1109957.97,total:1925448.17 }

@@ -83,11 +83,10 @@
         { nome:"EBITDA (Ajustado)",jan:844681.83,fev:537396.12,mar:-11708.33,abr:-11708.33,mai:-11708.33,jun:-11708.33,jul:-11708.33,ago:-11708.33,set:-11708.33,out:-11708.33,nov:-11708.33,dez:-11708.33,total:1264994.65 }
       ],
       ajustes: [
-        { nome:"Investimento",jan:26980.22,fev:59809.14,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:86789.36 },
         { nome:"Compra de veículos",jan:8448.44,fev:57977.36,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:66425.8 },
         { nome:"Invest. técnico e administrativo",jan:18531.78,fev:1831.78,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:20363.56 },
         { nome:"Aq. de provedor",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:0.0 },
-        { nome:"Empr/Finac/Parcel",jan:417745.56,fev:396693.89,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:814439.45 },
+        { nome:"Parcel. Impostos",jan:44979.14,fev:45327.44,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:90306.58 },
         { nome:"Investimentos POP",jan:35186.47,fev:73528.4,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:108714.87 },
         { nome:"Empréstimos para giro",jan:44067.64,fev:22495.76,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:66563.4 },
         { nome:"Reneg. Débitos",jan:0.0,fev:1000.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1000.0 },
@@ -116,8 +115,10 @@
     // ========== HISTÓRICO FLUXO DE CAIXA ==========
     // dadosFluxoAtual: variável LOCAL do Fluxo de Caixa — não afeta Dashboard nem Comissões
     let dadosFluxoAtual = dadosFinanceiros; // começa com 2026
+    const _tableCache = new Map(); // cache HTML por categoria+ano
 
     function mudarAnoFluxo(ano, btn) {
+      _tableCache.clear(); // invalida cache ao trocar ano
       document.querySelectorAll('#anosBtnGroup .year-btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
       const mapas = {
@@ -155,6 +156,7 @@
       }
       else if (v==='diretoria') { show('diretoriaView'); carregarParams(); diretoriaCarregarUltimoMes(); filtrarHist2025('Dezembro'); }
       else if (v==='comissao-financeiro') { show('comissaoFinanceiroView'); carregarParams().then(()=>renderComissao()); }
+      else if (v==='prb') { show('prbView'); if(typeof prbRender==='function') prbRender(); }
       else if (v==='comissao-operacional') { show('comissaoOperacionalView'); carregarParams().then(()=>renderComissaoOp()); }
     }
 
@@ -445,8 +447,7 @@
       ],
       "despesas_financeiras": [{"nome":"EBITDA","valores":{"dia_1":18903.9,"dia_2":11320.58,"dia_3":25416.49,"dia_4":19905.49,"dia_5":67293.7,"dia_6":97725.31,"dia_7":-230731.29,"dia_8":33571.29,"dia_9":44146.95,"dia_10":39162.95,"dia_11":13915.47,"dia_12":21065.0,"dia_13":200605.46,"dia_14":56517.92,"dia_15":57198.48,"dia_16":148595.25,"dia_17":17336.08,"dia_18":11355.49,"dia_19":-17171.26,"dia_20":-153933.85,"dia_21":177002.97,"dia_22":54587.78,"dia_23":-96950.13,"dia_24":15368.54,"dia_25":14468.6,"dia_26":47696.32,"dia_27":251771.26,"dia_28":43275.29,"dia_29":-35547.94,"dia_30":-148241.86,"dia_31":26631.11},"total":832261.35}],
       "ajustes_caixa": [{"nome":"Investimento","valores":{"dia_1":0.0,"dia_2":1900.0,"dia_3":0.0,"dia_4":0.0,"dia_5":0.0,"dia_6":0.0,"dia_7":0.0,"dia_8":0.0,"dia_9":5443.58,"dia_10":0.0,"dia_11":0.0,"dia_12":0.0,"dia_13":0.0,"dia_14":0.0,"dia_15":1265.56,"dia_16":0.0,"dia_17":0.0,"dia_18":0.0,"dia_19":0.0,"dia_20":0.0,"dia_21":0.0,"dia_22":0.0,"dia_23":0.0,"dia_24":0.0,"dia_25":0.0,"dia_26":1671.08,"dia_27":0.0,"dia_28":0.0,"dia_29":0.0,"dia_30":16700.0,"dia_31":0.0},"total":26980.22},
-            {"nome":"Empr/Finac/Parcel","valores":{"dia_1":0.0,"dia_2":9191.86,"dia_3":0.0,"dia_4":0.0,"dia_5":587.24,"dia_6":5400.0,"dia_7":0.0,"dia_8":0.0,"dia_9":30167.92,"dia_10":0.0,"dia_11":0.0,"dia_12":25904.73,"dia_13":9635.28,"dia_14":4923.16,"dia_15":68870.76,"dia_16":4189.94,"dia_17":0.0,"dia_18":0.0,"dia_19":5802.98,"dia_20":12199.33,"dia_21":3946.79,"dia_22":72257.12,"dia_23":14922.5,"dia_24":0.0,"dia_25":0.0,"dia_26":72839.1,"dia_27":4166.25,"dia_28":13397.48,"dia_29":2053.33,"dia_30":57289.79,"dia_31":0.0},"total":417745.56},
-            {"nome":"Impostos","valores":{"dia_1":0.0,"dia_2":0.0,"dia_3":0.0,"dia_4":0.0,"dia_5":0.0,"dia_6":0.0,"dia_7":0.0,"dia_8":0.0,"dia_9":0.0,"dia_10":0.0,"dia_11":0.0,"dia_12":0.0,"dia_13":0.0,"dia_14":0.0,"dia_15":0.0,"dia_16":0.0,"dia_17":0.0,"dia_18":0.0,"dia_19":0.0,"dia_20":0.0,"dia_21":0.0,"dia_22":0.0,"dia_23":0.0,"dia_24":0.0,"dia_25":0.0,"dia_26":0.0,"dia_27":0.0,"dia_28":0.0,"dia_29":0.0,"dia_30":44979.14,"dia_31":0.0},"total":44979.14},
+            {"nome":"Parcel. Impostos","valores":{"dia_1":0.0,"dia_2":0.0,"dia_3":0.0,"dia_4":0.0,"dia_5":0.0,"dia_6":0.0,"dia_7":0.0,"dia_8":0.0,"dia_9":0.0,"dia_10":0.0,"dia_11":0.0,"dia_12":0.0,"dia_13":0.0,"dia_14":0.0,"dia_15":0.0,"dia_16":0.0,"dia_17":0.0,"dia_18":0.0,"dia_19":0.0,"dia_20":0.0,"dia_21":0.0,"dia_22":0.0,"dia_23":0.0,"dia_24":0.0,"dia_25":0.0,"dia_26":0.0,"dia_27":0.0,"dia_28":0.0,"dia_29":0.0,"dia_30":44979.14,"dia_31":0.0},"total":44979.14},
             {"nome":"Sócios ou Retiradas","valores":{"dia_1":0.0,"dia_2":0.0,"dia_3":0.0,"dia_4":0.0,"dia_5":0.0,"dia_6":0.0,"dia_7":0.0,"dia_8":0.0,"dia_9":8116.8,"dia_10":0.0,"dia_11":0.0,"dia_12":24333.54,"dia_13":9635.28,"dia_14":279.08,"dia_15":54020.61,"dia_16":0.0,"dia_17":0.0,"dia_18":0.0,"dia_19":0.0,"dia_20":12199.33,"dia_21":2081.79,"dia_22":72257.12,"dia_23":14013.02,"dia_24":0.0,"dia_25":0.0,"dia_26":69701.36,"dia_27":4166.25,"dia_28":13397.48,"dia_29":0.0,"dia_30":9310.65,"dia_31":0.0},"total":293512.31}
       ]
       },
@@ -512,8 +513,7 @@
       ],
       "despesas_financeiras": [{"nome":"EBITDA","valores":{"dia_1":18632.1,"dia_2":3668.03,"dia_3":-34715.82,"dia_4":34533.59,"dia_5":-21475.34,"dia_6":-162097.03,"dia_7":26541.37,"dia_8":19383.92,"dia_9":-11645.77,"dia_10":112363.02,"dia_11":202256.73,"dia_12":74903.01,"dia_13":-38796.13,"dia_14":18209.01,"dia_15":17842.08,"dia_16":18487.14,"dia_17":14086.59,"dia_18":106215.04,"dia_19":79383.23,"dia_20":-159305.34,"dia_21":22737.15,"dia_22":12969.23,"dia_23":161635.78,"dia_24":33292.86,"dia_25":0.0,"dia_26":0.0,"dia_27":0.0,"dia_28":0.0,"dia_29":0.0,"dia_30":0.0,"dia_31":0.0},"total":549104.45}],
       "ajustes_caixa": [{"nome":"Investimento","valores":{"dia_1":0.0,"dia_2":1900.0,"dia_3":0.0,"dia_4":0.0,"dia_5":51200.0,"dia_6":0.0,"dia_7":0.0,"dia_8":0.0,"dia_9":3611.8,"dia_10":0.0,"dia_11":1831.78,"dia_12":0.0,"dia_13":0.0,"dia_14":0.0,"dia_15":0.0,"dia_16":0.0,"dia_17":0.0,"dia_18":1265.56,"dia_19":0.0,"dia_20":0.0,"dia_21":0.0,"dia_22":0.0,"dia_23":0.0,"dia_24":0.0,"dia_25":0.0,"dia_26":0.0,"dia_27":0.0,"dia_28":0.0,"dia_29":0.0,"dia_30":0.0,"dia_31":0.0},"total":59809.14},
-            {"nome":"Empr/Finac/Parcel","valores":{"dia_1":0.0,"dia_2":13371.34,"dia_3":587.23,"dia_4":0.0,"dia_5":8846.13,"dia_6":24182.54,"dia_7":0.0,"dia_8":0.0,"dia_9":29546.52,"dia_10":12075.93,"dia_11":14184.74,"dia_12":163285.78,"dia_13":59237.31,"dia_14":0.0,"dia_15":0.0,"dia_16":0.0,"dia_17":0.0,"dia_18":45262.36,"dia_19":8680.0,"dia_20":7114.69,"dia_21":0.0,"dia_22":0.0,"dia_23":10319.32,"dia_24":0.0,"dia_25":0.0,"dia_26":0.0,"dia_27":0.0,"dia_28":0.0,"dia_29":0.0,"dia_30":0.0,"dia_31":0.0},"total":396693.89},
-            {"nome":"Impostos","valores":{"dia_1":0.0,"dia_2":0.0,"dia_3":0.0,"dia_4":0.0,"dia_5":0.0,"dia_6":0.0,"dia_7":0.0,"dia_8":0.0,"dia_9":0.0,"dia_10":0.0,"dia_11":0.0,"dia_12":0.0,"dia_13":0.0,"dia_14":0.0,"dia_15":0.0,"dia_16":0.0,"dia_17":0.0,"dia_18":0.0,"dia_19":0.0,"dia_20":0.0,"dia_21":0.0,"dia_22":0.0,"dia_23":0.0,"dia_24":0.0,"dia_25":0.0,"dia_26":0.0,"dia_27":0.0,"dia_28":0.0,"dia_29":0.0,"dia_30":0.0,"dia_31":0.0},"total":0.0},
+            {"nome":"Parcel. Impostos","valores":{"dia_1":0.0,"dia_2":0.0,"dia_3":0.0,"dia_4":0.0,"dia_5":0.0,"dia_6":0.0,"dia_7":0.0,"dia_8":0.0,"dia_9":0.0,"dia_10":0.0,"dia_11":0.0,"dia_12":0.0,"dia_13":0.0,"dia_14":0.0,"dia_15":0.0,"dia_16":0.0,"dia_17":0.0,"dia_18":0.0,"dia_19":0.0,"dia_20":0.0,"dia_21":0.0,"dia_22":0.0,"dia_23":0.0,"dia_24":0.0,"dia_25":0.0,"dia_26":0.0,"dia_27":0.0,"dia_28":45327.44,"dia_29":0.0,"dia_30":0.0,"dia_31":0.0},"total":45327.44},
             {"nome":"Sócios ou Retiradas","valores":{"dia_1":0.0,"dia_2":0.0,"dia_3":0.0,"dia_4":0.0,"dia_5":3446.13,"dia_6":24182.54,"dia_7":0.0,"dia_8":0.0,"dia_9":23565.22,"dia_10":10623.18,"dia_11":12143.75,"dia_12":161899.0,"dia_13":18243.83,"dia_14":0.0,"dia_15":0.0,"dia_16":0.0,"dia_17":0.0,"dia_18":30094.0,"dia_19":1400.0,"dia_20":4752.76,"dia_21":0.0,"dia_22":0.0,"dia_23":9319.32,"dia_24":0.0,"dia_25":0.0,"dia_26":0.0,"dia_27":0.0,"dia_28":0.0,"dia_29":0.0,"dia_30":0.0,"dia_31":0.0},"total":299669.73}
       ]
       }
@@ -521,7 +521,7 @@
 
 
     function showTab(cat,el) {
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('#consolidadoView .tab-btn').forEach(b=>b.classList.remove('active'));
       if(el) el.classList.add('active');
       renderTable(cat);
     }
@@ -534,7 +534,15 @@
     }
 
     function renderTable(categoria) {
-      const data = dadosFluxoAtual[categoria];
+      const _anoKey = dadosFluxoAtual === dadosFinanceiros ? '2026'
+        : (typeof dadosFinanceiros2025!=='undefined' && dadosFluxoAtual===dadosFinanceiros2025) ? '2025'
+        : (typeof dadosFinanceiros2024!=='undefined' && dadosFluxoAtual===dadosFinanceiros2024) ? '2024' : '2023';
+      const _cacheKey = categoria + '_' + _anoKey;
+      if (_tableCache.has(_cacheKey)) {
+        document.getElementById('tableContent').innerHTML = _tableCache.get(_cacheKey);
+        return;
+      }
+      const data = (dadosFluxoAtual[categoria] || []).filter(i => i.nome !== 'Empr/Finac/Parcel' && i.nome !== 'Investimento');
 
       let html = `
         <table>
@@ -662,6 +670,7 @@
       }
 
       html += `</tbody></table>`;
+      _tableCache.set(_cacheKey, html);
       document.getElementById('tableContent').innerHTML = html;
     }
 
@@ -744,7 +753,7 @@
       let totaisDiarios = {};
       for (let dia = 1; dia <= 31; dia++) totaisDiarios[`dia_${dia}`] = 0;
       categorias.forEach(catInfo => {
-        const dadosCategoria = dadosDiarios[mes][catInfo.chave] || [];
+        const dadosCategoria = (dadosDiarios[mes][catInfo.chave] || []).filter(i => i.nome !== 'Empr/Finac/Parcel' && i.nome !== 'Investimento');
         if (dadosCategoria.length > 0) {
           html += `<tr style="background:#e0f2fe;font-weight:700;"><td colspan="33" style="padding:1rem;font-size:1rem;">${catInfo.nome}</td></tr>`;
           dadosCategoria.forEach(item => {
@@ -812,7 +821,7 @@
       let totalGeralAno = 0;
 
       categorias.forEach(catInfo => {
-        const itens = dadosFluxoAtual[catInfo.chave] || [];
+        const itens = (dadosFluxoAtual[catInfo.chave] || []).filter(i => i.nome !== 'Empr/Finac/Parcel' && i.nome !== 'Investimento');
         if (itens.length === 0) return;
 
         // Linha de categoria
@@ -872,7 +881,7 @@
     }
 
     function showCompTab(cat,el) {
-      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('#comparativoView .tab-btn').forEach(b=>b.classList.remove('active'));
       if(el) el.classList.add('active');
       renderCompTab(cat);
     }
@@ -1534,7 +1543,7 @@
       document.getElementById('userPerfil').textContent = user.perfil === 'edicao' ? '✏️ Editor' : '👁️ Visualização';
 
       // Controla abas restritas para perfil visualizacao
-      const abasRestritas = ['diretoria', 'powerbi']; // ⚙️Parâmetros e 📊Power BI
+      const abasRestritas = ['diretoria', 'powerbi', 'prb']; // ⚙️Parâmetros e 📊Power BI
       document.querySelectorAll('.nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
         const match = onclick.match(/'([^']+)'/);

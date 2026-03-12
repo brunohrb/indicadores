@@ -1,4 +1,4 @@
-    // ==================== CONSOLIDADO CSV SYNC ====================
+// ==================== CONSOLIDADO CSV SYNC ====================
     const ONEDRIVE_CSV_URL = 'https://excel.officeapps.live.com/x/_layouts/XlFileHandler.aspx?sheetName=JAN%202026&downloadAsCsvEnabled=1&WacUserType=WOPI&usid=81107527-d1ec-8889-b800-a4c8b76fe6e5&NoAuth=1&waccluster=PBR1';
 
     // Mapeamento: nome no CSV → chave em dadosFinanceiros + categoria
@@ -424,6 +424,15 @@
         if (savedVersion === DADOS_VERSION && saved) {
           const parsed = JSON.parse(saved);
           Object.assign(dadosFinanceiros, parsed);
+
+          // Patch: garante que Parcel. Impostos esteja em ajustes
+          if (dadosFinanceiros.ajustes && !dadosFinanceiros.ajustes.find(i => i.nome === 'Parcel. Impostos')) {
+            const idxAq = dadosFinanceiros.ajustes.findIndex(i => i.nome === 'Aq. de provedor');
+            const novoItem = { nome:"Parcel. Impostos",jan:44979.14,fev:45327.44,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:90306.58 };
+            if (idxAq >= 0) dadosFinanceiros.ajustes.splice(idxAq + 1, 0, novoItem);
+            else dadosFinanceiros.ajustes.push(novoItem);
+          }
+
           syncSetStatus(`✅ Dados carregados do Supabase (versão ${DADOS_VERSION})`, 'ok');
         } else {
           // Versão nova — salva versão atual, usa dados hardcoded
@@ -434,4 +443,3 @@
         console.warn('consolidadoInicializar erro:', e);
       }
     }
-

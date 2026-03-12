@@ -1,8 +1,7 @@
     // ==================== CHARTS ====================
     let charts = {};
+    let _chartsFilter = '';
     function renderizarGraficos() {
-      Object.values(charts).forEach(c=>c.destroy&&c.destroy());
-      charts = {};
 
       const MESES   = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -118,6 +117,13 @@
       setSub('dash_sub_rec',   mesNome+'/'+ano+' — Distribuição por categoria');
       setSub('dash_sub_desp',  mesNome+'/'+ano+' — Por tipo');
       setSub('dash_sub_custos',mesNome+'/'+ano+' — Maiores custos');
+
+      // Rebuild charts only when the mes/ano filter actually changes
+      const _filterKey = mesIdx + '_' + ano;
+      if (_filterKey === _chartsFilter && charts.receitas) return;
+      _chartsFilter = _filterKey;
+      Object.values(charts).forEach(c=>c.destroy&&c.destroy());
+      charts = {};
 
       const CORES = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'];
 

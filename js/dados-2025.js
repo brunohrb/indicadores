@@ -83,11 +83,9 @@ const dadosFinanceiros2025 = {
         { nome:"EBITDA (Ajustado)",jan:427661.73,fev:623073.67,mar:720852.79,abr:736292.84,mai:772528.46,jun:751882.76,jul:879451.62,ago:876255.81,set:918214.33,out:853417.62,nov:685271.44,dez:669615.43,total:9655547.01 }
       ],
   ajustes: [
-        { nome:"Investimento",jan:61005.83,fev:67560.81,mar:67355.22,abr:61701.04,mai:163511.8,jun:56620.09,jul:533155.1,ago:14368.41,set:27579.88,out:22174.14,nov:8380.22,dez:14380.22,total:1097792.76 },
         { nome:"Compra de veículos",jan:10976.35,fev:10013.17,mar:23751.12,abr:12614.54,mai:61574.26,jun:41274.26,jul:494531.42,ago:4840.5,set:7556.43,out:6511.58,nov:6548.44,dez:6548.44,total:686740.51 },
         { nome:"Aq. de provedor",jan:39850.3,fev:39850.3,mar:39340.0,abr:39340.0,mai:34340.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:192720.6 },
         { nome:"Investimentos POP",jan:22231.05,fev:32757.87,mar:167183.13,abr:29119.23,mai:47253.84,jun:52923.58,jul:86910.56,ago:96147.41,set:67646.2,out:59564.62,nov:49074.74,dez:51950.01,total:762762.24 },
-        { nome:"Empr/Finac/Parcel",jan:1253831.74,fev:377777.9,mar:792983.7,abr:713822.42,mai:779470.42,jun:763354.47,jul:1090420.36,ago:804693.67,set:955210.47,out:972222.86,nov:716649.16,dez:861850.23,total:10082287.4 },
         { nome:"Empréstimos para giro",jan:29389.43,fev:29375.16,mar:29358.08,abr:29339.21,mai:29324.73,jun:29310.33,jul:29295.79,ago:47971.76,set:44529.63,out:44259.96,nov:44596.71,dez:43736.37,total:430487.16 },
         { nome:"Empréstimos",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:500000.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:500000.0 },
         { nome:"Reneg. Débitos",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:0.0 },

@@ -70,12 +70,10 @@ const dadosFinanceiros2024 = {
         { nome:"EBITDA (Ajustado)",jan:735752.08,fev:561425.02,mar:816552.49,abr:579184.69,mai:800067.95,jun:808309.19,jul:801275.41,ago:671463.13,set:748272.03,out:692010.5,nov:774757.4,dez:752916.78,total:8741986.67 }
       ],
   ajustes: [
-        { nome:"Investimento",jan:120576.48,fev:106535.73,mar:524094.66,abr:166881.78,mai:153406.85,jun:97066.82,jul:60913.79,ago:51707.45,set:69695.17,out:66413.98,nov:57052.02,dez:109564.9,total:1583909.63 },
         { nome:"Veículos",jan:7956.2,fev:9730.29,mar:10795.0,abr:10992.61,mai:5992.61,jun:10992.61,jul:10992.61,ago:10992.61,set:31550.36,out:27992.61,nov:13064.3,dez:8752.36,total:159804.17 },
         { nome:"Equipamentos/TI",jan:3556.23,fev:2511.09,mar:3814.81,abr:2192.31,mai:3998.39,jun:4408.54,jul:5748.22,ago:5550.19,set:4351.36,out:7976.74,nov:1568.55,dez:1979.64,total:47656.07 },
         { nome:"Ativos imobilizado",jan:24267.8,fev:9498.1,mar:34908.1,abr:28122.13,mai:19070.22,jun:6296.66,jul:7182.96,ago:6394.65,set:5023.45,out:5274.63,nov:42419.17,dez:14022.6,total:202480.47 },
         { nome:"Aq. de provedor",jan:84796.25,fev:84796.25,mar:474576.75,abr:125574.73,mai:124345.63,jun:75369.01,jul:36990.0,ago:28770.0,set:28770.0,out:25170.0,nov:0.0,dez:84810.3,total:1173968.92 },
-        { nome:"Empr/Finac/Parcel",jan:1630012.65,fev:439789.68,mar:222930.19,abr:606677.39,mai:1018793.34,jun:554340.65,jul:434199.17,ago:372050.32,set:784082.98,out:1075064.64,nov:972884.01,dez:459712.73,total:8570537.75 },
         { nome:"Empréstimos",jan:79138.29,fev:79118.42,mar:79092.37,abr:79068.25,mai:79372.99,jun:79029.36,jul:79005.42,ago:78984.3,set:29465.04,out:7569.28,nov:29424.97,dez:29403.03,total:728671.72 },
         { nome:"Reneg. Débitos",jan:0.0,fev:0.0,mar:0.0,abr:0.0,mai:455000.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:534795.74,dez:15952.9,total:1005748.64 },
         { nome:"Sócios ou Retiradas",jan:1506376.03,fev:317104.44,mar:100000.0,abr:483184.0,mai:440000.0,jun:417500.0,jul:310224.68,ago:245000.0,set:709046.11,out:999763.96,nov:362492.12,dez:367917.97,total:6258609.31 }
