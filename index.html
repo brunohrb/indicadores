@@ -311,6 +311,7 @@
       <div class="nav-item" onclick="selectMenu(this,'diretoria')"><span class="nav-icon">⚙️</span><span>Parâmetros</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-financeiro')"><span class="nav-icon">💼</span><span>Comissão Financeiro</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-operacional')" style="white-space:nowrap"><span class="nav-icon">📈</span><span>Comissão Operacional</span></div>
+      <div class="nav-item" id="prbNavItem" onclick="prbAbrirView(this)" style="white-space:nowrap;margin-top:0.5rem;border-top:1px solid rgba(255,255,255,0.1);padding-top:0.75rem"><span class="nav-icon">💎</span><span>PRB — Sócios</span></div>
     </nav>
     <div class="sidebar-footer">Sistema Financeiro TEXNET<br>© 2026 - v3.0</div>
   </div>
@@ -2311,6 +2312,228 @@
 
 
     </div><!-- end .content -->
+
+  <!-- ================================================================ -->
+  <!-- PRB — PAINEL DO SÓCIO (dentro do main-content)                   -->
+  <!-- ================================================================ -->
+<div id="prbView" class="view-container" style="display:none">
+
+    <!-- PIN OVERLAY -->
+    <div id="prbPinOverlay" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e3a8a);z-index:5000;align-items:center;justify-content:center">
+      <div style="background:white;border-radius:20px;padding:2.5rem;max-width:400px;width:90%;box-shadow:0 24px 80px rgba(0,0,0,0.4);text-align:center">
+        <div style="font-size:3rem;margin-bottom:0.5rem">💎</div>
+        <h2 style="font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:0.25rem">Painel PRB</h2>
+        <p style="color:#64748b;font-size:0.875rem;margin-bottom:1.75rem">Lucro confidencial dos sócios · Texnet</p>
+        <input id="prbPinInput" type="password" placeholder="Digite o PIN de acesso"
+          style="width:100%;padding:0.85rem 1.25rem;border:2px solid #e2e8f0;border-radius:12px;font-size:1rem;text-align:center;letter-spacing:0.2em;outline:none;margin-bottom:0.75rem"
+          onfocus="this.style.borderColor='#2563eb'"
+          onblur="this.style.borderColor='#e2e8f0'"
+          onkeydown="if(event.key==='Enter')prbVerificarPin('prbPinInput','prbPinErro')">
+        <div id="prbPinErro" style="display:none;color:#dc2626;font-size:0.82rem;margin-bottom:0.75rem"></div>
+        <button onclick="prbVerificarPin('prbPinInput','prbPinErro')"
+          style="width:100%;padding:0.85rem;background:linear-gradient(135deg,#1e40af,#2563eb);color:white;border:none;border-radius:12px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:opacity 0.2s"
+          onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+          🔓 Entrar
+        </button>
+        <p style="color:#94a3b8;font-size:0.75rem;margin-top:1rem">Na primeira vez, o PIN digitado será cadastrado automaticamente.</p>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO PRB (visível após PIN) -->
+    <div id="prbContent" style="display:none">
+
+      <!-- Cabeçalho -->
+      <div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 60%,#1d4ed8 100%);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div style="display:flex;align-items:center;gap:1rem">
+          <div style="font-size:2.2rem">💎</div>
+          <div>
+            <div style="font-size:1.4rem;font-weight:800;color:white;letter-spacing:0.02em">PAINEL PRB — SÓCIOS</div>
+            <div style="font-size:0.82rem;color:#93c5fd">TEXNET · Lucro real & distribuição confidencial</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+          <!-- Filtro Ano -->
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <span style="color:#93c5fd;font-size:0.82rem;font-weight:600">ANO</span>
+            <select id="prbAnoFiltro" onchange="prbFiltrar()"
+              style="padding:0.45rem 0.85rem;border:1.5px solid rgba(255,255,255,0.25);border-radius:8px;font-size:0.875rem;font-weight:600;color:white;background:rgba(255,255,255,0.1);cursor:pointer;outline:none">
+              <option value="2023">2023</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+            </select>
+          </div>
+          <!-- Filtro Mês -->
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <span style="color:#93c5fd;font-size:0.82rem;font-weight:600">MÊS</span>
+            <select id="prbMesFiltro" onchange="prbFiltrar()"
+              style="padding:0.45rem 0.85rem;border:1.5px solid rgba(255,255,255,0.25);border-radius:8px;font-size:0.875rem;font-weight:600;color:white;background:rgba(255,255,255,0.1);cursor:pointer;outline:none">
+              <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
+              <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
+              <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
+              <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+            </select>
+          </div>
+          <button onclick="prbExportarCSV()" title="Exportar CSV"
+            style="padding:0.45rem 0.9rem;background:rgba(16,185,129,0.85);color:white;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer">
+            ⬇ CSV
+          </button>
+          <button onclick="document.getElementById('prbModalPin').style.display='flex'" title="Alterar PIN"
+            style="padding:0.45rem 0.9rem;background:rgba(255,255,255,0.15);color:white;border:none;border-radius:8px;font-size:0.8rem;cursor:pointer">
+            🔑 PIN
+          </button>
+          <button onclick="prbLock()" title="Bloquear painel"
+            style="padding:0.45rem 0.9rem;background:rgba(239,68,68,0.7);color:white;border:none;border-radius:8px;font-size:0.8rem;cursor:pointer">
+            🔒 Bloquear
+          </button>
+        </div>
+      </div>
+
+      <div style="padding:1.75rem 2rem">
+
+        <!-- Período ativo -->
+        <div style="margin-bottom:1.5rem;display:flex;align-items:center;gap:0.75rem">
+          <span style="font-size:0.82rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">Período selecionado:</span>
+          <span id="prbPeriodoLabel" style="font-size:1rem;font-weight:700;color:#1e293b;background:#f1f5f9;padding:0.3rem 0.85rem;border-radius:20px"></span>
+          <span id="prbMargem" style="font-size:0.875rem;font-weight:600;background:#f0fdf4;border:1px solid #bbf7d0;padding:0.3rem 0.85rem;border-radius:20px"></span>
+        </div>
+
+        <!-- KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;margin-bottom:2rem">
+
+          <!-- Faturamento -->
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #2563eb">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">💰 Faturamento</div>
+              <div style="background:#dbeafe;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">💰</div>
+            </div>
+            <div id="prbKpiFat" style="font-size:1.5rem;font-weight:800;color:#1e293b;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiFatPct" style="font-size:0.78rem;color:#64748b"></div>
+          </div>
+
+          <!-- Gastos -->
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #ef4444">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">📉 Gastos Operac.</div>
+              <div style="background:#fee2e2;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">📉</div>
+            </div>
+            <div id="prbKpiGas" style="font-size:1.5rem;font-weight:800;color:#dc2626;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiGasPct" style="font-size:0.78rem;color:#64748b"></div>
+          </div>
+
+          <!-- Impostos -->
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #f97316">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">🏛️ Impostos</div>
+              <div style="background:#ffedd5;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">🏛️</div>
+            </div>
+            <div id="prbKpiImp" style="font-size:1.5rem;font-weight:800;color:#ea580c;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiImpPct" style="font-size:0.78rem;color:#64748b"></div>
+          </div>
+
+          <!-- Pró-Labore -->
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #06b6d4">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">👔 Pró-Labore</div>
+              <div style="background:#cffafe;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">👔</div>
+            </div>
+            <div id="prbKpiPL" style="font-size:1.5rem;font-weight:800;color:#0891b2;margin-bottom:0.25rem">—</div>
+          </div>
+
+          <!-- EBITDA Ajustado -->
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #10b981">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">📊 EBITDA Ajustado</div>
+              <div style="background:#d1fae5;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">📊</div>
+            </div>
+            <div id="prbKpiEbt" style="font-size:1.5rem;font-weight:800;color:#059669;margin-bottom:0.25rem">—</div>
+          </div>
+
+          <!-- Lucro Sócio (destaque) -->
+          <div style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-radius:14px;box-shadow:0 4px 20px rgba(139,92,246,0.2);padding:1.25rem 1.5rem;border-top:4px solid #8b5cf6">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">🏆 Lucro Sócio</div>
+              <div style="background:#ede9fe;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">🏆</div>
+            </div>
+            <div id="prbKpiLuc" style="font-size:1.6rem;font-weight:800;color:#7c3aed;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiLucPct" style="font-size:0.78rem;color:#64748b"></div>
+          </div>
+
+          <!-- Retirada Bruta -->
+          <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border-radius:14px;box-shadow:0 4px 20px rgba(234,88,12,0.15);padding:1.25rem 1.5rem;border-top:4px solid #ea580c">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">💸 Retirada Bruta</div>
+              <div style="background:#fed7aa;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">💸</div>
+            </div>
+            <div id="prbKpiRet" style="font-size:1.6rem;font-weight:800;color:#c2410c;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiRetPct" style="font-size:0.78rem;color:#64748b"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Fat − Gastos − Impostos − Aj.Caixa + PL</div>
+          </div>
+
+        </div><!-- /KPIs -->
+
+        <!-- Gráfico + Tabela -->
+        <div style="display:grid;grid-template-columns:1fr;gap:1.5rem">
+
+          <!-- Gráfico -->
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.5rem">
+            <div style="font-size:1rem;font-weight:700;color:#1e293b;margin-bottom:1.25rem">📈 Evolução Mensal — Faturamento × Gastos × Lucro Sócio</div>
+            <div style="position:relative;height:300px">
+              <canvas id="prbChartCanvas"></canvas>
+            </div>
+          </div>
+
+          <!-- Tabela mensal -->
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden">
+            <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;font-size:1rem;font-weight:700;color:#1e293b">
+              📋 Desempenho Mensal Detalhado
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;min-width:900px">
+                <thead>
+                  <tr style="background:#f8fafc">
+                    <th class="prb-th" style="min-width:190px;text-align:left">Indicador</th>
+                    <th class="prb-th">Jan</th><th class="prb-th">Fev</th><th class="prb-th">Mar</th><th class="prb-th">Abr</th>
+                    <th class="prb-th">Mai</th><th class="prb-th">Jun</th><th class="prb-th">Jul</th><th class="prb-th">Ago</th>
+                    <th class="prb-th">Set</th><th class="prb-th">Out</th><th class="prb-th">Nov</th><th class="prb-th">Dez</th>
+                    <th class="prb-th" style="background:#e0e7ff;color:#3730a3">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="prbTabelaBody">
+                  <tr><td colspan="14" style="text-align:center;padding:2rem;color:#94a3b8">Carregando...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- /padding -->
+    </div><!-- /prbContent -->
+
+    <!-- MODAL ALTERAR PIN -->
+    <div id="prbModalPin" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;align-items:center;justify-content:center">
+      <div style="background:white;border-radius:16px;padding:2rem;width:90%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="font-size:1.1rem;font-weight:700;color:#1e293b;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center">
+          🔑 Alterar PIN PRB
+          <button onclick="document.getElementById('prbModalPin').style.display='none'" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#94a3b8">✕</button>
+        </div>
+        <input id="prbPinAtual" type="password" placeholder="PIN atual"
+          style="width:100%;padding:0.75rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.9rem;margin-bottom:0.75rem;outline:none">
+        <input id="prbPinNovo" type="password" placeholder="Novo PIN"
+          style="width:100%;padding:0.75rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.9rem;margin-bottom:0.75rem;outline:none">
+        <input id="prbPinConf" type="password" placeholder="Confirmar novo PIN"
+          style="width:100%;padding:0.75rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.9rem;margin-bottom:0.75rem;outline:none">
+        <div id="prbPinAlterarErro" style="display:none;font-size:0.82rem;margin-bottom:0.75rem;color:#dc2626"></div>
+        <button onclick="prbAlterarPin()"
+          style="width:100%;padding:0.75rem;background:#1d4ed8;color:white;border:none;border-radius:10px;font-size:0.9rem;font-weight:600;cursor:pointer">
+          Salvar novo PIN
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /prbView -->
+
   </div><!-- end .main-content -->
 
   <!-- Modal detalhamento (fora do main para overlay correto) -->
@@ -2328,17 +2551,299 @@
 
 
   <!-- Scripts da aplicação -->
-  <script src="js/dados-2023.js"></script>
-  <script src="js/dados-2024.js"></script>
-  <script src="js/dados-2025.js"></script>
+  <!-- ================================================================ -->
+  <!-- PRB — PAINEL DO SÓCIO                                           -->
+  <!-- ================================================================ -->
+
+  <style>
+    .prb-th { padding:0.75rem 0.6rem;text-align:right;font-size:0.75rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;border-bottom:2px solid #e2e8f0 }
+    .prb-td-label { padding:0.85rem 0.6rem 0.85rem 1rem;font-size:0.82rem;white-space:nowrap;border-bottom:1px solid #f1f5f9;position:sticky;left:0;background:white;z-index:5;min-width:190px }
+    .prb-td-val { padding:0.85rem 0.6rem;text-align:right;font-size:0.82rem;font-variant-numeric:tabular-nums;border-bottom:1px solid #f1f5f9;color:#374151 }
+    .prb-td-total { padding:0.85rem 0.75rem;text-align:right;font-size:0.82rem;font-variant-numeric:tabular-nums;border-bottom:1px solid #f1f5f9;background:#e0e7ff }
+    .prb-tr:hover .prb-td-label,.prb-tr:hover .prb-td-val,.prb-tr:hover .prb-td-total { background:#f8fafc !important }
+    #prbMesFiltro option, #prbAnoFiltro option { background:#1e293b;color:white }
+  </style>
+
+  <script src="js/dados-2024.js?v=1773264250"></script>
+  <script src="js/dados-2025.js?v=1773264250"></script>
   <script src="js/config.js"></script>
-  <script src="js/dados-financeiros.js"></script>
+  <script src="js/dados-financeiros.js?v=1773264250"></script>
   <script src="js/charts.js"></script>
   <script src="js/diretoria.js"></script>
   <script src="js/comissao-financeiro.js"></script>
   <script src="js/fechar-mes.js"></script>
   <script src="js/consolidado.js"></script>
   <script src="js/init-operacional.js"></script>
+  <script>
+// ================================================================
+// PRB — PAINEL DO SÓCIO (Lucro Real) — inline
+// ================================================================
+
+// Abre a view PRB diretamente, sem depender do changeView externo
+function prbAbrirView(navEl) {
+  // Highlight nav
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  // Esconde header
+  const hdr = document.getElementById('mainHeader');
+  if (hdr) hdr.style.display = 'none';
+  // Esconde todas as views
+  document.querySelectorAll('.view-container').forEach(c => {
+    c.classList.remove('active');
+    c.style.display = 'none';
+  });
+  // Mostra prbView
+  const view = document.getElementById('prbView');
+  if (view) { view.style.display = 'block'; view.classList.add('active'); }
+  // Atualiza o select viewType se existir
+  const vt = document.getElementById('viewType');
+  if (vt) vt.value = 'prb';
+  // Chama render
+  prbRender();
+}
+const PRB_PIN_KEY  = 'texnet_prb_pin';
+const PRB_SESSION  = 'texnet_prb_sess';
+let   prbPinOk     = false;
+let   prbChart     = null;
+let   prbAno       = '2026';
+
+const PRB_MESES_K = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const PRB_MESES_N = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const PRB_MESES_F = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function prbFC(v){
+  if(v==null||isNaN(v))return'—';
+  const a=Math.abs(v);
+  if(a>=1e6)return(v<0?'-':'')+'R$ '+(a/1e6).toFixed(2).replace('.',',')+'M';
+  if(a>=1e3)return(v<0?'-':'')+'R$ '+(a/1e3).toFixed(1).replace('.',',')+'k';
+  return(v<0?'-':'')+'R$ '+a.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function prbFull(v){
+  if(v==null||isNaN(v))return'—';
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v);
+}
+function prbSum(arr,key){
+  if(!arr||!arr.length)return 0;
+  return arr.reduce((s,r)=>s+(Number(r[key])||0),0);
+}
+function prbData(ano){
+  const map={
+    '2023':typeof dadosFinanceiros2023!=='undefined'?dadosFinanceiros2023:null,
+    '2024':typeof dadosFinanceiros2024!=='undefined'?dadosFinanceiros2024:null,
+    '2025':typeof dadosFinanceiros2025!=='undefined'?dadosFinanceiros2025:null,
+    '2026':typeof dadosFinanceiros!=='undefined'?dadosFinanceiros:null,
+  };
+  return map[ano]||null;
+}
+function prbCalc(ano,mesKey){
+  const d=prbData(ano);
+  if(!d)return null;
+  const isTotal=(mesKey==='total');
+  const keys=isTotal?PRB_MESES_K:[mesKey];
+  const soma=(arr)=>keys.reduce((s,k)=>s+prbSum(arr,k),0);
+  const faturamento=soma(d.receitas);
+  const impostos=soma(d.impostos);
+  const custos=soma(d.custos);
+  const despesas=soma(d.despesas);
+  const proLaboreArr=(d.despesas||[]).filter(r=>r.nome&&r.nome.includes('Pró-Labore'));
+  const proLabore=keys.reduce((s,k)=>s+prbSum(proLaboreArr,k),0);
+  const gastos=custos+(despesas-proLabore);
+  const eaItem=(d.ebitda_ajustado||[]).find(r=>r.nome&&r.nome.includes('Ajustado'))||(d.ebitda_ajustado||[])[0];
+  const eItem=(d.ebitda||[])[0];
+  const sumArr=(item)=>item?keys.reduce((s,k)=>s+(Number(item[k])||0),0):0;
+  const ebitda=eaItem?sumArr(eaItem):(eItem?sumArr(eItem):(faturamento-impostos-custos-despesas));
+  const ebitdaAdj=eaItem?sumArr(eaItem):ebitda;
+  // Lucro Sócio = EBITDA Ajustado + Pró-Labore
+  const lucroSocio=ebitdaAdj+proLabore;
+  const margem=faturamento>0?(ebitdaAdj/faturamento):0;
+  // Ajuste de Caixa = Investimento + Investimentos POP + Empréstimos para giro + Reneg. Débitos + Sócios ou Retiradas
+  // (Empr/Finac/Parcel era duplicidade — foi removido dos dados)
+  const ajustesArr=d.ajustes||[];
+  // Ajuste de Caixa = sub-itens reais (sem subtotais Investimento e Empr/Finac/Parcel)
+  const ajusteNomesValidos=['Compra de veículos','Invest. técnico e administrativo','Aq. de provedor','Parcel. Impostos','Investimentos POP','Empréstimos para giro','Reneg. Débitos','Sócios ou Retiradas'];
+  const ajusteCaixa=ajustesArr
+    .filter(r=>r.nome&&ajusteNomesValidos.some(n=>r.nome.trim()===n))
+    .reduce((s,r)=>s+keys.reduce((ks,k)=>ks+(Number(r[k])||0),0),0);
+  // Retirada Bruta = Faturamento - Gastos - Impostos - AjusteCaixa + Pró-Labore
+  const retiradaBruta=faturamento-gastos-impostos-ajusteCaixa+proLabore;
+  return{faturamento,impostos,custos,despesas,gastos,proLabore,ebitda,ebitdaAdj,lucroSocio,margem,ajusteCaixa,retiradaBruta};
+}
+
+async function prbVerificarPin(inputId,erroId){
+  const pin=document.getElementById(inputId).value.trim();
+  const erroEl=document.getElementById(erroId);
+  if(!pin){erroEl.textContent='Digite o PIN.';erroEl.style.display='block';return;}
+  erroEl.style.display='none';
+  let pinSalvo=null;
+  try{const r=await sbStorage.get(PRB_PIN_KEY);pinSalvo=r;}catch(e){}
+  if(!pinSalvo)pinSalvo=localStorage.getItem(PRB_PIN_KEY);
+  if(!pinSalvo){
+    try{await sbStorage.set(PRB_PIN_KEY,pin);}catch(e){localStorage.setItem(PRB_PIN_KEY,pin);}
+    pinSalvo=pin;
+  }
+  if(pin===pinSalvo){
+    prbPinOk=true;
+    sessionStorage.setItem(PRB_SESSION,'1');
+    document.getElementById('prbPinOverlay').style.display='none';
+    document.getElementById('prbContent').style.display='block';
+    prbRender();
+  }else{
+    erroEl.textContent='❌ PIN incorreto. Tente novamente.';
+    erroEl.style.display='block';
+    document.getElementById(inputId).value='';
+    document.getElementById(inputId).focus();
+  }
+}
+
+async function prbAlterarPin(){
+  const atual=document.getElementById('prbPinAtual')?.value?.trim();
+  const novo=document.getElementById('prbPinNovo')?.value?.trim();
+  const conf=document.getElementById('prbPinConf')?.value?.trim();
+  const erroEl=document.getElementById('prbPinAlterarErro');
+  if(!atual||!novo||!conf){erroEl.textContent='Preencha todos os campos.';erroEl.style.display='block';return;}
+  if(novo!==conf){erroEl.textContent='Novo PIN e confirmação não coincidem.';erroEl.style.display='block';return;}
+  if(novo.length<4){erroEl.textContent='PIN deve ter pelo menos 4 caracteres.';erroEl.style.display='block';return;}
+  let pinSalvo=null;
+  try{pinSalvo=await sbStorage.get(PRB_PIN_KEY);}catch(e){}
+  if(!pinSalvo)pinSalvo=localStorage.getItem(PRB_PIN_KEY);
+  if(pinSalvo&&atual!==pinSalvo){erroEl.textContent='PIN atual incorreto.';erroEl.style.display='block';return;}
+  try{await sbStorage.set(PRB_PIN_KEY,novo);}catch(e){localStorage.setItem(PRB_PIN_KEY,novo);}
+  erroEl.style.color='#10b981';erroEl.textContent='✅ PIN alterado com sucesso!';erroEl.style.display='block';
+  setTimeout(()=>{
+    erroEl.style.display='none';erroEl.style.color='#dc2626';
+    document.getElementById('prbModalPin').style.display='none';
+    ['prbPinAtual','prbPinNovo','prbPinConf'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  },1800);
+}
+
+function prbRender(){
+  const overlay=document.getElementById('prbPinOverlay');
+  const content=document.getElementById('prbContent');
+  if(!prbPinOk&&!sessionStorage.getItem(PRB_SESSION)){
+    if(overlay)overlay.style.display='flex';
+    if(content)content.style.display='none';
+    return;
+  }
+  prbPinOk=true;
+  if(overlay)overlay.style.display='none';
+  if(content)content.style.display='block';
+  const mesIdx=parseInt(document.getElementById('prbMesFiltro')?.value??'0');
+  const mesKey=PRB_MESES_K[mesIdx];
+  const mesNome=PRB_MESES_F[mesIdx];
+  const ano=document.getElementById('prbAnoFiltro')?.value??'2026';
+  prbAno=ano;
+  const calc=prbCalc(ano,mesKey);
+  if(!calc){
+    if(content)content.innerHTML='<div style="padding:3rem;text-align:center;color:#64748b">Dados de '+ano+' não disponíveis.</div>';
+    return;
+  }
+  const lbl=document.getElementById('prbPeriodoLabel');
+  if(lbl)lbl.textContent=mesNome+' / '+ano;
+  const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  setEl('prbKpiFat',prbFull(calc.faturamento));
+  setEl('prbKpiGas',prbFull(calc.gastos));
+  setEl('prbKpiImp',prbFull(calc.impostos));
+  setEl('prbKpiPL',prbFull(calc.proLabore));
+  setEl('prbKpiEbt',prbFull(calc.ebitdaAdj));
+  setEl('prbKpiLuc',prbFull(calc.lucroSocio));
+  const setPct=(id,v,base)=>{const e=document.getElementById(id);if(e&&base>0)e.textContent=(v/base*100).toFixed(1).replace('.',',')+'% da receita';};
+  setPct('prbKpiFatPct',calc.faturamento,calc.faturamento);
+  setPct('prbKpiGasPct',calc.gastos,calc.faturamento);
+  setPct('prbKpiImpPct',calc.impostos,calc.faturamento);
+  setPct('prbKpiLucPct',calc.lucroSocio,calc.faturamento);
+  setEl('prbKpiRet',prbFull(calc.retiradaBruta));
+  setPct('prbKpiRetPct',calc.retiradaBruta,calc.faturamento);
+  const margEl=document.getElementById('prbMargem');
+  if(margEl){
+    const pct=(calc.margem*100);
+    const color=pct>=35?'#10b981':pct>=25?'#f59e0b':'#ef4444';
+    margEl.innerHTML='<span style="color:'+color+';font-weight:700">Margem EBITDA: '+pct.toFixed(1).replace('.',',')+'%</span>';
+  }
+  prbRenderTabela(ano);
+  prbRenderChart(ano);
+}
+
+function prbFiltrar(){prbRender();}
+
+function prbRenderTabela(ano){
+  const tbl=document.getElementById('prbTabelaBody');
+  if(!tbl)return;
+  const rows=[
+    {label:'💰 Faturamento',key:'faturamento',color:'#2563eb',bold:true},
+    {label:'📉 Gastos (Cust+Desp)',key:'gastos',color:'#ef4444',bold:false},
+    {label:'🏛️ Impostos',key:'impostos',color:'#f97316',bold:false},
+    {label:'👔 Pró-Labore',key:'proLabore',color:'#06b6d4',bold:false},
+    {label:'📊 EBITDA Ajustado',key:'ebitdaAdj',color:'#10b981',bold:true},
+    {label:'🏆 Lucro Sócio',key:'lucroSocio',color:'#8b5cf6',bold:true},
+    {label:'💸 Retirada Bruta',key:'retiradaBruta',color:'#c2410c',bold:true},
+  ];
+  tbl.innerHTML=rows.map(row=>{
+    const cells=PRB_MESES_K.map(mk=>{
+      const c=prbCalc(ano,mk);
+      if(!c)return'<td class="prb-td-val">—</td>';
+      const v=c[row.key];
+      const col=v<0?'color:#ef4444':(row.bold?'color:'+row.color:'');
+      return'<td class="prb-td-val" style="'+col+'">'+prbFC(v)+'</td>';
+    }).join('');
+    const total=prbCalc(ano,'total');
+    const tv=total?total[row.key]:0;
+    const fw=row.bold?'font-weight:700':'';
+    return'<tr class="prb-tr"><td class="prb-td-label" style="color:'+row.color+';'+fw+'">'+row.label+'</td>'+cells+'<td class="prb-td-total" style="color:'+row.color+';'+fw+'">'+prbFull(tv)+'</td></tr>';
+  }).join('');
+}
+
+function prbRenderChart(ano){
+  const ctx=document.getElementById('prbChartCanvas');
+  if(!ctx)return;
+  const fatMensal=PRB_MESES_K.map(mk=>prbCalc(ano,mk)?.faturamento||0);
+  const gasMensal=PRB_MESES_K.map(mk=>prbCalc(ano,mk)?.gastos||0);
+  const lucMensal=PRB_MESES_K.map(mk=>prbCalc(ano,mk)?.lucroSocio||0);
+  if(prbChart){prbChart.destroy();prbChart=null;}
+  prbChart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:PRB_MESES_N,
+      datasets:[
+        {label:'Faturamento',data:fatMensal,backgroundColor:'rgba(37,99,235,0.65)',order:2,borderRadius:4},
+        {label:'Gastos+Impos.',data:gasMensal,backgroundColor:'rgba(239,68,68,0.65)',order:2,borderRadius:4},
+        {label:'Lucro Sócio',data:lucMensal,type:'line',borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',pointRadius:5,pointBackgroundColor:'#10b981',tension:0.35,fill:true,order:1,borderWidth:2.5}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+prbFull(c.raw)}}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>'R$'+Math.round(v/1000)+'k',font:{size:11}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:11}},grid:{display:false}}}
+    }
+  });
+}
+
+window.prbLock=function(){
+  prbPinOk=false;
+  sessionStorage.removeItem(PRB_SESSION);
+  if(prbChart){prbChart.destroy();prbChart=null;}
+  const inp=document.getElementById('prbPinInput');if(inp)inp.value='';
+  const err=document.getElementById('prbPinErro');if(err)err.style.display='none';
+  const ov=document.getElementById('prbPinOverlay');if(ov)ov.style.display='flex';
+  const ct=document.getElementById('prbContent');if(ct)ct.style.display='none';
+};
+
+window.prbExportarCSV=function(){
+  const ano=document.getElementById('prbAnoFiltro')?.value??'2026';
+  const headers=['Indicador',...PRB_MESES_N,'Total'];
+  const rows=[
+    ['Faturamento',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.faturamento||0),prbCalc(ano,'total')?.faturamento||0],
+    ['Gastos',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.gastos||0),prbCalc(ano,'total')?.gastos||0],
+    ['Impostos',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.impostos||0),prbCalc(ano,'total')?.impostos||0],
+    ['Pro-Labore',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.proLabore||0),prbCalc(ano,'total')?.proLabore||0],
+    ['EBITDA Aj.',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.ebitdaAdj||0),prbCalc(ano,'total')?.ebitdaAdj||0],
+    ['Lucro Socio',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.lucroSocio||0),prbCalc(ano,'total')?.lucroSocio||0],
+  ];
+  const csv=[headers,...rows].map(r=>r.map(v=>typeof v==='number'?v.toFixed(2).replace('.',','):v).join(';')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='PRB_Texnet_'+ano+'.csv';a.click();
+};
+  </script>
 
 
   <!-- ===================== DRE PAINEL ===================== -->
@@ -2901,5 +3406,29 @@
   </script>
 
 
+
+  <script>
+  // PATCH: Garante Parcel. Impostos nos ajustes — sobrepõe cache do JS
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof dadosFinanceiros !== 'undefined') {
+      var aj = dadosFinanceiros.ajustes;
+      if (aj) {
+        // Remove Investimento e Empr/Finac/Parcel se ainda existirem
+        dadosFinanceiros.ajustes = aj.filter(function(i) {
+          return i.nome !== 'Investimento' && i.nome !== 'Empr/Finac/Parcel';
+        });
+        // Adiciona Parcel. Impostos se não existir
+        var temImp = dadosFinanceiros.ajustes.some(function(i){ return i.nome === 'Parcel. Impostos'; });
+        if (!temImp) {
+          // Insere após Aq. de provedor
+          var idx = dadosFinanceiros.ajustes.findIndex(function(i){ return i.nome === 'Aq. de provedor'; });
+          var imp = {nome:"Parcel. Impostos",jan:44979.14,fev:45327.44,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:90306.58};
+          if (idx >= 0) dadosFinanceiros.ajustes.splice(idx+1, 0, imp);
+          else dadosFinanceiros.ajustes.push(imp);
+        }
+      }
+    }
+  });
+  </script>
 </body>
 </html>
