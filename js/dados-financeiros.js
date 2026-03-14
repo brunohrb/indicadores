@@ -61,7 +61,7 @@
         { nome:"Taxas Boleto",jan:9409.45,fev:6727.14,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:16136.59 },
         { nome:"Enérgia Elétrica escritório",jan:2307.66,fev:4977.36,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:7285.02 },
         { nome:"Despesas Diversas / Estacionamento",jan:1412.13,fev:3715.51,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:5127.64 },
-        { nome:"Tarifas bancárias",jan:1402.08,fev:30.82,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1432.9 }
+        { nome:"Tarifas bancárias",jan:1402.08,fev:101.29,mar:447.44,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1950.81 }
       ],
       ebitda: [
         { nome:"EBITDA",jan:832261.35,fev:549104.45,mar:0.0,abr:0.0,mai:0.0,jun:0.0,jul:0.0,ago:0.0,set:0.0,out:0.0,nov:0.0,dez:0.0,total:1381365.8 }
