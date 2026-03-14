@@ -467,8 +467,14 @@
              style="padding:0.35rem 0.85rem;background:#0078d4;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;text-decoration:none;">
             ☁️ OneDrive
           </a>
-          <input type="file" id="consolidadoCsvInput" accept=".xlsx,.xls" onchange="consolidadoParseXlsx(this)"
-            style="padding:0.35rem 0.85rem;background:#059669;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;border:none;display:inline-block;">
+          <label style="padding:0.35rem 0.85rem;background:#059669;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;">
+            📂 Upload XLSX
+            <input type="file" id="consolidadoCsvInput" accept=".xlsx,.xls" style="display:none" onchange="consolidadoParseXlsx(this)">
+          </label>
+          <button onclick="document.getElementById('xlsxBase64Panel').style.display=document.getElementById('xlsxBase64Panel').style.display==='none'?'flex':'none'"
+            style="padding:0.35rem 0.85rem;background:#7c3aed;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;border:none;">
+            🔑 Base64
+          </button>
           <span id="syncStatusMsg" style="font-size:0.75rem;color:#64748b"></span>
           <div id="syncProgressBar" style="display:none;flex:1;min-width:120px;">
             <div style="background:#e2e8f0;border-radius:99px;height:5px;overflow:hidden;">
@@ -477,6 +483,21 @@
             <div id="syncProgressMsg" style="font-size:0.72rem;color:#64748b;margin-top:0.2rem;"></div>
           </div>
         </div>
+        <!-- PAINEL BASE64 -->
+        <div id="xlsxBase64Panel" style="display:none;flex-direction:column;gap:0.5rem;margin:0.5rem 2rem 0;padding:1rem;background:#f5f3ff;border:2px solid #7c3aed;border-radius:8px;">
+          <div style="font-size:0.78rem;font-weight:700;color:#5b21b6;">🔑 Cole o arquivo XLSX em Base64</div>
+          <div style="font-size:0.72rem;color:#6d28d9;background:#ede9fe;padding:0.5rem 0.75rem;border-radius:6px;font-family:monospace;">
+            PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\Users\...\arquivo.xlsx')) | clip
+          </div>
+          <textarea id="xlsxBase64Input" rows="3" placeholder="Cole aqui o Base64 do arquivo .xlsx (Ctrl+V)..."
+            style="width:100%;padding:0.5rem;border:1px solid #c4b5fd;border-radius:6px;font-size:0.72rem;font-family:monospace;resize:vertical;box-sizing:border-box;"
+            onpaste="setTimeout(function(){xlsxProcessarBase64();},100)"></textarea>
+          <button onclick="xlsxProcessarBase64()"
+            style="align-self:flex-start;padding:0.35rem 1rem;background:#7c3aed;color:white;border-radius:6px;border:none;font-size:0.78rem;font-weight:600;cursor:pointer;">
+            ▶ Processar
+          </button>
+        </div>
+
         <div style="padding:0 2rem;">
 
           <div class="consolidado-filtro" style="flex-wrap:wrap;gap:1rem;">
@@ -2409,14 +2430,15 @@
             <div id="prbKpiFatPct" style="font-size:0.78rem;color:#64748b"></div>
           </div>
 
-          <!-- Gastos -->
+          <!-- Despesas Totais -->
           <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #ef4444">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
-              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">📉 Gastos Operac.</div>
-              <div style="background:#fee2e2;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">📉</div>
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">💸 DESPESAS TOTAIS</div>
+              <div style="background:#fee2e2;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">💸</div>
             </div>
             <div id="prbKpiGas" style="font-size:1.5rem;font-weight:800;color:#dc2626;margin-bottom:0.25rem">—</div>
             <div id="prbKpiGasPct" style="font-size:0.78rem;color:#64748b"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Custos + Despesas (incl. PL)</div>
           </div>
 
           <!-- Impostos -->
@@ -2465,7 +2487,29 @@
             </div>
             <div id="prbKpiRet" style="font-size:1.6rem;font-weight:800;color:#c2410c;margin-bottom:0.25rem">—</div>
             <div id="prbKpiRetPct" style="font-size:0.78rem;color:#64748b"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Fat − Gastos − Impostos − Aj.Caixa + PL</div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Fat − Desp.Totais − Impostos − Aj.Caixa + Part.Lucro + PL</div>
+          </div>
+
+          <!-- Ajuste de Caixa -->
+          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #64748b">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">📦 Invest. e Dívidas Antigas</div>
+              <div style="background:#f1f5f9;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">📦</div>
+            </div>
+            <div id="prbKpiAjuste" style="font-size:1.5rem;font-weight:800;color:#475569;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiAjustePct" style="font-size:0.78rem;color:#64748b"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Aj. Caixa − Participação de Lucro</div>
+          </div>
+
+          <!-- Participação de Lucro -->
+          <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:14px;box-shadow:0 4px 20px rgba(16,185,129,0.15);padding:1.25rem 1.5rem;border-top:4px solid #10b981">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">🤝 Participação de Lucro</div>
+              <div style="background:#bbf7d0;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">🤝</div>
+            </div>
+            <div id="prbKpiPartLuc" style="font-size:1.6rem;font-weight:800;color:#059669;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiPartLucPct" style="font-size:0.78rem;color:#64748b"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Aj. Caixa → Sócios ou Retiradas</div>
           </div>
 
         </div><!-- /KPIs -->
@@ -2645,7 +2689,8 @@ function prbCalc(ano,mesKey){
   const despesas=soma(d.despesas);
   const proLaboreArr=(d.despesas||[]).filter(r=>r.nome&&r.nome.includes('Pró-Labore'));
   const proLabore=keys.reduce((s,k)=>s+prbSum(proLaboreArr,k),0);
-  const gastos=custos+(despesas-proLabore);
+  // DESPESAS TOTAIS = custos + despesas (igual ao Dashboard — inclui Pró-Labore)
+  const gastos=custos+despesas;
   const eaItem=(d.ebitda_ajustado||[]).find(r=>r.nome&&r.nome.includes('Ajustado'))||(d.ebitda_ajustado||[])[0];
   const eItem=(d.ebitda||[])[0];
   const sumArr=(item)=>item?keys.reduce((s,k)=>s+(Number(item[k])||0),0):0;
@@ -2654,17 +2699,19 @@ function prbCalc(ano,mesKey){
   // Lucro Sócio = EBITDA Ajustado + Pró-Labore
   const lucroSocio=ebitdaAdj+proLabore;
   const margem=faturamento>0?(ebitdaAdj/faturamento):0;
-  // Ajuste de Caixa = Investimento + Investimentos POP + Empréstimos para giro + Reneg. Débitos + Sócios ou Retiradas
-  // (Empr/Finac/Parcel era duplicidade — foi removido dos dados)
   const ajustesArr=d.ajustes||[];
-  // Ajuste de Caixa = sub-itens reais (sem subtotais Investimento e Empr/Finac/Parcel)
-  const ajusteNomesValidos=['Compra de veículos','Invest. técnico e administrativo','Aq. de provedor','Parcel. Impostos','Investimentos POP','Empréstimos para giro','Reneg. Débitos','Sócios ou Retiradas'];
+  const ajusteNomesValidos=["Compra de veículos","Invest. técnico e administrativo","Aq. de provedor","Parcel. Impostos","Investimentos POP","Empréstimos para giro","Reneg. Débitos","Sócios ou Retiradas"];
   const ajusteCaixa=ajustesArr
     .filter(r=>r.nome&&ajusteNomesValidos.some(n=>r.nome.trim()===n))
     .reduce((s,r)=>s+keys.reduce((ks,k)=>ks+(Number(r[k])||0),0),0);
-  // Retirada Bruta = Faturamento - Gastos - Impostos - AjusteCaixa + Pró-Labore
-  const retiradaBruta=faturamento-gastos-impostos-ajusteCaixa+proLabore;
-  return{faturamento,impostos,custos,despesas,gastos,proLabore,ebitda,ebitdaAdj,lucroSocio,margem,ajusteCaixa,retiradaBruta};
+  const sociosRetArr=ajustesArr.filter(r=>r.nome&&r.nome.trim()==="Sócios ou Retiradas");
+  const sociosRetiradas=sociosRetArr.reduce((s,r)=>s+keys.reduce((ks,k)=>ks+(Number(r[k])||0),0),0);
+  // Retirada Bruta = Faturamento - DESPESAS TOTAIS - Impostos - AjusteCaixa + SóciosRetiradas + Pró-Labore
+  // Invest. e Dívidas Antigas = AjusteCaixa - SóciosRetiradas
+  const investDividas=ajusteCaixa-sociosRetiradas;
+  const retiradaBruta=faturamento-gastos-impostos-ajusteCaixa+sociosRetiradas+proLabore;
+  return{faturamento,impostos,custos,despesas,gastos,proLabore,ebitda,ebitdaAdj,lucroSocio,margem,ajusteCaixa,investDividas,sociosRetiradas,retiradaBruta};
+
 }
 
 async function prbVerificarPin(inputId,erroId){
@@ -2751,6 +2798,10 @@ function prbRender(){
   setPct('prbKpiLucPct',calc.lucroSocio,calc.faturamento);
   setEl('prbKpiRet',prbFull(calc.retiradaBruta));
   setPct('prbKpiRetPct',calc.retiradaBruta,calc.faturamento);
+  setEl('prbKpiAjuste',prbFull(calc.investDividas));
+  setPct('prbKpiAjustePct',calc.investDividas,calc.faturamento);
+  setEl('prbKpiPartLuc',prbFull(calc.sociosRetiradas));
+  setPct('prbKpiPartLucPct',calc.sociosRetiradas,calc.faturamento);
   const margEl=document.getElementById('prbMargem');
   if(margEl){
     const pct=(calc.margem*100);
@@ -2768,12 +2819,14 @@ function prbRenderTabela(ano){
   if(!tbl)return;
   const rows=[
     {label:'💰 Faturamento',key:'faturamento',color:'#2563eb',bold:true},
-    {label:'📉 Gastos (Cust+Desp)',key:'gastos',color:'#ef4444',bold:false},
+    {label:'💸 Despesas Totais',key:'gastos',color:'#ef4444',bold:false},
     {label:'🏛️ Impostos',key:'impostos',color:'#f97316',bold:false},
     {label:'👔 Pró-Labore',key:'proLabore',color:'#06b6d4',bold:false},
     {label:'📊 EBITDA Ajustado',key:'ebitdaAdj',color:'#10b981',bold:true},
     {label:'🏆 Lucro Sócio',key:'lucroSocio',color:'#8b5cf6',bold:true},
     {label:'💸 Retirada Bruta',key:'retiradaBruta',color:'#c2410c',bold:true},
+    {label:'📦 Invest. e Dívidas Antigas',key:'investDividas',color:'#64748b',bold:false},
+    {label:'🤝 Participação de Lucro',key:'sociosRetiradas',color:'#059669',bold:true},
   ];
   tbl.innerHTML=rows.map(row=>{
     const cells=PRB_MESES_K.map(mk=>{
@@ -2830,11 +2883,14 @@ window.prbExportarCSV=function(){
   const headers=['Indicador',...PRB_MESES_N,'Total'];
   const rows=[
     ['Faturamento',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.faturamento||0),prbCalc(ano,'total')?.faturamento||0],
-    ['Gastos',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.gastos||0),prbCalc(ano,'total')?.gastos||0],
+    ['Desp.Totais',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.gastos||0),prbCalc(ano,'total')?.gastos||0],
     ['Impostos',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.impostos||0),prbCalc(ano,'total')?.impostos||0],
     ['Pro-Labore',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.proLabore||0),prbCalc(ano,'total')?.proLabore||0],
     ['EBITDA Aj.',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.ebitdaAdj||0),prbCalc(ano,'total')?.ebitdaAdj||0],
     ['Lucro Socio',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.lucroSocio||0),prbCalc(ano,'total')?.lucroSocio||0],
+    ['Retirada Bruta',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.retiradaBruta||0),prbCalc(ano,'total')?.retiradaBruta||0],
+    ['Invest. e Dividas Antigas',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.investDividas||0),prbCalc(ano,'total')?.investDividas||0],
+    ['Part. Lucro (Socios/Retiradas)',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.sociosRetiradas||0),prbCalc(ano,'total')?.sociosRetiradas||0],
   ];
   const csv=[headers,...rows].map(r=>r.map(v=>typeof v==='number'?v.toFixed(2).replace('.',','):v).join(';')).join('\n');
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
@@ -3427,6 +3483,27 @@ window.prbExportarCSV=function(){
       }
     }
   });
+  </script>
+
+  <script>
+  function xlsxProcessarBase64() {
+    var raw = (document.getElementById('xlsxBase64Input').value || '').trim();
+    if (!raw) return;
+    try {
+      var bin = atob(raw);
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var file = new File([bytes], 'upload.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var status = document.getElementById('syncStatusMsg');
+      if (status) status.textContent = '⏳ Processando...';
+      consolidadoParseXlsx({ files: [file] });
+      document.getElementById('xlsxBase64Input').value = '';
+      document.getElementById('xlsxBase64Panel').style.display = 'none';
+    } catch(e) {
+      var status = document.getElementById('syncStatusMsg');
+      if (status) status.textContent = '❌ Base64 invalido: ' + e.message;
+    }
+  }
   </script>
 </body>
 </html>
