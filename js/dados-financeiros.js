@@ -1059,7 +1059,7 @@
         try {
           const chave = `ind_dados:2025:${mes}`;
           const { error } = await sb
-            .from('app_storage')
+            .from('indicadores_app_storage')
             .upsert({ key: chave, value: JSON.stringify(DADOS_2025[mes]), updated_at: new Date().toISOString() }, { onConflict: 'key' });
           if (error) throw error;
           ok++;
@@ -1497,7 +1497,7 @@
       load.style.display = 'block';
       try {
         const hash = await sha256hex(senha);
-        const { data, error } = await sb.from('usuarios')
+        const { data, error } = await sb.from('indicadores_usuarios')
           .select('id, nome, email, perfil, ativo')
           .eq('email', email.toLowerCase())
           .eq('senha_hash', hash)
@@ -1523,7 +1523,7 @@
           localStorage.removeItem('texnet_lembrar');
         }
         // Atualiza último acesso
-        await sb.from('usuarios').update({ ultimo_acesso: new Date().toISOString() }).eq('id', data.id);
+        await sb.from('indicadores_usuarios').update({ ultimo_acesso: new Date().toISOString() }).eq('id', data.id);
         aplicarPerfil();
       } catch(e) {
         load.style.display = 'none';
