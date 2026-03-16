@@ -2420,7 +2420,7 @@
         <!-- KPIs -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;margin-bottom:2rem">
 
-          <!-- Faturamento -->
+          <!-- 1. Faturamento -->
           <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #2563eb">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
               <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">💰 Faturamento</div>
@@ -2430,7 +2430,7 @@
             <div id="prbKpiFatPct" style="font-size:0.78rem;color:#64748b"></div>
           </div>
 
-          <!-- Despesas Totais -->
+          <!-- 2. Despesas Totais -->
           <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #ef4444">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
               <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">💸 DESPESAS TOTAIS</div>
@@ -2441,7 +2441,7 @@
             <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Custos + Despesas (incl. PL)</div>
           </div>
 
-          <!-- Impostos -->
+          <!-- 3. Impostos -->
           <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #f97316">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
               <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">🏛️ Impostos</div>
@@ -2451,46 +2451,17 @@
             <div id="prbKpiImpPct" style="font-size:0.78rem;color:#64748b"></div>
           </div>
 
-          <!-- Pró-Labore -->
-          <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #06b6d4">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
-              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">👔 Pró-Labore</div>
-              <div style="background:#cffafe;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">👔</div>
-            </div>
-            <div id="prbKpiPL" style="font-size:1.5rem;font-weight:800;color:#0891b2;margin-bottom:0.25rem">—</div>
-          </div>
-
-          <!-- EBITDA Ajustado -->
+          <!-- 4. EBITDA Ajustado -->
           <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #10b981">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
               <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">📊 EBITDA Ajustado</div>
               <div style="background:#d1fae5;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">📊</div>
             </div>
             <div id="prbKpiEbt" style="font-size:1.5rem;font-weight:800;color:#059669;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiEbtPct" style="font-size:0.78rem;color:#64748b"></div>
           </div>
 
-          <!-- Lucro Sócio (destaque) -->
-          <div style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-radius:14px;box-shadow:0 4px 20px rgba(139,92,246,0.2);padding:1.25rem 1.5rem;border-top:4px solid #8b5cf6">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
-              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">🏆 Lucro Sócio</div>
-              <div style="background:#ede9fe;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">🏆</div>
-            </div>
-            <div id="prbKpiLuc" style="font-size:1.6rem;font-weight:800;color:#7c3aed;margin-bottom:0.25rem">—</div>
-            <div id="prbKpiLucPct" style="font-size:0.78rem;color:#64748b"></div>
-          </div>
-
-          <!-- Retirada Bruta -->
-          <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border-radius:14px;box-shadow:0 4px 20px rgba(234,88,12,0.15);padding:1.25rem 1.5rem;border-top:4px solid #ea580c">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
-              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">💸 Retirada Bruta</div>
-              <div style="background:#fed7aa;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">💸</div>
-            </div>
-            <div id="prbKpiRet" style="font-size:1.6rem;font-weight:800;color:#c2410c;margin-bottom:0.25rem">—</div>
-            <div id="prbKpiRetPct" style="font-size:0.78rem;color:#64748b"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Fat − Desp.Totais − Impostos − Aj.Caixa + Part.Lucro + PL</div>
-          </div>
-
-          <!-- Ajuste de Caixa -->
+          <!-- 5. Invest. e Dívidas Antigas -->
           <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);padding:1.25rem 1.5rem;border-top:4px solid #64748b">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
               <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">📦 Invest. e Dívidas Antigas</div>
@@ -2501,15 +2472,37 @@
             <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Aj. Caixa − Participação de Lucro</div>
           </div>
 
-          <!-- Participação de Lucro -->
-          <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-radius:14px;box-shadow:0 4px 20px rgba(16,185,129,0.15);padding:1.25rem 1.5rem;border-top:4px solid #10b981">
+          <!-- 6. Lucro Sócio (destaque) -->
+          <div style="background:linear-gradient(135deg,#f5f3ff,#ede9fe);border-radius:14px;box-shadow:0 4px 20px rgba(139,92,246,0.2);padding:1.25rem 1.5rem;border-top:4px solid #8b5cf6">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
-              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">🤝 Participação de Lucro</div>
-              <div style="background:#bbf7d0;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">🤝</div>
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">🏆 Lucro Sócio</div>
+              <div style="background:#ede9fe;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">🏆</div>
             </div>
-            <div id="prbKpiPartLuc" style="font-size:1.6rem;font-weight:800;color:#059669;margin-bottom:0.25rem">—</div>
-            <div id="prbKpiPartLucPct" style="font-size:0.78rem;color:#64748b"></div>
-            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Aj. Caixa → Sócios ou Retiradas</div>
+            <div id="prbKpiLuc" style="font-size:1.6rem;font-weight:800;color:#7c3aed;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiLucPct" style="font-size:0.78rem;color:#64748b"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">EBITDA Ajustado + 👔 Pró-Labore</div>
+          </div>
+
+          <!-- 7. Lucro Bruto (ex-Retirada Bruta) -->
+          <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border-radius:14px;box-shadow:0 4px 20px rgba(234,88,12,0.15);padding:1.25rem 1.5rem;border-top:4px solid #ea580c">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem">
+              <div style="font-size:0.8rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">💰 Lucro Bruto</div>
+              <div style="background:#fed7aa;border-radius:8px;padding:0.3rem 0.5rem;font-size:1.1rem">💰</div>
+            </div>
+            <div id="prbKpiRet" style="font-size:1.6rem;font-weight:800;color:#c2410c;margin-bottom:0.25rem">—</div>
+            <div id="prbKpiRetPct" style="font-size:0.78rem;color:#64748b"></div>
+            <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.4rem">Fat − Desp.Totais − Impostos − Invest./Dívidas</div>
+          </div>
+
+          <!-- Pró-Labore (oculto — usado internamente no Lucro Sócio) -->
+          <div id="prbCardPL" style="display:none">
+            <div id="prbKpiPL">—</div>
+          </div>
+
+          <!-- Participação de Lucro (oculto — reservado para uso futuro) -->
+          <div id="prbCardPartLuc" style="display:none">
+            <div id="prbKpiPartLuc">—</div>
+            <div id="prbKpiPartLucPct"></div>
           </div>
 
         </div><!-- /KPIs -->
@@ -2795,6 +2788,7 @@ function prbRender(){
   setPct('prbKpiFatPct',calc.faturamento,calc.faturamento);
   setPct('prbKpiGasPct',calc.gastos,calc.faturamento);
   setPct('prbKpiImpPct',calc.impostos,calc.faturamento);
+  setPct('prbKpiEbtPct',calc.ebitdaAdj,calc.faturamento);
   setPct('prbKpiLucPct',calc.lucroSocio,calc.faturamento);
   setEl('prbKpiRet',prbFull(calc.retiradaBruta));
   setPct('prbKpiRetPct',calc.retiradaBruta,calc.faturamento);
@@ -2821,12 +2815,10 @@ function prbRenderTabela(ano){
     {label:'💰 Faturamento',key:'faturamento',color:'#2563eb',bold:true},
     {label:'💸 Despesas Totais',key:'gastos',color:'#ef4444',bold:false},
     {label:'🏛️ Impostos',key:'impostos',color:'#f97316',bold:false},
-    {label:'👔 Pró-Labore',key:'proLabore',color:'#06b6d4',bold:false},
     {label:'📊 EBITDA Ajustado',key:'ebitdaAdj',color:'#10b981',bold:true},
-    {label:'🏆 Lucro Sócio',key:'lucroSocio',color:'#8b5cf6',bold:true},
-    {label:'💸 Retirada Bruta',key:'retiradaBruta',color:'#c2410c',bold:true},
     {label:'📦 Invest. e Dívidas Antigas',key:'investDividas',color:'#64748b',bold:false},
-    {label:'🤝 Participação de Lucro',key:'sociosRetiradas',color:'#059669',bold:true},
+    {label:'🏆 Lucro Sócio',key:'lucroSocio',color:'#8b5cf6',bold:true},
+    {label:'💰 Lucro Bruto',key:'retiradaBruta',color:'#c2410c',bold:true},
   ];
   tbl.innerHTML=rows.map(row=>{
     const cells=PRB_MESES_K.map(mk=>{
