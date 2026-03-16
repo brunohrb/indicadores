@@ -283,7 +283,6 @@
           syncMarcarFeito();
           showTab(document.querySelector('.tab-btn.active')?.textContent?.toLowerCase().trim() || 'receitas');
           renderComissao();
-          if (typeof renderizarGraficos === 'function') renderizarGraficos();
           syncSetProgress(null);
           input.value = '';
           syncSetStatus(
@@ -396,7 +395,6 @@
         // Refresh
         showTab(document.querySelector('.tab-btn.active')?.textContent?.toLowerCase() || 'receitas');
         renderComissao();
-        if (typeof renderizarGraficos === 'function') renderizarGraficos();
         syncSetProgress(null);
 
         if (atualizados === 0) {
