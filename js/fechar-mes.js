@@ -20,13 +20,18 @@
 
       const fat      = getFaturamento(mesKey);
       const fatTotal = getFaturamentoTotal(mesKey);
-      const juros    = getJuros(mesKey);
       const tarifas  = getTarifas(mesKey);
       const ebitda   = getEbitda(mesKey);
       const dirDados = await getDiretoriaDados(mesIdx, ano);
       const reajuste = dirDados?.dados
         ? ((dirDados.dados.reajuste_pf || 0) + (dirDados.dados.reajuste_pj || 0)) || dirDados.dados.reajuste || 0
         : 0;
+      // Juros: prefere PDF (juros45 + juros45m); fallback para Excel se PDF não disponível
+      const _j45  = dirDados?.dados?.juros45  ?? null;
+      const _j45m = dirDados?.dados?.juros45m ?? null;
+      const juros = (_j45 !== null || _j45m !== null)
+        ? (_j45 || 0) + (_j45m || 0)
+        : getJuros(mesKey);
 
       const metaJurosPerc   = params['param_metaJuros'] / 100;
       const txComissaoJuros = params['param_txComissaoJuros'] / 100;
@@ -266,7 +271,6 @@
       // === DADOS DO MÊS ===
       const fat      = getFaturamento(mesKey);       // PF+PJ apenas (para cálculos de comissão)
       const fatTotal = getFaturamentoTotal(mesKey);   // todas receitas (para exibição nos cards)
-      const juros    = getJuros(mesKey);
       const tarifas  = getTarifas(mesKey);
       const ebitda   = getEbitda(mesKey);
 
@@ -274,6 +278,12 @@
       const dirDados = await getDiretoriaDados(mesIdx, ano);
       const hasDiretoria = !!(dirDados && dirDados.dados);
       const resultadoLiq = hasDiretoria ? (dirDados.dados.resultado || 0) : 0;
+      // Juros: prefere PDF (juros45 + juros45m); fallback para Excel se PDF não disponível
+      const _j45r  = hasDiretoria ? (dirDados.dados.juros45  ?? null) : null;
+      const _j45mr = hasDiretoria ? (dirDados.dados.juros45m ?? null) : null;
+      const juros  = (_j45r !== null || _j45mr !== null)
+        ? (_j45r || 0) + (_j45mr || 0)
+        : getJuros(mesKey);
       const reajuste     = hasDiretoria
         ? ((dirDados.dados.reajuste_pf || 0) + (dirDados.dados.reajuste_pj || 0)) || dirDados.dados.reajuste || 0
         : 0;
