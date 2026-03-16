@@ -1,6 +1,6 @@
     // ==================== SUPABASE CONFIG ====================
-    const SB_URL  = 'https://rgdagcvpgdlefmiywurz.supabase.co';
-    const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnZGFnY3ZwZ2RsZWZtaXl3dXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5Mzk3MjUsImV4cCI6MjA4NzUxNTcyNX0.IT0nPkVhOODgFYLqnAwVjdtP_2PTeBPq0Aj0yB7jpKQ';
+    const SB_URL  = 'https://xuwwgprchhfshrqdhuqn.supabase.co';
+    const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc';
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
     // Log visual no canto da tela para debug
@@ -18,7 +18,7 @@
     const sbStorage = {
       async get(key) {
         try {
-          const { data, error } = await sb.from('app_storage').select('value').eq('key', key).maybeSingle();
+          const { data, error } = await sb.from('indicadores_app_storage').select('value').eq('key', key).maybeSingle();
           if (error) { sbLog(`GET "${key}" erro: ${error.message}`, 'erro'); throw error; }
           return data ? data.value : null;
         } catch(e) {
@@ -28,7 +28,7 @@
       },
       async set(key, value) {
         try {
-          const { error } = await sb.from('app_storage').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+          const { error } = await sb.from('indicadores_app_storage').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
           if (error) { sbLog(`SET "${key}" erro: ${error.message}`, 'erro'); throw error; }
           sbLog(`SET "${key}" ✓`, 'ok');
         } catch(e) {
@@ -38,7 +38,7 @@
       },
       async remove(key) {
         try {
-          const { error } = await sb.from('app_storage').delete().eq('key', key);
+          const { error } = await sb.from('indicadores_app_storage').delete().eq('key', key);
           if (error) { sbLog(`DEL "${key}" erro: ${error.message}`, 'erro'); throw error; }
         } catch(e) {
           sbLog(`DEL "${key}" falhou: ${e.message}`, 'warn');
@@ -49,7 +49,7 @@
       async testar() {
         sbLog('Testando conexão...', 'info');
         try {
-          const { data, error } = await sb.from('app_storage').select('key').limit(1);
+          const { data, error } = await sb.from('indicadores_app_storage').select('key').limit(1);
           if (error) { sbLog(`Tabela não acessível: ${error.message}`, 'erro'); return false; }
           sbLog('Conexão OK! Tabela app_storage acessível ✓', 'ok');
           return true;
