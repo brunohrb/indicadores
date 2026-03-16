@@ -2543,6 +2543,30 @@
 
         </div>
 
+        <!-- Retiradas por Sócio (PRB) -->
+        <div style="background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.07);overflow:hidden;margin-top:1.5rem">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:1rem;font-weight:700;color:#1e293b">👥 Retiradas por Sócio — PRB</div>
+            <div id="prbRetiradasStatus" style="font-size:0.78rem;color:#94a3b8">Carregando...</div>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;min-width:900px">
+              <thead>
+                <tr style="background:#f8fafc">
+                  <th class="prb-th" style="min-width:120px;text-align:left">Sócio</th>
+                  <th class="prb-th">Jan</th><th class="prb-th">Fev</th><th class="prb-th">Mar</th><th class="prb-th">Abr</th>
+                  <th class="prb-th">Mai</th><th class="prb-th">Jun</th><th class="prb-th">Jul</th><th class="prb-th">Ago</th>
+                  <th class="prb-th">Set</th><th class="prb-th">Out</th><th class="prb-th">Nov</th><th class="prb-th">Dez</th>
+                  <th class="prb-th" style="background:#e0e7ff;color:#3730a3">Total Ano</th>
+                </tr>
+              </thead>
+              <tbody id="prbRetiradasBody">
+                <tr><td colspan="14" style="text-align:center;padding:2rem;color:#94a3b8">Carregando dados do PRB...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div><!-- /padding -->
     </div><!-- /prbContent -->
 
@@ -2804,9 +2828,70 @@ function prbRender(){
   }
   prbRenderTabela(ano);
   prbRenderChart(ano);
+  prbCarregarRetiradas();
 }
 
 function prbFiltrar(){prbRender();}
+
+/* ── PRB: Retiradas por Sócio (Supabase) ── */
+const PRB_SUPA_URL = 'https://xuwwgprchhfshrqdhuqn.supabase.co';
+const PRB_SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc';
+
+async function prbCarregarRetiradas(){
+  const ano = document.getElementById('prbAnoFiltro')?.value ?? '2026';
+  const statusEl = document.getElementById('prbRetiradasStatus');
+  const tbody = document.getElementById('prbRetiradasBody');
+  if(!tbody) return;
+  if(statusEl) statusEl.textContent = 'Atualizando...';
+  try {
+    // Reutilizar sessão do PRB (mesmo domínio — brunohrb.github.io)
+    let authToken = PRB_SUPA_KEY;
+    try {
+      const sessaoRaw = localStorage.getItem('sb-xuwwgprchhfshrqdhuqn-auth-token');
+      if(sessaoRaw){
+        const sessao = JSON.parse(sessaoRaw);
+        if(sessao?.access_token) authToken = sessao.access_token;
+      }
+    } catch(e){}
+    const res = await fetch(
+      `${PRB_SUPA_URL}/rest/v1/movimentacoes?select=socio,valor,mes,ano&socio=in.(paulo,rafael,bruno)&ano=eq.${ano}&order=mes.asc`,
+      { headers:{ apikey: PRB_SUPA_KEY, Authorization:`Bearer ${authToken}` } }
+    );
+    if(!res.ok) throw new Error('Erro '+res.status);
+    const data = await res.json();
+    // Agrupar por sócio + mês, somando valores
+    const totais = {};
+    for(const row of data){
+      const k = `${row.socio}_${row.mes}`;
+      totais[k] = (totais[k]||0) + (row.valor||0);
+    }
+    const socios = [
+      {id:'paulo',  label:'👤 Paulo',  cor:'#2563eb'},
+      {id:'rafael', label:'👤 Rafael', cor:'#10b981'},
+      {id:'bruno',  label:'👤 Bruno',  cor:'#8b5cf6'}
+    ];
+    tbody.innerHTML = socios.map(s=>{
+      let totalAno = 0;
+      const cells = Array.from({length:12},(_,i)=>{
+        const v = totais[`${s.id}_${i}`]||0;
+        totalAno += v;
+        const cor = v<0?'#ef4444': v>0?s.cor:'#94a3b8';
+        return `<td class="prb-td-val" style="color:${cor}">${v!==0?prbFC(v):'—'}</td>`;
+      }).join('');
+      const corTotal = totalAno<0?'#ef4444':s.cor;
+      return `<tr>
+        <td class="prb-td-lab" style="font-weight:700;color:${s.cor}">${s.label}</td>
+        ${cells}
+        <td class="prb-td-val" style="background:#f0f9ff;font-weight:800;color:${corTotal}">${prbFC(totalAno)}</td>
+      </tr>`;
+    }).join('');
+    const agora = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    if(statusEl) statusEl.textContent = `✅ Atualizado às ${agora}`;
+  } catch(e){
+    if(statusEl) statusEl.textContent = '❌ Erro ao carregar';
+    if(tbody) tbody.innerHTML = `<tr><td colspan="14" style="text-align:center;padding:1.5rem;color:#ef4444">Não foi possível carregar os dados do PRB.</td></tr>`;
+  }
+}
 
 function prbRenderTabela(ano){
   const tbl=document.getElementById('prbTabelaBody');
