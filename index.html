@@ -311,7 +311,7 @@
       <div class="nav-item" onclick="selectMenu(this,'diretoria')"><span class="nav-icon">⚙️</span><span>Parâmetros</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-financeiro')"><span class="nav-icon">💼</span><span>Comissão Financeiro</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-operacional')" style="white-space:nowrap"><span class="nav-icon">📈</span><span>Comissão Operacional</span></div>
-      <div class="nav-item" id="prbNavItem" onclick="prbAbrirView(this)" style="white-space:nowrap;margin-top:0.5rem;border-top:1px solid rgba(255,255,255,0.1);padding-top:0.75rem"><span class="nav-icon">💎</span><span>PRB — Sócios</span></div>
+      <div class="nav-item" id="prbNavItem" onclick="prbAbrirView(this)" style="white-space:nowrap;margin-top:0.5rem;border-top:1px solid rgba(255,255,255,0.1);padding-top:0.75rem"><span class="nav-icon">🤝</span><span>PRB — Sócios</span></div>
     </nav>
     <div class="sidebar-footer">Sistema Financeiro TEXNET<br>© 2026 - v3.0</div>
   </div>
@@ -346,18 +346,11 @@
           <h2 style="margin:0;font-size:1.3rem;color:#1e293b">💰 Dashboard</h2>
           <div style="display:flex;align-items:center;gap:0.5rem;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:0.4rem 0.75rem">
             <label style="font-size:0.82rem;color:#64748b;font-weight:600">📅 Mês:</label>
-            <select id="dashMesFiltro" onchange="renderizarGraficos()" style="border:none;font-weight:700;font-size:0.9rem;color:#1e293b;background:transparent;cursor:pointer;outline:none">
-              <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
-              <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
-              <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
-              <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
-            </select>
+            <div id="ms_wrap_dashMesFiltro" class="ms-wrap"></div>
           </div>
           <div style="display:flex;align-items:center;gap:0.5rem;background:white;border:1px solid #e2e8f0;border-radius:10px;padding:0.4rem 0.75rem">
             <label style="font-size:0.82rem;color:#64748b;font-weight:600">🗓 Ano:</label>
-            <select id="dashAnoFiltro" onchange="renderizarGraficos()" style="border:none;font-weight:700;font-size:0.9rem;color:#1e293b;background:transparent;cursor:pointer;outline:none">
-              <option value="2026">2026</option><option value="2025">2025</option>
-            </select>
+            <div id="ms_wrap_dashAnoFiltro" class="ms-wrap"></div>
           </div>
           <span id="dashPeriodoLabel" style="font-size:0.82rem;color:#64748b;font-style:italic"></span>
         </div>
@@ -444,7 +437,7 @@
         <div class="chart-grid" style="padding:1.25rem 2rem">
           <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Composição das Receitas</h3><p class="chart-subtitle" id="dash_sub_rec">Distribuição por categoria</p></div><div class="chart-container"><canvas id="receitasChart"></canvas></div></div>
           <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Distribuição de Despesas</h3><p class="chart-subtitle" id="dash_sub_desp">Por tipo</p></div><div class="chart-container"><canvas id="despesasChart"></canvas></div></div>
-          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Evolução Mensal 2026</h3><p class="chart-subtitle">Receitas vs Custos+Despesas</p></div><div class="chart-container"><canvas id="comparativoReceitasChart"></canvas></div></div>
+          <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Evolução Mensal <span id="dashEvoAnoLbl">2026</span></h3><p class="chart-subtitle">Receitas vs Custos+Despesas</p></div><div class="chart-container"><canvas id="comparativoReceitasChart"></canvas></div></div>
           <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Top 10 Custos</h3><p class="chart-subtitle" id="dash_sub_custos">Maiores custos operacionais</p></div><div class="chart-container"><canvas id="custosChart"></canvas></div></div>
         </div>
       <!-- Marcos flutuante no Dashboard -->
@@ -789,18 +782,11 @@
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.6rem;flex-shrink:0">
               <div style="display:flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:0.45rem 0.85rem">
                 <span style="font-size:0.75rem;color:rgba(255,255,255,0.65);font-weight:600">📅 MÊS</span>
-                <select id="indMesFiltro" onchange="carregarIndicadoresMes()" style="background:transparent;border:none;color:white;font-weight:700;font-size:0.88rem;cursor:pointer;outline:none">
-                  <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
-                  <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
-                  <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
-                  <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
-                </select>
+                <div id="ms_wrap_indMesFiltro" class="ms-wrap"></div>
               </div>
               <div style="display:flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:0.45rem 0.85rem">
                 <span style="font-size:0.75rem;color:rgba(255,255,255,0.65);font-weight:600">🗓 ANO</span>
-                <select id="indAnoFiltro" onchange="carregarIndicadoresMes()" style="background:transparent;border:none;color:white;font-weight:700;font-size:0.88rem;cursor:pointer;outline:none">
-                  <option value="2026">2026</option><option value="2025">2025</option>
-                </select>
+                <div id="ms_wrap_indAnoFiltro" class="ms-wrap"></div>
               </div>
             </div>
           </div>
@@ -1064,8 +1050,8 @@
         <script>
           // ======= INDICADORES: CARREGAR DO SUPABASE =======
           function indChaveFiltro() {
-            const mes = document.getElementById('indMesFiltro')?.value ?? 0;
-            const ano = document.getElementById('indAnoFiltro')?.value ?? 2026;
+            const mes = msGetFirst('indMesFiltro') ?? '0';
+            const ano = msGetFirst('indAnoFiltro') ?? '2026';
             const m = String(parseInt(mes)+1).padStart(2,'0');
             return `ind_dados:${ano}:${m}`;
           }
@@ -1154,8 +1140,8 @@
               if (raw) {
                 renderizarIndicadores(JSON.parse(raw));
               } else {
-                const mes = document.getElementById('indMesFiltro')?.value ?? 0;
-                const ano = document.getElementById('indAnoFiltro')?.value ?? 2026;
+                const mes = msGetFirst('indMesFiltro') ?? '0';
+                const ano = msGetFirst('indAnoFiltro') ?? '2026';
                 const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
                 const emptyEl = document.getElementById('indicadoresSemDados');
                 if (emptyEl) emptyEl.querySelector('p').innerHTML = 
@@ -1166,26 +1152,7 @@
             }
           }
 
-          // Inicializa: define mês atual como padrão
-          (function() {
-            const mesAtual = new Date().getMonth(); // 0=jan
-            const anoAtual = new Date().getFullYear();
-            document.addEventListener('DOMContentLoaded', () => {
-              const sel = document.getElementById('indMesFiltro');
-              const selAno = document.getElementById('indAnoFiltro');
-              if (sel) sel.value = mesAtual;
-              if (selAno) {
-                // ensure year option exists
-                if (![...selAno.options].some(o=>o.value==anoAtual)) {
-                  const opt = document.createElement('option');
-                  opt.value = anoAtual; opt.textContent = anoAtual;
-                  selAno.prepend(opt);
-                }
-                selAno.value = anoAtual;
-              }
-              carregarIndicadoresMes();
-            });
-          })();
+          // Inicialização do filtro de indicadores é feita via init-operacional.js (msCreate)
         </script>
         </div>
       </div>
@@ -2169,27 +2136,11 @@
           <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
             <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.75rem">
               <label style="font-size:0.85rem;font-weight:600;opacity:0.9">📅 Mês:</label>
-              <select id="comissaoMesFiltro" onchange="renderComissao()" style="background:transparent;border:none;color:white;font-weight:700;font-size:0.95rem;cursor:pointer">
-                <option value="0" style="color:#1e293b">Janeiro</option>
-                <option value="1" style="color:#1e293b">Fevereiro</option>
-                <option value="2" style="color:#1e293b">Março</option>
-                <option value="3" style="color:#1e293b">Abril</option>
-                <option value="4" style="color:#1e293b">Maio</option>
-                <option value="5" style="color:#1e293b">Junho</option>
-                <option value="6" style="color:#1e293b">Julho</option>
-                <option value="7" style="color:#1e293b">Agosto</option>
-                <option value="8" style="color:#1e293b">Setembro</option>
-                <option value="9" style="color:#1e293b">Outubro</option>
-                <option value="10" style="color:#1e293b">Novembro</option>
-                <option value="11" style="color:#1e293b">Dezembro</option>
-              </select>
+              <div id="ms_wrap_comissaoMesFiltro" class="ms-wrap"></div>
             </div>
             <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.75rem">
               <label style="font-size:0.85rem;font-weight:600;opacity:0.9">🗓 Ano:</label>
-              <select id="comissaoAnoFiltro" onchange="renderComissao()" style="background:transparent;border:none;color:white;font-weight:700;font-size:0.95rem;cursor:pointer">
-                <option value="2026" style="color:#1e293b">2026</option>
-                <option value="2025" style="color:#1e293b">2025</option>
-              </select>
+              <div id="ms_wrap_comissaoAnoFiltro" class="ms-wrap"></div>
             </div>
             <button onclick="renderComissao()" style="padding:0.55rem 1.2rem;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.6);color:white;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem">🔄 Atualizar</button>
           </div>
@@ -2252,27 +2203,11 @@
               <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
                 <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.75rem">
                   <label style="font-size:0.85rem;font-weight:600;opacity:0.9">📅 Mês:</label>
-                  <select id="opMesFiltro" onchange="renderComissaoOp()" style="background:transparent;border:none;color:white;font-weight:700;font-size:0.95rem;cursor:pointer">
-                    <option value="0" style="color:#1e293b">Janeiro</option>
-                    <option value="1" style="color:#1e293b">Fevereiro</option>
-                    <option value="2" style="color:#1e293b">Março</option>
-                    <option value="3" style="color:#1e293b">Abril</option>
-                    <option value="4" style="color:#1e293b">Maio</option>
-                    <option value="5" style="color:#1e293b">Junho</option>
-                    <option value="6" style="color:#1e293b">Julho</option>
-                    <option value="7" style="color:#1e293b">Agosto</option>
-                    <option value="8" style="color:#1e293b">Setembro</option>
-                    <option value="9" style="color:#1e293b">Outubro</option>
-                    <option value="10" style="color:#1e293b">Novembro</option>
-                    <option value="11" style="color:#1e293b">Dezembro</option>
-                  </select>
+                  <div id="ms_wrap_opMesFiltro" class="ms-wrap"></div>
                 </div>
                 <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:0.5rem 1rem;display:flex;align-items:center;gap:0.75rem">
                   <label style="font-size:0.85rem;font-weight:600;opacity:0.9">🗓 Ano:</label>
-                  <select id="opAnoFiltro" onchange="renderComissaoOp()" style="background:transparent;border:none;color:white;font-weight:700;font-size:0.95rem;cursor:pointer">
-                    <option value="2026" style="color:#1e293b">2026</option>
-                    <option value="2025" style="color:#1e293b">2025</option>
-                  </select>
+                  <div id="ms_wrap_opAnoFiltro" class="ms-wrap"></div>
                 </div>
                 <button onclick="renderComissaoOp()" style="padding:0.55rem 1.2rem;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.6);color:white;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem">🔄 Atualizar</button>
               </div>
@@ -2340,7 +2275,6 @@
     <!-- PIN OVERLAY -->
     <div id="prbPinOverlay" style="display:flex;position:fixed;inset:0;background:linear-gradient(135deg,#0f172a,#1e3a8a);z-index:5000;align-items:center;justify-content:center">
       <div style="background:white;border-radius:20px;padding:2.5rem;max-width:400px;width:90%;box-shadow:0 24px 80px rgba(0,0,0,0.4);text-align:center">
-        <div style="font-size:3rem;margin-bottom:0.5rem">💎</div>
         <h2 style="font-size:1.4rem;font-weight:700;color:#0f172a;margin-bottom:0.25rem">Painel PRB</h2>
         <p style="color:#64748b;font-size:0.875rem;margin-bottom:1.75rem">Lucro confidencial dos sócios · Texnet</p>
         <input id="prbPinInput" type="password" placeholder="Digite o PIN de acesso"
@@ -2364,7 +2298,6 @@
       <!-- Cabeçalho -->
       <div style="background:linear-gradient(135deg,#0f172a 0%,#1e3a8a 60%,#1d4ed8 100%);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
         <div style="display:flex;align-items:center;gap:1rem">
-          <div style="font-size:2.2rem">💎</div>
           <div>
             <div style="font-size:1.4rem;font-weight:800;color:white;letter-spacing:0.02em">PAINEL PRB — SÓCIOS</div>
             <div style="font-size:0.82rem;color:#93c5fd">TEXNET · Lucro real & distribuição confidencial</div>
@@ -2374,24 +2307,12 @@
           <!-- Filtro Ano -->
           <div style="display:flex;align-items:center;gap:0.5rem">
             <span style="color:#93c5fd;font-size:0.82rem;font-weight:600">ANO</span>
-            <select id="prbAnoFiltro" onchange="prbFiltrar()"
-              style="padding:0.45rem 0.85rem;border:1.5px solid rgba(255,255,255,0.25);border-radius:8px;font-size:0.875rem;font-weight:600;color:white;background:rgba(255,255,255,0.1);cursor:pointer;outline:none">
-              <option value="2023">2023</option>
-              <option value="2024">2024</option>
-              <option value="2025">2025</option>
-              <option value="2026" selected>2026</option>
-            </select>
+            <div id="ms_wrap_prbAnoFiltro" class="ms-wrap"></div>
           </div>
           <!-- Filtro Mês -->
           <div style="display:flex;align-items:center;gap:0.5rem">
             <span style="color:#93c5fd;font-size:0.82rem;font-weight:600">MÊS</span>
-            <select id="prbMesFiltro" onchange="prbFiltrar()"
-              style="padding:0.45rem 0.85rem;border:1.5px solid rgba(255,255,255,0.25);border-radius:8px;font-size:0.875rem;font-weight:600;color:white;background:rgba(255,255,255,0.1);cursor:pointer;outline:none">
-              <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
-              <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
-              <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
-              <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
-            </select>
+            <div id="ms_wrap_prbMesFiltro" class="ms-wrap"></div>
           </div>
           <button onclick="prbExportarCSV()" title="Exportar CSV"
             style="padding:0.45rem 0.9rem;background:rgba(16,185,129,0.85);color:white;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer">
@@ -2620,9 +2541,96 @@
     .prb-td-val { padding:0.85rem 0.6rem;text-align:right;font-size:0.82rem;font-variant-numeric:tabular-nums;border-bottom:1px solid #f1f5f9;color:#374151 }
     .prb-td-total { padding:0.85rem 0.75rem;text-align:right;font-size:0.82rem;font-variant-numeric:tabular-nums;border-bottom:1px solid #f1f5f9;background:#e0e7ff }
     .prb-tr:hover .prb-td-label,.prb-tr:hover .prb-td-val,.prb-tr:hover .prb-td-total { background:#f8fafc !important }
-    #prbMesFiltro option, #prbAnoFiltro option { background:#1e293b;color:white }
+  </style>
+  <style>
+    /* ── MULTI-SELECT DROPDOWN ── */
+    .ms-wrap{position:relative;display:inline-block;vertical-align:middle}
+    .ms-btn{display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;user-select:none;border-radius:8px;padding:0.45rem 0.85rem;font-size:0.875rem;font-weight:700;transition:background 0.15s;border:none;outline:none;line-height:1.2}
+    .ms-btn-dark{border:1.5px solid rgba(255,255,255,0.25) !important;color:white;background:rgba(255,255,255,0.1)}
+    .ms-btn-dark:hover{background:rgba(255,255,255,0.18)}
+    .ms-btn-light{border:1.5px solid #e2e8f0 !important;color:#1e293b;background:white}
+    .ms-btn-light:hover{background:#f8fafc}
+    .ms-btn-label{white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+    .ms-btn-arrow{font-size:0.55rem;opacity:0.65;flex-shrink:0;margin-left:2px}
+    .ms-list{display:none;position:absolute;top:calc(100% + 6px);right:0;background:white;border:1.5px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.18);z-index:99999;min-width:160px;padding:0.4rem 0;max-height:270px;overflow-y:auto}
+    .ms-wrap.ms-open .ms-list{display:block}
+    .ms-item{display:flex;align-items:center;gap:0.5rem;padding:0.42rem 0.85rem;cursor:pointer;font-size:0.875rem;color:#1e293b;white-space:nowrap;transition:background 0.1s}
+    .ms-item:hover{background:#f1f5f9}
+    .ms-item.ms-sel{background:#eff6ff;color:#2563eb;font-weight:600}
+    .ms-item input[type=checkbox]{accent-color:#2563eb;width:14px;height:14px;margin:0;pointer-events:none;flex-shrink:0}
+    .ms-all{display:flex;align-items:center;gap:0.5rem;padding:0.38rem 0.85rem;cursor:pointer;font-size:0.8rem;color:#64748b;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+    .ms-all:hover{background:#f8fafc;color:#374151}
+    .ms-all input[type=checkbox]{accent-color:#94a3b8;width:14px;height:14px;margin:0;pointer-events:none}
   </style>
 
+  <script>
+/* ═══════════════════ MULTI-SELECT ENGINE ═══════════════════ */
+window._msState = window._msState || {};
+function msCreate(id, options, onChange, initialVals, btnClass) {
+  const init = (initialVals && initialVals.length) ? initialVals : [options[0].value];
+  _msState[id] = { options, values: new Set(init), onChange, btnClass: btnClass || 'ms-btn-dark' };
+  _msRenderWidget(id);
+}
+function _msRenderWidget(id) {
+  const s = _msState[id];
+  if (!s) return;
+  const wrap = document.getElementById('ms_wrap_' + id);
+  if (!wrap) return;
+  const wasOpen = wrap.classList.contains('ms-open');
+  const sel = [...s.values];
+  let lbl;
+  if (sel.length === 0) lbl = '—';
+  else if (sel.length === 1) lbl = s.options.find(o => o.value === sel[0])?.label || sel[0];
+  else lbl = sel.length + ' sel.';
+  const allChk = sel.length === s.options.length ? 'checked' : '';
+  wrap.innerHTML =
+    '<button type="button" class="ms-btn ' + s.btnClass + '" onclick="event.stopPropagation();_msToggle(\'' + id + '\')">' +
+      '<span class="ms-btn-label">' + lbl + '</span>' +
+      '<span class="ms-btn-arrow">▼</span>' +
+    '</button>' +
+    '<div class="ms-list">' +
+      '<div class="ms-all" onclick="event.stopPropagation();_msToggleAll(\'' + id + '\')">' +
+        '<input type="checkbox" ' + allChk + ' readonly><span>Todos</span>' +
+      '</div>' +
+      s.options.map(function(o) {
+        var chk = s.values.has(o.value) ? 'checked' : '';
+        var sel2 = s.values.has(o.value) ? ' ms-sel' : '';
+        return '<div class="ms-item' + sel2 + '" onclick="event.stopPropagation();_msPick(\'' + id + '\',\'' + o.value + '\')">' +
+          '<input type="checkbox" ' + chk + ' readonly><span>' + o.label + '</span></div>';
+      }).join('') +
+    '</div>';
+  if (wasOpen) wrap.classList.add('ms-open');
+}
+function _msToggle(id) {
+  document.querySelectorAll('.ms-wrap.ms-open').forEach(function(w){ if(w.id !== 'ms_wrap_'+id) w.classList.remove('ms-open'); });
+  var wrap = document.getElementById('ms_wrap_' + id);
+  if (wrap) wrap.classList.toggle('ms-open');
+}
+function _msPick(id, val) {
+  var s = _msState[id];
+  if (!s) return;
+  if (s.values.has(val)) { if (s.values.size > 1) s.values.delete(val); }
+  else s.values.add(val);
+  _msRenderWidget(id);
+  if (s.onChange) s.onChange();
+}
+function _msToggleAll(id) {
+  var s = _msState[id];
+  if (!s) return;
+  if (s.values.size === s.options.length) s.values = new Set([s.options[0].value]);
+  else s.values = new Set(s.options.map(function(o){ return o.value; }));
+  _msRenderWidget(id);
+  if (s.onChange) s.onChange();
+}
+function msGetVals(id) { return [...((_msState[id] && _msState[id].values) ? _msState[id].values : [])]; }
+function msGetFirst(id) { var v = msGetVals(id); return v.length > 0 ? v[0] : null; }
+document.addEventListener('click', function() {
+  document.querySelectorAll('.ms-wrap.ms-open').forEach(function(w){ w.classList.remove('ms-open'); });
+});
+/* ═══════════════════════════════════════════════════════════ */
+  </script>
+
+  <script src="js/dados-2023.js?v=1773264250"></script>
   <script src="js/dados-2024.js?v=1773264250"></script>
   <script src="js/dados-2025.js?v=1773264250"></script>
   <script src="js/config.js"></script>
@@ -2717,7 +2725,7 @@ function prbCalc(ano,mesKey){
   const lucroSocio=ebitdaAdj+proLabore;
   const margem=faturamento>0?(ebitdaAdj/faturamento):0;
   const ajustesArr=d.ajustes||[];
-  const ajusteNomesValidos=["Compra de veículos","Invest. técnico e administrativo","Aq. de provedor","Parcel. Impostos","Investimentos POP","Empréstimos para giro","Reneg. Débitos","Sócios ou Retiradas"];
+  const ajusteNomesValidos=["Compra de veículos","Veículos","Invest. técnico e administrativo","Equipamentos/TI","Ativos imobilizado","Aq. de provedor","Parcel. Impostos","Investimentos POP","Empréstimos para giro","Empréstimos","Reneg. Débitos","Sócios ou Retiradas"];
   const ajusteCaixa=ajustesArr
     .filter(r=>r.nome&&ajusteNomesValidos.some(n=>r.nome.trim()===n))
     .reduce((s,r)=>s+keys.reduce((ks,k)=>ks+(Number(r[k])||0),0),0);
@@ -2789,18 +2797,39 @@ function prbRender(){
   prbPinOk=true;
   if(overlay)overlay.style.display='none';
   if(content)content.style.display='block';
-  const mesIdx=parseInt(document.getElementById('prbMesFiltro')?.value??'0');
-  const mesKey=PRB_MESES_K[mesIdx];
-  const mesNome=PRB_MESES_F[mesIdx];
-  const ano=document.getElementById('prbAnoFiltro')?.value??'2026';
+  const _mesVals=msGetVals('prbMesFiltro');
+  const _anoVals=msGetVals('prbAnoFiltro');
+  const ano=(_anoVals.length?_anoVals[0]:null)||(document.getElementById('ms_wrap_prbAnoFiltro')?'2026':'2026');
   prbAno=ano;
-  const calc=prbCalc(ano,mesKey);
+  // Aggregate selected months
+  let calc;
+  let periodoLbl;
+  if(_mesVals.length===0||_mesVals.length===12){
+    calc=prbCalc(ano,'total');
+    periodoLbl='Total do Ano / '+ano;
+  }else if(_mesVals.length===1){
+    const mesIdx=parseInt(_mesVals[0]);
+    const mesKey=PRB_MESES_K[mesIdx];
+    const mesNome=PRB_MESES_F[mesIdx];
+    calc=prbCalc(ano,mesKey);
+    periodoLbl=mesNome+' / '+ano;
+  }else{
+    const keys=_mesVals.map(m=>PRB_MESES_K[parseInt(m)]);
+    const nomes=_mesVals.map(m=>PRB_MESES_F[parseInt(m)].substring(0,3)).join('+');
+    const calcs=keys.map(k=>prbCalc(ano,k)).filter(Boolean);
+    if(!calcs.length){calc=null;}else{
+      const sum=f=>calcs.reduce((s,c)=>s+(c[f]||0),0);
+      const fat=sum('faturamento');
+      calc={faturamento:fat,gastos:sum('gastos'),impostos:sum('impostos'),proLabore:sum('proLabore'),ebitdaAdj:sum('ebitdaAdj'),lucroSocio:sum('lucroSocio'),retiradaBruta:sum('retiradaBruta'),investDividas:sum('investDividas'),sociosRetiradas:sum('sociosRetiradas'),margem:fat>0?sum('ebitdaAdj')/fat:0};
+    }
+    periodoLbl=nomes+' / '+ano;
+  }
   if(!calc){
     if(content)content.innerHTML='<div style="padding:3rem;text-align:center;color:#64748b">Dados de '+ano+' não disponíveis.</div>';
     return;
   }
   const lbl=document.getElementById('prbPeriodoLabel');
-  if(lbl)lbl.textContent=mesNome+' / '+ano;
+  if(lbl)lbl.textContent=periodoLbl;
   const setEl=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   setEl('prbKpiFat',prbFull(calc.faturamento));
   setEl('prbKpiGas',prbFull(calc.gastos));
@@ -2838,7 +2867,7 @@ const PRB_SUPA_URL = 'https://xuwwgprchhfshrqdhuqn.supabase.co';
 const PRB_SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc';
 
 async function prbCarregarRetiradas(){
-  const ano = document.getElementById('prbAnoFiltro')?.value ?? '2026';
+  const ano = msGetFirst('prbAnoFiltro') ?? '2026';
   const statusEl = document.getElementById('prbRetiradasStatus');
   const tbody = document.getElementById('prbRetiradasBody');
   if(!tbody) return;
@@ -2924,7 +2953,7 @@ function prbRenderChart(ano){
   const ctx=document.getElementById('prbChartCanvas');
   if(!ctx)return;
   const fatMensal=PRB_MESES_K.map(mk=>prbCalc(ano,mk)?.faturamento||0);
-  const gasMensal=PRB_MESES_K.map(mk=>prbCalc(ano,mk)?.gastos||0);
+  const gasMensal=PRB_MESES_K.map(mk=>{const c=prbCalc(ano,mk);return c?(c.gastos+c.impostos):0;});
   const lucMensal=PRB_MESES_K.map(mk=>prbCalc(ano,mk)?.lucroSocio||0);
   if(prbChart){prbChart.destroy();prbChart=null;}
   prbChart=new Chart(ctx,{
@@ -2956,7 +2985,7 @@ window.prbLock=function(){
 };
 
 window.prbExportarCSV=function(){
-  const ano=document.getElementById('prbAnoFiltro')?.value??'2026';
+  const ano=msGetFirst('prbAnoFiltro')??'2026';
   const headers=['Indicador',...PRB_MESES_N,'Total'];
   const rows=[
     ['Faturamento',...PRB_MESES_K.map(k=>prbCalc(ano,k)?.faturamento||0),prbCalc(ano,'total')?.faturamento||0],
