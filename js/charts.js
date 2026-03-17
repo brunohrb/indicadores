@@ -5,11 +5,11 @@
 
       const MESES   = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-      const mesIdx  = parseInt(document.getElementById('dashMesFiltro')?.value ?? 0);
+      const mesIdx  = parseInt(msGetFirst('dashMesFiltro') ?? 0);
       const mesKey  = MESES[mesIdx];
       const mesAnterior = mesIdx > 0 ? MESES[mesIdx-1] : null;
       const mesNome = MESES_N[mesIdx];
-      const ano     = document.getElementById('dashAnoFiltro')?.value ?? '2026';
+      const ano     = msGetFirst('dashAnoFiltro') ?? '2026';
       const fc = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
       const fp = v => (v*100).toFixed(1).replace('.',',')+'%';
 
@@ -17,14 +17,21 @@
       const lbl = document.getElementById('dashPeriodoLabel');
       if(lbl) lbl.textContent = mesNome+'/'+ano;
 
-      const df = dadosFinanceiros;
+      // Seleciona dados do ano correto
+      const _anoMap = {
+        '2023': typeof dadosFinanceiros2023 !== 'undefined' ? dadosFinanceiros2023 : null,
+        '2024': typeof dadosFinanceiros2024 !== 'undefined' ? dadosFinanceiros2024 : null,
+        '2025': typeof dadosFinanceiros2025 !== 'undefined' ? dadosFinanceiros2025 : null,
+        '2026': typeof dadosFinanceiros !== 'undefined' ? dadosFinanceiros : null,
+      };
+      const df = _anoMap[ano] || dadosFinanceiros;
 
       // === KPIs ===
       const receitas  = df.receitas?.reduce((s,r)=>s+(r[mesKey]||0),0) || 0;
       const custos    = df.custos?.reduce((s,r)=>s+(r[mesKey]||0),0) || 0;
       const despesas  = df.despesas?.reduce((s,r)=>s+(r[mesKey]||0),0) || 0;
       const impostos  = df.impostos?.reduce((s,r)=>s+(r[mesKey]||0),0) || 0;
-      const ebitdaItem= df.ebitda_ajustado?.find(r=>r.nome==='EBITDA (Ajustado)');
+      const ebitdaItem= df.ebitda_ajustado?.find(r=>r.nome&&r.nome.includes('Ajustado')) || df.ebitda?.[0];
       const ebitda    = ebitdaItem ? (ebitdaItem[mesKey]||0) : 0;
       const custoTotal= custos + despesas;
 
@@ -117,6 +124,8 @@
       setSub('dash_sub_rec',   mesNome+'/'+ano+' — Distribuição por categoria');
       setSub('dash_sub_desp',  mesNome+'/'+ano+' — Por tipo');
       setSub('dash_sub_custos',mesNome+'/'+ano+' — Maiores custos');
+      const evoLbl = document.getElementById('dashEvoAnoLbl');
+      if(evoLbl) evoLbl.textContent = ano;
 
       // Rebuild charts only when the mes/ano filter actually changes
       const _filterKey = mesIdx + '_' + ano;
@@ -146,7 +155,7 @@
       // === Gráfico Evolução Mensal ===
       const recMensal  = MESES.map(m=>df.receitas?.reduce((s,r)=>s+(r[m]||0),0)||0);
       const custMensal = MESES.map(m=>(df.custos?.reduce((s,r)=>s+(r[m]||0),0)||0)+(df.despesas?.reduce((s,r)=>s+(r[m]||0),0)||0));
-      const ebitdaMensal = MESES.map(m=>{ const e=df.ebitda_ajustado?.find(r=>r.nome==='EBITDA (Ajustado)'); return e?(e[m]||0):0; });
+      const ebitdaMensal = MESES.map(m=>{ const e=df.ebitda_ajustado?.find(r=>r.nome&&r.nome.includes('Ajustado'))||df.ebitda?.[0]; return e?(e[m]||0):0; });
       charts.comp = new Chart(document.getElementById('comparativoReceitasChart'),{
         type:'bar',
         data:{

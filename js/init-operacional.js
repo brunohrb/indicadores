@@ -1,28 +1,43 @@
 // ==================== INIT ====================
     document.addEventListener('DOMContentLoaded', async () => {
-      // === Definir mês/ano atual em TODOS os filtros ===
-      const _hoje = new Date();
-      const _mes  = _hoje.getMonth();     // 0-11
-      const _ano  = _hoje.getFullYear();
+      const _hoje   = new Date();
+      const _mes    = _hoje.getMonth();     // 0-11
+      const _ano    = _hoje.getFullYear();
       const _mesStr = String(_mes + 1).padStart(2, '0');
+      const _mesV   = String(_mes);
+      const _anoV   = String(_ano);
 
-      // Dashboard
-      const _dashMes = document.getElementById('dashMesFiltro');
-      const _dashAno = document.getElementById('dashAnoFiltro');
-      if (_dashMes) _dashMes.value = String(_mes);
-      if (_dashAno) _dashAno.value = String(_ano);
+      const MS_MESES = [
+        {value:'0',label:'Janeiro'},{value:'1',label:'Fevereiro'},{value:'2',label:'Março'},
+        {value:'3',label:'Abril'},{value:'4',label:'Maio'},{value:'5',label:'Junho'},
+        {value:'6',label:'Julho'},{value:'7',label:'Agosto'},{value:'8',label:'Setembro'},
+        {value:'9',label:'Outubro'},{value:'10',label:'Novembro'},{value:'11',label:'Dezembro'}
+      ];
+      const MS_ANOS_4 = [
+        {value:'2026',label:'2026'},{value:'2025',label:'2025'},
+        {value:'2024',label:'2024'},{value:'2023',label:'2023'}
+      ];
+      const MS_ANOS_2 = [{value:'2026',label:'2026'},{value:'2025',label:'2025'}];
 
-      // Comissão Financeiro
-      const _comMes = document.getElementById('comissaoMesFiltro');
-      const _comAno = document.getElementById('comissaoAnoFiltro');
-      if (_comMes) _comMes.value = String(_mes);
-      if (_comAno) _comAno.value = String(_ano);
+      // Dashboard (light theme)
+      msCreate('dashMesFiltro',  MS_MESES,  renderizarGraficos,  [_mesV], 'ms-btn-light');
+      msCreate('dashAnoFiltro',  MS_ANOS_4, renderizarGraficos,  [_anoV], 'ms-btn-light');
 
-      // Comissão Operacional
-      const _opMes = document.getElementById('opMesFiltro');
-      const _opAno = document.getElementById('opAnoFiltro');
-      if (_opMes) _opMes.value = String(_mes);
-      if (_opAno) _opAno.value = String(_ano);
+      // Indicadores (dark theme)
+      msCreate('indMesFiltro',   MS_MESES,  carregarIndicadoresMes, [_mesV], 'ms-btn-dark');
+      msCreate('indAnoFiltro',   MS_ANOS_4, carregarIndicadoresMes, [_anoV], 'ms-btn-dark');
+
+      // Comissão Financeiro (dark theme)
+      msCreate('comissaoMesFiltro', MS_MESES,  () => renderComissao(),    [_mesV], 'ms-btn-dark');
+      msCreate('comissaoAnoFiltro', MS_ANOS_2, () => renderComissao(),    [_anoV], 'ms-btn-dark');
+
+      // Comissão Operacional (dark theme)
+      msCreate('opMesFiltro',    MS_MESES,  () => renderComissaoOp(),    [_mesV], 'ms-btn-dark');
+      msCreate('opAnoFiltro',    MS_ANOS_2, () => renderComissaoOp(),    [_anoV], 'ms-btn-dark');
+
+      // PRB (dark theme) — initialized with current month/year
+      msCreate('prbMesFiltro',   MS_MESES,  prbFiltrar, [_mesV], 'ms-btn-dark');
+      msCreate('prbAnoFiltro',   MS_ANOS_4, prbFiltrar, [_anoV], 'ms-btn-dark');
 
       // Consolidado (input type=month: "YYYY-MM")
       const _consEl = document.getElementById('consolidadoPeriodo');
@@ -37,12 +52,13 @@
       await carregarParams();
       await consolidadoInicializar();
       renderizarGraficos();
+      carregarIndicadoresMes();
       initParamFormatting();
     });
     // ==================== COMISSÃO OPERACIONAL ====================
     function renderComissaoOp() {
-      const mesIdx  = parseInt(document.getElementById('opMesFiltro')?.value || '0');
-      const ano     = parseInt(document.getElementById('opAnoFiltro')?.value || '2026');
+      const mesIdx  = parseInt(msGetFirst('opMesFiltro') || '0');
+      const ano     = parseInt(msGetFirst('opAnoFiltro') || '2026');
       const MESES   = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
       const mesKey  = MESES[mesIdx];

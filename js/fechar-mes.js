@@ -1,7 +1,7 @@
 // ==================== FECHAR MÊS ====================
     async function fecharMes() {
-      const mesIdx = parseInt(document.getElementById('comissaoMesFiltro')?.value ?? 0);
-      const ano    = document.getElementById('comissaoAnoFiltro')?.value ?? '2026';
+      const mesIdx = parseInt(msGetFirst('comissaoMesFiltro') ?? 0);
+      const ano    = msGetFirst('comissaoAnoFiltro') ?? '2026';
       const mesNome = MESES_NOME[mesIdx];
       const mesKey  = MESES_KEY[mesIdx];
 
@@ -76,8 +76,8 @@
     }
 
     async function reabrirMes() {
-      const mesIdx = parseInt(document.getElementById('comissaoMesFiltro')?.value ?? 0);
-      const ano    = document.getElementById('comissaoAnoFiltro')?.value ?? '2026';
+      const mesIdx = parseInt(msGetFirst('comissaoMesFiltro') ?? 0);
+      const ano    = msGetFirst('comissaoAnoFiltro') ?? '2026';
       const mesNome = MESES_NOME[mesIdx];
       const conf = confirm(`Reabrir ${mesNome}/${ano}?\nOs cálculos voltarão a usar os parâmetros atuais.`);
       if (!conf) return;
@@ -236,8 +236,8 @@
     }
 
     async function renderComissao() {
-      const mesIdx  = parseInt(document.getElementById('comissaoMesFiltro')?.value ?? 0);
-      const ano     = document.getElementById('comissaoAnoFiltro')?.value ?? '2026';
+      const mesIdx  = parseInt(msGetFirst('comissaoMesFiltro') ?? 0);
+      const ano     = msGetFirst('comissaoAnoFiltro') ?? '2026';
       const mesKey  = MESES_KEY[mesIdx];
       const mesNome = MESES_NOME[mesIdx];
 
