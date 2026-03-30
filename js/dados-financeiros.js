@@ -141,10 +141,11 @@
       const v = document.getElementById('viewType').value;
       document.querySelectorAll('.view-container').forEach(c=>{c.classList.remove('active');c.style.display='none';});
       
-      const hideHeader = ['consolidado','comparativo','powerbi','ia-estrategica','diretoria','comissao-financeiro','comissao-operacional','indicadores','demonstrativo'];
+      const hideHeader = ['consolidado','comparativo','powerbi','ia-estrategica','diretoria','comissao-financeiro','comissao-operacional','indicadores','demonstrativo','ixc'];
       document.getElementById('mainHeader').style.display = hideHeader.includes(v) ? 'none' : 'block';
       const show = id => { const el=document.getElementById(id); el.style.display='block'; el.classList.add('active'); };
       if (v==='dashboard') { show('dashboardView'); renderizarGraficos();  }
+      else if (v==='ixc') { show('ixcView'); if(typeof renderIXCTab==='function') renderIXCTab(); }
       else if (v==='consolidado') { show('consolidadoView'); showTab('receitas'); }
       else if (v==='comparativo') { show('comparativoView'); renderComparisonCards(); renderCompTab('receitas-comp'); }
       else if (v==='powerbi') show('powerbiView');

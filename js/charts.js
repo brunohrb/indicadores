@@ -1,6 +1,80 @@
     // ==================== CHARTS ====================
     let charts = {};
     let _chartsFilter = '';
+
+    // ── Painel IXC no Dashboard ───────────────────────────────────
+    async function atualizarPainelIXC() {
+      try {
+        if (typeof IXCDados === 'undefined') return;
+
+        const mesIdx = parseInt(msGetFirst('dashMesFiltro') ?? 0);
+        const ano    = msGetFirst('dashAnoFiltro') ?? '2026';
+        const anoMes = `${ano}-${String(mesIdx + 1).padStart(2, '0')}`;
+        const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+        const painel = document.getElementById('ixc-dashboard-painel');
+        if (!painel) return;
+
+        const [resumo, op, sync] = await Promise.all([
+          IXCDados.getResumoMes(anoMes),
+          IXCDados.getOperacional(),
+          IXCDados.getUltimaSync(),
+        ]);
+
+        // Só exibe se tiver dados
+        if (!resumo && !op) { painel.style.display = 'none'; return; }
+        painel.style.display = 'block';
+
+        const brl = v => v != null
+          ? 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+          : '—';
+        const num = v => v != null ? Number(v).toLocaleString('pt-BR') : '—';
+
+        // Período
+        const per = document.getElementById('ixc-dash-periodo');
+        if (per) per.textContent = MESES_N[mesIdx] + '/' + ano;
+
+        // Hora sync
+        const hora = document.getElementById('ixc-dash-sync-hora');
+        if (hora && sync) {
+          const dt = new Date(sync.timestamp);
+          hora.textContent = '🔄 Atualizado: ' + dt.toLocaleDateString('pt-BR') + ' às ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Clientes ativos
+        const elCli = document.getElementById('ixc-dash-clientes');
+        if (elCli) elCli.textContent = op ? num(op.clientesAtivos) : '—';
+
+        // Usuários radius
+        const elUsr = document.getElementById('ixc-dash-usuarios');
+        if (elUsr) elUsr.textContent = op ? num(op.usuariosAtivos) : '—';
+
+        // Recebido
+        const elRec = document.getElementById('ixc-dash-recebido');
+        const elRecQtd = document.getElementById('ixc-dash-recebido-qtd');
+        if (elRec) elRec.textContent = resumo?.receitas ? brl(resumo.receitas.totalRecebido) : '—';
+        if (elRecQtd && resumo?.receitas) elRecQtd.textContent = num(resumo.receitas.countRecebido) + ' boletos pagos';
+
+        // Despesas
+        const elDesp = document.getElementById('ixc-dash-despesas');
+        const elDespQtd = document.getElementById('ixc-dash-despesas-qtd');
+        if (elDesp) elDesp.textContent = resumo?.despesas ? brl(resumo.despesas.totalPago) : '—';
+        if (elDespQtd && resumo?.despesas) elDespQtd.textContent = num(resumo.despesas.countPago) + ' contas pagas';
+
+        // Saldo
+        const saldo = resumo?.saldoMes;
+        const elSaldo = document.getElementById('ixc-dash-saldo');
+        if (elSaldo) {
+          elSaldo.textContent = brl(saldo);
+          elSaldo.style.color = saldo >= 0 ? '#bbf7d0' : '#fca5a5';
+        }
+
+      } catch (e) {
+        console.warn('[IXC Painel]', e.message);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────
+
     function renderizarGraficos() {
 
       const MESES   = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -176,5 +250,8 @@
         data:{labels:top10.map(c=>c.nome.length>22?c.nome.substr(0,20)+'…':c.nome),datasets:[{label:mesNome+'/'+ano,data:top10.map(c=>c[mesKey]||0),backgroundColor:'rgba(245,158,11,0.75)'}]},
         options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{callback:v=>'R$'+Math.round(v/1000)+'k'}}},plugins:{tooltip:{callbacks:{label:ctx=>fc(ctx.raw)}}}}
       });
+
+      // Atualizar painel IXC junto com os gráficos
+      atualizarPainelIXC();
     }
 
