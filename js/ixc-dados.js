@@ -1,16 +1,16 @@
 // ================================================================
-// IXC DADOS — Integração IXC → Dashboard Texnet
-// Lê dados sincronizados do Supabase e expõe para o dashboard
+// IXC DADOS â IntegraÃ§Ã£o IXC â Dashboard Texnet
+// LÃª dados sincronizados do Supabase e expÃµe para o dashboard
 // ================================================================
 
 const IXCDados = (() => {
 
-  // Cache local de dados já carregados
+  // Cache local de dados jÃ¡ carregados
   const _cache = {};
   let _ultimaSync = null;
   let _operacional = null;
 
-  // ── Utilitários ─────────────────────────────────────────────
+  // ââ UtilitÃ¡rios âââââââââââââââââââââââââââââââââââââââââââââ
 
   function _chave(tipo, anoMes) {
     return `ixc_${tipo}_${anoMes}`;
@@ -19,7 +19,7 @@ const IXCDados = (() => {
   async function _lerSB(chave) {
     if (_cache[chave] !== undefined) return _cache[chave];
     try {
-      const { data, error } = await sb.from('indicadores_app_storage')
+      const { data, error } = await sb.from('app_storage')
         .select('value, updated_at')
         .eq('key', chave)
         .maybeSingle();
@@ -33,10 +33,10 @@ const IXCDados = (() => {
     }
   }
 
-  // ── API Pública ──────────────────────────────────────────────
+  // ââ API PÃºblica ââââââââââââââââââââââââââââââââââââââââââââââ
 
   /**
-   * Retorna dados de receitas do mês via IXC.
+   * Retorna dados de receitas do mÃªs via IXC.
    * @param {string} anoMes - ex: "2026-03"
    */
   async function getReceitas(anoMes) {
@@ -44,21 +44,21 @@ const IXCDados = (() => {
   }
 
   /**
-   * Retorna dados de despesas do mês via IXC.
+   * Retorna dados de despesas do mÃªs via IXC.
    */
   async function getDespesas(anoMes) {
     return await _lerSB(_chave('despesas', anoMes));
   }
 
   /**
-   * Retorna fluxo de caixa diário do mês.
+   * Retorna fluxo de caixa diÃ¡rio do mÃªs.
    */
   async function getFluxoCaixa(anoMes) {
     return await _lerSB(_chave('fluxo', anoMes));
   }
 
   /**
-   * Retorna indicadores operacionais (clientes, usuários).
+   * Retorna indicadores operacionais (clientes, usuÃ¡rios).
    */
   async function getOperacional() {
     if (_operacional) return _operacional;
@@ -67,7 +67,7 @@ const IXCDados = (() => {
   }
 
   /**
-   * Retorna metadados da última sincronização.
+   * Retorna metadados da Ãºltima sincronizaÃ§Ã£o.
    */
   async function getUltimaSync() {
     if (_ultimaSync) return _ultimaSync;
@@ -76,7 +76,7 @@ const IXCDados = (() => {
   }
 
   /**
-   * Verifica se os dados do mês estão disponíveis e recentes.
+   * Verifica se os dados do mÃªs estÃ£o disponÃ­veis e recentes.
    * @param {string} anoMes
    * @returns {boolean}
    */
@@ -86,7 +86,7 @@ const IXCDados = (() => {
   }
 
   /**
-   * Retorna resumo financeiro do mês (receitas + despesas).
+   * Retorna resumo financeiro do mÃªs (receitas + despesas).
    */
   async function getResumoMes(anoMes) {
     const [rec, desp, fluxo] = await Promise.all([
@@ -116,7 +116,7 @@ const IXCDados = (() => {
   }
 
   /**
-   * Retorna dados de múltiplos meses (para gráficos anuais).
+   * Retorna dados de mÃºltiplos meses (para grÃ¡ficos anuais).
    * @param {number} ano - ex: 2026
    */
   async function getDadosAno(ano) {
@@ -133,7 +133,7 @@ const IXCDados = (() => {
   }
 
   /**
-   * Cria badge "Dados IXC — atualizado HH:MM" para exibição no dashboard.
+   * Cria badge "Dados IXC â atualizado HH:MM" para exibiÃ§Ã£o no dashboard.
    */
   async function criarBadgeSync() {
     const sync = await getUltimaSync();
@@ -153,11 +153,11 @@ const IXCDados = (() => {
       const dt = new Date(sync.timestamp);
       const hora = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       const data = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      div.innerHTML = `<span>🔄</span> IXC sincronizado: ${data} ${hora}`;
+      div.innerHTML = `<span>ð</span> IXC sincronizado: ${data} ${hora}`;
       div.title = `Meses: ${(sync.meses || []).join(', ')}`;
     } else {
       div.style.background = '#dc2626';
-      div.innerHTML = `<span>⚠️</span> IXC: sem dados sync`;
+      div.innerHTML = `<span>â ï¸</span> IXC: sem dados sync`;
       div.title = 'Execute: node ixc-sync/sync.js';
     }
 
@@ -171,7 +171,7 @@ const IXCDados = (() => {
 
   /**
    * Atualiza os cards de KPI do dashboard com dados reais do IXC.
-   * Chame esta função após carregar a página.
+   * Chame esta funÃ§Ã£o apÃ³s carregar a pÃ¡gina.
    */
   async function atualizarKPIs(anoMes) {
     try {
@@ -189,7 +189,7 @@ const IXCDados = (() => {
         });
       }
 
-      // Receita recebida do mês
+      // Receita recebida do mÃªs
       if (resumo?.receitas?.totalRecebido) {
         const v = resumo.receitas.totalRecebido;
         const els = document.querySelectorAll('[data-ixc="receita-mes"]');
@@ -199,7 +199,7 @@ const IXCDados = (() => {
         });
       }
 
-      // Despesas do mês
+      // Despesas do mÃªs
       if (resumo?.despesas?.totalPago) {
         const v = resumo.despesas.totalPago;
         const els = document.querySelectorAll('[data-ixc="despesas-mes"]');
@@ -215,14 +215,14 @@ const IXCDados = (() => {
   }
 
   /**
-   * Renderiza gráfico de fluxo de caixa com dados reais do IXC.
+   * Renderiza grÃ¡fico de fluxo de caixa com dados reais do IXC.
    * @param {string} canvasId - ID do elemento canvas
    * @param {string} anoMes   - ex: "2026-03"
    */
   async function renderizarFluxoCaixa(canvasId, anoMes) {
     const fluxo = await getFluxoCaixa(anoMes);
     if (!fluxo || !fluxo.length) {
-      console.warn(`[IXCDados] Fluxo de caixa ${anoMes} não disponível`);
+      console.warn(`[IXCDados] Fluxo de caixa ${anoMes} nÃ£o disponÃ­vel`);
       return null;
     }
 
@@ -251,7 +251,7 @@ const IXCDados = (() => {
             borderWidth: 1,
           },
           {
-            label: 'Saídas',
+            label: 'SaÃ­das',
             data: saidas,
             backgroundColor: 'rgba(239,68,68,0.7)',
             borderColor: '#ef4444',
@@ -275,7 +275,7 @@ const IXCDados = (() => {
         plugins: {
           title: {
             display: true,
-            text: `Fluxo de Caixa — ${anoMes.substring(5, 7)}/${anoMes.substring(0, 4)} (Dados IXC)`,
+            text: `Fluxo de Caixa â ${anoMes.substring(5, 7)}/${anoMes.substring(0, 4)} (Dados IXC)`,
             font: { size: 14, weight: 'bold' },
           },
           tooltip: {
@@ -307,7 +307,7 @@ const IXCDados = (() => {
     });
   }
 
-  // Inicialização automática
+  // InicializaÃ§Ã£o automÃ¡tica
   window.addEventListener('load', async () => {
     try {
       await criarBadgeSync();
