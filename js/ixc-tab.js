@@ -217,3 +217,42 @@ function _setText(id, txt) {
   const e = document.getElementById(id);
   if (e) e.textContent = txt;
 }
+
+async function ixcAtualizarAgora() {
+  const btn  = document.getElementById('ixcBtnAtualizar');
+  const icon = document.getElementById('ixcBtnIcon');
+  if (!btn) return;
+
+  // Estado: carregando
+  btn.disabled = true;
+  btn.style.background = '#94a3b8';
+  btn.style.cursor = 'not-allowed';
+  if (icon) icon.textContent = '⏳';
+
+  try {
+    // Limpa cache do IXCDados para forçar releitura do Supabase
+    if (typeof IXCDados !== 'undefined' && typeof IXCDados.limparCache === 'function') {
+      IXCDados.limparCache();
+    }
+    await renderIXCTab();
+
+    // Feedback de sucesso
+    if (icon) icon.textContent = '✅';
+    btn.style.background = '#059669';
+    setTimeout(() => {
+      if (icon) icon.textContent = '🔄';
+      btn.style.background = '#2563eb';
+      btn.disabled = false;
+      btn.style.cursor = 'pointer';
+    }, 2000);
+  } catch(e) {
+    if (icon) icon.textContent = '❌';
+    btn.style.background = '#dc2626';
+    setTimeout(() => {
+      if (icon) icon.textContent = '🔄';
+      btn.style.background = '#2563eb';
+      btn.disabled = false;
+      btn.style.cursor = 'pointer';
+    }, 2000);
+  }
+}
