@@ -395,8 +395,8 @@
             fp(metaMatEquip), fp(matEquipPct), bonMat, bonMatOk) +
           bonCard('👥','Folha % Fat. ≤ '+fp(metaFolha),
             fp(metaFolha), fp(folhaPct), bonFolha, bonFolhaOk) +
-          bonCard('💹','EBITDA Trim. positivo',
-            '> 0', fc(ebitdaAcum), bonEbitda, bonEbitdaOk);
+          bonCard('💹','EBITDA Trim. ≥ Meta',
+            fc(metaEbitdaTrim), fc(ebitdaAcum), bonEbitda, bonEbitdaOk);
 
         if(isTrimFim) {
           document.getElementById('opBonusTrimestral').innerHTML +=
