@@ -216,9 +216,32 @@
         const matEquipAcum  = somaMulti('custos', MAT_EQUIP_NOMES, mesesAte);
         const folhaAcum     = soma('custos','Folha - Direta', mesesAte);
 
-        // Acumula resultado do trimestre lendo PDF de cada mês (simplificado: usa valor do mês atual * nMeses)
-        const nMeses        = mesesAte.length;
-        const resultadoAcum = resultado * nMeses;  // aproximação; idealmente buscaria cada mês
+        // Acumula resultado real de cada mês do trimestre (Novos − Cancelamentos)
+        const nMeses = mesesAte.length;
+        const MESES_IDX = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+        let resultadoAcum = 0;
+        for (const mK of mesesAte) {
+          const mI = MESES_IDX.indexOf(mK);
+          const dirM = await getDiretoriaDados(mI, ano);
+          const DM = (dirM && dirM.dados) ? dirM.dados : {};
+          const getM = (k, fb=0) => (DM[k] !== null && DM[k] !== undefined && DM[k] !== '') ? +DM[k] : fb;
+          const reajM = await getReajusteMes(mI);
+          const nn_pf_m  = getM('nn_pf');
+          const nn_pj_m  = getM('nn_pj');
+          const upg_m    = getM('upgrade');
+          const reat_m   = getM('reat');
+          const raj_m    = reajM > 0 ? reajM : ((+DM['reajuste_pf']||0)+(+DM['reajuste_pj']||0)) > 0
+                           ? ((+DM['reajuste_pf']||0)+(+DM['reajuste_pj']||0))
+                           : (DM['reajuste'] != null ? +DM['reajuste'] : 0);
+          const cpf_m    = getM('canc_pf');
+          const cpj_m    = getM('canc_pj');
+          const vcpf_m   = getM('val_canc_pf', cpf_m * TICKET_PF);
+          const vcpj_m   = getM('val_canc_pj', cpj_m * TICKET_PJ);
+          const dng_m    = Math.abs(getM('downgrade'));
+          const nn_tot_m = nn_pf_m + nn_pj_m + upg_m + reat_m + raj_m;
+          const cc_tot_m = vcpf_m + vcpj_m + dng_m;
+          resultadoAcum += nn_tot_m - cc_tot_m;
+        }
 
         const qi = trim ? trim.qi : 0;
         const metaMatEquip  = META_MAT_EQUIP_Q[qi] || 0;
