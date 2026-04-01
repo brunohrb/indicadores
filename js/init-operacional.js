@@ -234,7 +234,8 @@
         const bonChurnOk  = isTrimFim && churnFinAcum  <= META_CHURN_FIN_TRIM;
         const bonMatOk    = isTrimFim && metaMatEquip > 0 && matEquipPct <= metaMatEquip;
         const bonFolhaOk  = isTrimFim && metaFolha    > 0 && folhaPct    <= metaFolha;
-        const bonEbitdaOk = isTrimFim && ebitdaAcum > 0;  // Ebitda sempre pago se positivo no fim do trim
+        const metaEbitdaTrim = gp('metaTrim_q' + (qi + 1));
+        const bonEbitdaOk = isTrimFim && metaEbitdaTrim > 0 && ebitdaAcum >= metaEbitdaTrim;  // Ebitda sempre pago se positivo no fim do trim
 
         const bonRes    = bonResOk    ? ebitdaAcum * PREMIO_RESULT_TRIM   : 0;
         const bonChurn  = bonChurnOk  ? ebitdaAcum * PREMIO_CHURN_FIN_TRIM: 0;
