@@ -217,10 +217,12 @@
         const folhaAcum     = soma('custos','Folha - Direta', mesesAte);
 
         // Acumula resultado real de cada mês do trimestre (Novos − Cancelamentos)
+        // O mês atual já está calculado em `resultado`; os anteriores são buscados do storage
         const nMeses = mesesAte.length;
         const MESES_IDX = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-        let resultadoAcum = 0;
-        for (const mK of mesesAte) {
+        let resultadoAcum = resultado; // já inclui o mês atual
+        const mesesAnteriores = mesesAte.filter(mK => mK !== mesKey);
+        for (const mK of mesesAnteriores) {
           const mI = MESES_IDX.indexOf(mK);
           const dirM = await getDiretoriaDados(mI, ano);
           const DM = (dirM && dirM.dados) ? dirM.dados : {};
@@ -257,7 +259,10 @@
         const bonChurnOk  = isTrimFim && churnFinAcum  <= META_CHURN_FIN_TRIM;
         const bonMatOk    = isTrimFim && metaMatEquip > 0 && matEquipPct <= metaMatEquip;
         const bonFolhaOk  = isTrimFim && metaFolha    > 0 && folhaPct    <= metaFolha;
-        const metaEbitdaTrim = gp('metaTrim_q' + (qi + 1));
+        // Lê metaTrim_q diretamente do DOM com parse BRL (ex: "2.401.769,91" → 2401769.91)
+        const _metaTrimEl  = document.getElementById('metaTrim_q' + (qi + 1));
+        const _metaTrimRaw = _metaTrimEl ? _metaTrimEl.value.replace(/\./g,'').replace(',','.') : '0';
+        const metaEbitdaTrim = parseFloat(_metaTrimRaw) || 0;
         const bonEbitdaOk = isTrimFim && metaEbitdaTrim > 0 && ebitdaAcum >= metaEbitdaTrim;  // Ebitda sempre pago se positivo no fim do trim
 
         const bonRes    = bonResOk    ? ebitdaAcum * PREMIO_RESULT_TRIM   : 0;
