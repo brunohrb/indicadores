@@ -62,11 +62,12 @@ async function renderIXCTab() {
     if (lbl) lbl.textContent = mesNome + '/' + ano;
 
     // Buscar dados do Supabase
-    const [resumo, op, sync, fluxoRaw] = await Promise.all([
+    const [resumo, op, sync, fluxoRaw, comercial] = await Promise.all([
       IXCDados.getResumoMes(anoMes),
       IXCDados.getOperacional(),
       IXCDados.getUltimaSync(),
       IXCDados.getFluxoCaixa(anoMes),
+      IXCDados.getComercial(anoMes),
     ]);
 
     const fluxo = fluxoRaw?.dias || (Array.isArray(fluxoRaw) ? fluxoRaw : null);
@@ -200,6 +201,69 @@ async function renderIXCTab() {
       _setText('ixcTab_fluxoSaldo',    fc(saldoFinal));
       const elSF = document.getElementById('ixcTab_fluxoSaldo');
       if (elSF) elSF.style.color = saldoFinal >= 0 ? '#059669' : '#dc2626';
+    }
+
+    // ── COMERCIAL ───────────────────────────────────────
+    const secCom = document.getElementById('ixcTab_secComercial');
+    if (comercial && secCom) {
+      secCom.style.display = 'block';
+
+      _setText('ixcTabComercialPeriodo', mesNome + '/' + ano);
+
+      // Novos contratos
+      _setText('ixcTab_novosTotal', num(comercial.novosTotal || 0));
+      _setText('ixcTab_novosPF',    num(comercial.novosPF    || 0));
+      _setText('ixcTab_novosPJ',    num(comercial.novosPJ    || 0));
+      _setText('ixcTab_novosValor', fc(comercial.novosNegociosValor || 0));
+      _setText('ixcTab_novosQtdBoletos', num(comercial.novosNegociosCount || 0) + ' boletos de entrada');
+
+      // Cancelamentos
+      _setText('ixcTab_cancelTotal', num(comercial.cancelTotal || 0));
+      _setText('ixcTab_cancelPF',    num(comercial.canceladosPF || 0));
+      _setText('ixcTab_cancelPJ',    num(comercial.canceladosPJ || 0));
+
+      // Churn líquido
+      const churn = comercial.churnLiquido || 0;
+      const elChurn = document.getElementById('ixcTab_churnLiquido');
+      if (elChurn) {
+        elChurn.textContent = (churn >= 0 ? '+' : '') + num(churn) + ' contratos';
+        elChurn.style.color = churn >= 0 ? '#059669' : '#dc2626';
+      }
+
+      // OS
+      if (comercial.os) {
+        const os = comercial.os;
+        _setText('ixcTab_osTotal',     num(os.total    || 0));
+        _setText('ixcTab_osSupPF',     num(os.supPF    || 0));
+        _setText('ixcTab_osSupPJ',     num(os.supPJ    || 0));
+        _setText('ixcTab_osComercial', num(os.comercial|| 0));
+        _setText('ixcTab_osRetencao',  num(os.retencao || 0));
+
+        // Barras proporcionais por tipo
+        const elBarras = document.getElementById('ixcTab_osBarras');
+        if (elBarras && os.total > 0) {
+          const tipos = [
+            { label:'Suporte PF', val: os.supPF,     cor:'#059669' },
+            { label:'Suporte PJ', val: os.supPJ,     cor:'#2563eb' },
+            { label:'Comercial',  val: os.comercial,  cor:'#d97706' },
+            { label:'Retenção',   val: os.retencao,   cor:'#dc2626' },
+            { label:'Outros',     val: os.outros,     cor:'#94a3b8' },
+          ].filter(t => t.val > 0);
+
+          elBarras.innerHTML = tipos.map(t => {
+            const pct = (t.val / os.total * 100).toFixed(1);
+            return `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.4rem">
+              <div style="font-size:0.72rem;color:#475569;width:7rem;flex-shrink:0">${t.label}</div>
+              <div style="flex:1;height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden">
+                <div style="height:100%;width:${pct}%;background:${t.cor};border-radius:4px;transition:width 0.6s"></div>
+              </div>
+              <div style="font-size:0.72rem;color:#475569;width:4rem;text-align:right">${num(t.val)} (${pct}%)</div>
+            </div>`;
+          }).join('');
+        }
+      }
+    } else if (secCom) {
+      secCom.style.display = 'none';
     }
 
     // Exibir conteúdo

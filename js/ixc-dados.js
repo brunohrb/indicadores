@@ -58,6 +58,14 @@ const IXCDados = (() => {
   }
 
   /**
+   * Retorna dados comerciais do mês (novos, cancelamentos, OS).
+   * @param {string} anoMes - ex: "2026-03"
+   */
+  async function getComercial(anoMes) {
+    return await _lerSB(_chave('comercial', anoMes));
+  }
+
+  /**
    * Retorna indicadores operacionais (clientes, usuários).
    */
   async function getOperacional() {
@@ -326,6 +334,7 @@ const IXCDados = (() => {
     getReceitas,
     getDespesas,
     getFluxoCaixa,
+    getComercial,
     getOperacional,
     getUltimaSync,
     dadosDisponiveis,
