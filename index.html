@@ -2708,6 +2708,88 @@
         </div>
       </div>
 
+      <!-- ── SEÇÃO: COMERCIAL (movida para cima) ───────── -->
+      <div id="ixcTab_secComercial" style="display:none;margin-bottom:1.5rem">
+        <h3 style="font-size:0.9rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 0.75rem">📊 Comercial — <span id="ixcTabComercialPeriodo">—</span></h3>
+
+        <!-- Novos × Cancelamentos -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+
+          <!-- Novos Contratos -->
+          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
+            <div style="font-size:0.72rem;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem">✅ Novos Contratos</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;text-align:center">
+              <div>
+                <div id="ixcTab_novosTotal" style="font-size:1.5rem;font-weight:800;color:#059669">—</div>
+                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">Total</div>
+              </div>
+              <div>
+                <div id="ixcTab_novosPF" style="font-size:1.5rem;font-weight:800;color:#2563eb">—</div>
+                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">PF</div>
+              </div>
+              <div>
+                <div id="ixcTab_novosPJ" style="font-size:1.5rem;font-weight:800;color:#7c3aed">—</div>
+                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">PJ/PME</div>
+              </div>
+            </div>
+            <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f1f5f9">
+              <div style="font-size:0.72rem;color:#64748b;margin-bottom:0.2rem">💰 Novos Negócios</div>
+              <div id="ixcTab_novosValor" style="font-size:1rem;font-weight:700;color:#059669">—</div>
+              <div id="ixcTab_novosQtdBoletos" style="font-size:0.7rem;color:#94a3b8;margin-top:0.1rem">— boletos</div>
+            </div>
+          </div>
+
+          <!-- Cancelamentos -->
+          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
+            <div style="font-size:0.72rem;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem">❌ Cancelamentos</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;text-align:center">
+              <div>
+                <div id="ixcTab_cancelTotal" style="font-size:1.5rem;font-weight:800;color:#dc2626">—</div>
+                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">Total</div>
+              </div>
+              <div>
+                <div id="ixcTab_cancelPF" style="font-size:1.5rem;font-weight:800;color:#2563eb">—</div>
+                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">PF</div>
+              </div>
+              <div>
+                <div id="ixcTab_cancelPJ" style="font-size:1.5rem;font-weight:800;color:#7c3aed">—</div>
+                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">PJ/PME</div>
+              </div>
+            </div>
+            <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f1f5f9">
+              <div style="font-size:0.72rem;color:#64748b;margin-bottom:0.2rem">📈 Churn Líquido</div>
+              <div id="ixcTab_churnLiquido" style="font-size:1rem;font-weight:700">—</div>
+              <div id="ixcTab_churnDesc" style="font-size:0.7rem;color:#94a3b8;margin-top:0.1rem">novos − cancelamentos</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OS por Tipo -->
+        <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
+          <div style="font-size:0.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem">🔧 Ordens de Serviço — <span id="ixcTab_osTotal">—</span> no mês</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem" id="ixcTab_osGrid">
+            <div style="text-align:center;padding:0.75rem;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
+              <div id="ixcTab_osSupPF" style="font-size:1.4rem;font-weight:800;color:#059669">—</div>
+              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.2rem">Suporte PF</div>
+            </div>
+            <div style="text-align:center;padding:0.75rem;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe">
+              <div id="ixcTab_osSupPJ" style="font-size:1.4rem;font-weight:800;color:#2563eb">—</div>
+              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.2rem">Suporte PJ</div>
+            </div>
+            <div style="text-align:center;padding:0.75rem;background:#fffbeb;border-radius:10px;border:1px solid #fde68a">
+              <div id="ixcTab_osComercial" style="font-size:1.4rem;font-weight:800;color:#d97706">—</div>
+              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.2rem">Comercial</div>
+            </div>
+            <div style="text-align:center;padding:0.75rem;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
+              <div id="ixcTab_osRetencao" style="font-size:1.4rem;font-weight:800;color:#dc2626">—</div>
+              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.2rem">Retenção</div>
+            </div>
+          </div>
+          <!-- Barra proporcional -->
+          <div style="margin-top:1rem" id="ixcTab_osBarras"></div>
+        </div>
+      </div>
+
       <!-- ── SEÇÃO: RECEITAS ─────────────────────────── -->
       <div style="margin-bottom:1.5rem">
         <h3 style="font-size:0.9rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 0.75rem">💰 Receitas — <span id="ixcTabPeriodoLabel">—</span></h3>
@@ -2919,17 +3001,17 @@ document.addEventListener('click', function() {
   <script src="js/dados-2023.js?v=1773264250"></script>
   <script src="js/dados-2024.js?v=1773264250"></script>
   <script src="js/dados-2025.js?v=1773264250"></script>
-  <script src="js/config.js?v=2"></script>
+  <script src="js/config.js?v=4"></script>
   <!-- IXC Dados — deve carregar ANTES do init-operacional (que chama renderizarGraficos) -->
-  <script src="js/ixc-dados.js?v=2"></script>
-  <script src="js/ixc-tab.js?v=2"></script>
-  <script src="js/dados-financeiros.js?v=2"></script>
-  <script src="js/charts.js?v=2"></script>
+  <script src="js/ixc-dados.js?v=4"></script>
+  <script src="js/ixc-tab.js?v=4"></script>
+  <script src="js/dados-financeiros.js?v=4"></script>
+  <script src="js/charts.js?v=4"></script>
   <script src="js/diretoria.js"></script>
   <script src="js/comissao-financeiro.js"></script>
   <script src="js/fechar-mes.js"></script>
   <script src="js/consolidado.js"></script>
-  <script src="js/init-operacional.js?v=2"></script>
+  <script src="js/init-operacional.js?v=4"></script>
   <script>
 // ================================================================
 // IXC — ABRE A ABA IXC DIRETAMENTE (sem depender de changeView)
