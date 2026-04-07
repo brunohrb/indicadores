@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Reparar dados IXC</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  body { font-family: sans-serif; max-width: 600px; margin: 4rem auto; padding: 0 1rem; color: #1e293b; }
+  h1   { font-size: 1.4rem; margin-bottom: 0.5rem; }
+  pre  { background: #f1f5f9; border-radius: 8px; padding: 1rem; font-size: 0.85rem; white-space: pre-wrap; min-height: 200px; }
+  button { background: #2563eb; color: white; border: none; border-radius: 8px; padding: 0.75rem 2rem;
+           font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 1rem; }
+  button:disabled { background: #94a3b8; cursor: not-allowed; }
+  .ok   { color: #059669; }
+  .erro { color: #dc2626; }
+  .info { color: #2563eb; }
+</style>
+</head>
+<body>
+<h1>🧹 Reparar dados IXC zerados</h1>
+<p>Esta página detecta e remove entradas zeradas do Supabase para que o
+dashboard volte a exibir <strong>"Sem dados"</strong> corretamente em vez de R$ 0,00.</p>
+
+<label style="font-size:0.9rem;font-weight:600">Mês a reparar:</label><br>
+<input id="mes" value="2026-03" style="padding:0.4rem 0.8rem;border:1px solid #cbd5e1;border-radius:6px;font-size:1rem;margin:0.4rem 0">
+
+<br><button id="btn" onclick="rodar()">▶ Executar reparo</button>
+
+<pre id="log">Clique em "Executar reparo" para começar...</pre>
+
+<script>
+const SB_URL = 'https://xuwwgprchhfshrqdhuqn.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const tipos = ['receitas', 'despesas', 'fluxo', 'comercial'];
+
+function log(msg, cls) {
+  const el = document.getElementById('log');
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = msg + '\n';
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+
+function eZerado(obj) {
+  if (!obj || typeof obj !== 'object') return true;
+  const nums = Object.values(obj).filter(v => typeof v === 'number');
+  return nums.length > 0 && nums.every(v => v === 0);
+}
+
+async function rodar() {
+  const anoMes = document.getElementById('mes').value.trim();
+  if (!/^\d{4}-\d{2}$/.test(anoMes)) { alert('Formato inválido. Use YYYY-MM, ex: 2026-03'); return; }
+
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  document.getElementById('log').textContent = '';
+
+  log('🔍 Conectando ao Supabase...', 'info');
+
+  // Lista tudo
+  const { data: tudo, error: errLista } = await sb.from('app_storage')
+    .select('key, value, updated_at').like('key', 'ixc_%').order('updated_at', { ascending: false });
+
+  if (errLista) { log('❌ Erro: ' + errLista.message, 'erro'); btn.disabled = false; return; }
+
+  log('\n📋 Estado atual:');
+  for (const row of (tudo || [])) {
+    let v; try { v = JSON.parse(row.value); } catch { v = null; }
+    const z = eZerado(v);
+    const dt = new Date(row.updated_at).toLocaleString('pt-BR');
+    log('  ' + (z ? '🔴 ZERADO  ' : '🟢 OK       ') + row.key + '  (' + dt + ')', z ? 'erro' : 'ok');
+  }
+
+  log('\n🧹 Limpando chaves zeradas de ' + anoMes + '...', 'info');
+  let removidas = 0;
+
+  for (const tipo of tipos) {
+    const chave = `ixc_${tipo}_${anoMes}`;
+    const { data } = await sb.from('app_storage').select('value').eq('key', chave).maybeSingle();
+    if (!data) { log('  ⏭️  ' + chave + ' — não existe'); continue; }
+
+    let valor; try { valor = JSON.parse(data.value); } catch { valor = null; }
+
+    if (eZerado(valor)) {
+      const { error } = await sb.from('app_storage').delete().eq('key', chave);
+      if (error) { log('  ❌ ' + chave + ' — erro: ' + error.message, 'erro'); }
+      else        { log('  ✅ ' + chave + ' — REMOVIDO', 'ok'); removidas++; }
+    } else {
+      log('  ✔️  ' + chave + ' — tem dados reais, mantido', 'ok');
+    }
+  }
+
+  // Atualiza ixc_ultima_sync
+  const { data: syncRow } = await sb.from('app_storage').select('value').eq('key','ixc_ultima_sync').maybeSingle();
+  if (syncRow) {
+    try {
+      const sync = JSON.parse(syncRow.value);
+      const meses = (sync.meses||[]).filter(m => m !== anoMes);
+      if (meses.length !== (sync.meses||[]).length) {
+        await sb.from('app_storage').upsert(
+          { key:'ixc_ultima_sync', value: JSON.stringify({...sync, meses}), updated_at: new Date().toISOString() },
+          { onConflict:'key' });
+        log('  ✅ ixc_ultima_sync — mês ' + anoMes + ' removido', 'ok');
+      }
+    } catch(e) {}
+  }
+
+  log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  if (removidas > 0) {
+    log('✅ ' + removidas + ' chave(s) removida(s)!', 'ok');
+    log('\n💡 Abra o dashboard e clique em "Atualizar agora" na aba IXC.', 'info');
+  } else {
+    log('ℹ️  Nenhuma chave zerada encontrada para ' + anoMes + '.\n    Os dados podem estar corretos ou já foram limpos.', 'info');
+  }
+
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
