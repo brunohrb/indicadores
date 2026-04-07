@@ -2654,7 +2654,14 @@
     <div id="ixcTab_semDados" style="display:none;padding:3rem 2rem;text-align:center">
       <div style="font-size:2.5rem;margin-bottom:0.5rem">📡</div>
       <h3 style="color:#1e293b;font-weight:700">Sem dados para este período</h3>
-      <p style="color:#64748b;font-size:0.875rem">Execute <code>node ixc-sync/sync.js --mes YYYY-MM</code> para sincronizar.</p>
+      <p style="color:#64748b;font-size:0.875rem">
+        Os dados estão ausentes ou foram sincronizados antes de haver transações no mês.<br>
+        Re-execute o sync: <code>node ixc-sync/sync.js --mes <span id="ixcTab_semDadosMes">YYYY-MM</span></code>
+      </p>
+      <p style="color:#94a3b8;font-size:0.8rem;margin-top:0.5rem">
+        Para diagnosticar: <code>node ixc-sync/diagnostico.js</code>
+        &nbsp;|&nbsp; Para limpar zeros: <code>node ixc-sync/diagnostico.js --limpar <span id="ixcTab_semDadosMes2">YYYY-MM</span></code>
+      </p>
     </div>
 
     <!-- Erro -->

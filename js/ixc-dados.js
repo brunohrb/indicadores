@@ -94,7 +94,18 @@ const IXCDados = (() => {
   }
 
   /**
+   * Verifica se um objeto de receitas/despesas está completamente zerado
+   * (sync rodou antes de haver transações no mês).
+   */
+  function _dadosZerados(obj) {
+    if (!obj || typeof obj !== 'object') return true;
+    const nums = Object.values(obj).filter(v => typeof v === 'number');
+    return nums.length > 0 && nums.every(v => v === 0);
+  }
+
+  /**
    * Retorna resumo financeiro do mês (receitas + despesas).
+   * Entradas completamente zeradas são tratadas como ausentes (sync prematuro).
    */
   async function getResumoMes(anoMes) {
     const [rec, desp, fluxo] = await Promise.all([
@@ -103,23 +114,27 @@ const IXCDados = (() => {
       getFluxoCaixa(anoMes),
     ]);
 
-    if (!rec && !desp) return null;
+    // Trata registros zerados (sync rodado sem dados) como inexistentes
+    const recValido  = rec  && !_dadosZerados(rec)  ? rec  : null;
+    const despValido = desp && !_dadosZerados(desp) ? desp : null;
+
+    if (!recValido && !despValido) return null;
 
     return {
       anoMes,
-      receitas: rec ? {
-        totalRecebido: rec.totalRecebido,
-        totalEmitido: rec.totalEmitido,
-        totalJurosMulta: rec.totalJurosMulta,
-        countRecebido: rec.countRecebido,
+      receitas: recValido ? {
+        totalRecebido: recValido.totalRecebido,
+        totalEmitido: recValido.totalEmitido,
+        totalJurosMulta: recValido.totalJurosMulta,
+        countRecebido: recValido.countRecebido,
       } : null,
-      despesas: desp ? {
-        totalPago: desp.totalPago,
-        countPago: desp.countPago,
-        porConta: desp.porConta || [],
+      despesas: despValido ? {
+        totalPago: despValido.totalPago,
+        countPago: despValido.countPago,
+        porConta: despValido.porConta || [],
       } : null,
       fluxo: fluxo ? fluxo.dias : null,
-      saldoMes: (rec?.totalRecebido || 0) - (desp?.totalPago || 0),
+      saldoMes: (recValido?.totalRecebido || 0) - (despValido?.totalPago || 0),
     };
   }
 
