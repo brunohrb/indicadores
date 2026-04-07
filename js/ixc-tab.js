@@ -74,6 +74,11 @@ async function renderIXCTab() {
 
     // Sem dados para este período?
     if (!resumo && !op) {
+      // Preenche o mês na mensagem de orientação
+      const elM1 = document.getElementById('ixcTab_semDadosMes');
+      const elM2 = document.getElementById('ixcTab_semDadosMes2');
+      if (elM1) elM1.textContent = anoMes;
+      if (elM2) elM2.textContent = anoMes;
       mostrarEstado('semDados');
       return;
     }
