@@ -193,17 +193,28 @@ async function syncOperacional() {
     qtype: 'cliente.ativo', query: 'S', oper: '=',
     grid_param: JSON.stringify([{ TB: 'cliente.tipo_pessoa', OP: '=', P: tipo }]),
   });
-  const [clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ] = await Promise.all([
+  let [clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ] = await Promise.all([
     contar('cliente', { qtype: 'cliente.ativo', query: 'S', oper: '=' }),
     contar('radusuarios', { qtype: 'radusuarios.ativo', query: 'S', oper: '=' }),
     contar('cliente', {}),
     contar('cliente', filtroAtivoTipo('F')),
     contar('cliente', filtroAtivoTipo('J')),
   ]);
+
+  // Se o grid_param não funcionar (IXC ignora), PF+PJ vão bater com o total
+  // (não filtrou por ativo). Nesse caso cai pro fallback: lista todos os
+  // ativos e conta PF/PJ localmente.
   const somaPFPJ = clientesPF + clientesPJ;
   if (Math.abs(somaPFPJ - clientesAtivos) > 5) {
-    log(`     ⚠️ PF+PJ ativos (${somaPFPJ}) difere de ativos (${clientesAtivos}) — IXC pode não suportar grid_param`, 'warn');
+    log(`     ⚠️ grid_param não funcionou (PF+PJ=${somaPFPJ} ≠ ativos=${clientesAtivos}). Usando fallback: listando ativos...`, 'warn');
+    const { registros } = await listarTodos('cliente', {
+      qtype: 'cliente.ativo', query: 'S', oper: '=',
+    });
+    clientesPF = registros.filter(r => r.tipo_pessoa === 'F').length;
+    clientesPJ = registros.filter(r => r.tipo_pessoa === 'J').length;
+    log(`     ✓ Fallback OK: PF=${clientesPF} · PJ=${clientesPJ} (${registros.length} ativos listados)`, 'ok');
   }
+
   return { clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ, atualizadoEm: new Date().toISOString() };
 }
 
