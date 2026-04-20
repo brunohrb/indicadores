@@ -81,12 +81,27 @@ async function salvarSupabase(chave, valor) {
 
 // ─── Sync de Receitas ─────────────────────────────────
 
+// Filtros aplicados para bater com "Relatório de Recebimentos" do IXC:
+// - status=R (recebido)
+// - estornado!=S (não foi estornado)
+// - forma_recebimento=R (regular; exclui M=manual e vazios)
+// Valor líquido = valor_recebido − valor_cancelado
+function recValido(r) {
+  return r.status === 'R'
+      && r.estornado !== 'S'
+      && r.forma_recebimento === 'R';
+}
+function recValor(r) {
+  return (parseFloat(r.valor_recebido || 0) || 0) - (parseFloat(r.valor_cancelado || 0) || 0);
+}
+
 async function syncReceitas(anoMes) {
   const dataIni = `${anoMes}-01`;
   const dataFim = dayjs(dataIni).endOf('month').format('YYYY-MM-DD');
   log(`  📥 Receitas ${anoMes}: buscando fn_areceber...`);
 
   let totalRecebido = 0, totalEmitido = 0, countRecebido = 0, countEmitido = 0;
+  let totalJurosMulta = 0;
   let page = 1;
 
   while (true) {
@@ -101,13 +116,14 @@ async function syncReceitas(anoMes) {
 
     for (const r of registros) {
       const baixa = (r.baixa_data || '').substring(0, 10);
-      if (baixa >= dataIni && baixa <= dataFim) {
-        totalRecebido += parseFloat(r.valor_recebido || 0);
+      if (baixa >= dataIni && baixa <= dataFim && recValido(r)) {
+        totalRecebido += recValor(r);
         countRecebido++;
+        totalJurosMulta += (parseFloat(r.valor_juros || 0) || 0) + (parseFloat(r.valor_multas || 0) || 0);
       }
       const emissao = (r.data_emissao || '').substring(0, 10);
       if (emissao >= dataIni && emissao <= dataFim) {
-        totalEmitido += parseFloat(r.valor || 0);
+        totalEmitido += parseFloat(r.valor || 0) || 0;
         countEmitido++;
       }
     }
@@ -117,16 +133,6 @@ async function syncReceitas(anoMes) {
     page++;
     await new Promise(r => setTimeout(r, 150));
   }
-
-  let totalJurosMulta = 0;
-  try {
-    const { registros } = await listarTodos('fn_areceber', {
-      qtype: 'fn_areceber.baixa_data', query: dataIni, oper: '>=',
-    });
-    totalJurosMulta = registros
-      .filter(r => (r.baixa_data || '').substring(0, 10) <= dataFim && r.tipo_cobranca === 'J')
-      .reduce((s, r) => s + parseFloat(r.valor_recebido || 0), 0);
-  } catch (e) { log(`     Aviso juros: ${e.message}`, 'warn'); }
 
   return {
     anoMes,
@@ -218,7 +224,8 @@ async function syncFluxoCaixa(anoMes) {
     for (const r of registros) {
       const dia = (r.baixa_data || '').substring(0, 10);
       if (dia < dataIni || dia > dataFim) continue;
-      entradas[dia] = (entradas[dia] || 0) + parseFloat(r.valor_recebido || 0);
+      if (!recValido(r)) continue;
+      entradas[dia] = (entradas[dia] || 0) + recValor(r);
     }
     const ultima = registros.length > 0 ? (registros[registros.length - 1].baixa_data || '').substring(0, 10) : '';
     if (ultima > dataFim || registros.length < cfg.PAGE_SIZE) break;
