@@ -19,6 +19,10 @@ Baixe e instale: **https://nodejs.org/pt-br/download**
 
 ## ▶️ Para sincronizar (sempre que quiser)
 
+> ⚠️ **ATENÇÃO:** só dê dois cliques no **`sync.bat`** (Windows) ou **`sync.command`** (Mac).
+> **NUNCA** clique no `sync.js` — o Windows tenta abrir com o "Windows Script Host"
+> e dá erro `Caractere inválido / 800A03F6`. Esse arquivo só é executado pelo `.bat`.
+
 **Dois cliques** no arquivo:
 - **Windows:** `sync.bat`
 - **Mac:** `sync.command`
@@ -47,6 +51,7 @@ node sync.js --full               # últimos 12 meses
 
 | Erro | O que fazer |
 |---|---|
+| `Caractere inválido` / `800A03F6` (Windows Script Host) | Você clicou no `sync.js` — clique no **`sync.bat`** |
 | `Node.js não encontrado` | Instalar o Node.js (passo 1 acima) |
 | `Seu IP não está liberado` | Você não está na rede do escritório — conecte na VPN ou vá para o escritório |
 | `Failed to fetch` / `ECONNREFUSED` | Problema de rede — veja se consegue abrir o IXC no navegador |
