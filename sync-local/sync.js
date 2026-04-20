@@ -259,12 +259,93 @@ async function syncFluxoCaixa(anoMes) {
   return { anoMes, dias };
 }
 
+// ─── DEBUG — imprime campos crus de registros fn_areceber ──
+
+async function debugReceitas(anoMes) {
+  const dataIni = `${anoMes}-01`;
+  const dataFim = dayjs(dataIni).endOf('month').format('YYYY-MM-DD');
+  log(`\n🔍 DEBUG Receitas ${anoMes} — buscando amostras...`);
+
+  const data = await ixcPost('fn_areceber', {
+    qtype: 'fn_areceber.baixa_data', query: dataIni, oper: '>=',
+    sortname: 'fn_areceber.baixa_data', sortorder: 'asc',
+    page: '1', rp: '20',
+  });
+
+  const registros = (data.registros || []).filter(r => {
+    const d = (r.baixa_data || '').substring(0, 10);
+    return d >= dataIni && d <= dataFim;
+  }).slice(0, 5);
+
+  if (!registros.length) {
+    log('  Nenhum registro no período.', 'warn');
+    return;
+  }
+
+  log(`\n📋 Campos do 1º registro (todos):`);
+  console.log(JSON.stringify(registros[0], null, 2));
+
+  log(`\n💰 Somando ${registros.length} registros de amostra com várias fórmulas:`);
+
+  const formulas = {
+    'valor_recebido (atual)':
+      r => parseFloat(r.valor_recebido || 0),
+    'valor':
+      r => parseFloat(r.valor || 0),
+    'valor - desconto - desconto_adicional':
+      r => parseFloat(r.valor||0) - parseFloat(r.valor_desconto||0) - parseFloat(r.valor_desconto_adicional||0),
+    'valor_recebido - desconto - desconto_adicional':
+      r => parseFloat(r.valor_recebido||0) - parseFloat(r.valor_desconto||0) - parseFloat(r.valor_desconto_adicional||0),
+    'valor + juros + multa - desconto - desconto_adicional':
+      r => parseFloat(r.valor||0) + parseFloat(r.valor_juros||0) + parseFloat(r.valor_multa||0)
+         - parseFloat(r.valor_desconto||0) - parseFloat(r.valor_desconto_adicional||0),
+    'valor_baixa':
+      r => parseFloat(r.valor_baixa || 0),
+    'valor_liquido (se existir)':
+      r => parseFloat(r.valor_liquido || 0),
+  };
+
+  for (const [nome, fn] of Object.entries(formulas)) {
+    const soma = registros.reduce((s, r) => s + fn(r), 0);
+    log(`   ${nome}  →  ${moeda(soma)}`);
+  }
+
+  log(`\n📊 Por registro — Baixa / Acréscimo / Desconto / Valor Líquido esperados:`);
+  for (const r of registros) {
+    console.log({
+      id: r.id,
+      cliente: r.id_cliente,
+      baixa_data: r.baixa_data,
+      valor: r.valor,
+      valor_recebido: r.valor_recebido,
+      valor_juros: r.valor_juros,
+      valor_multa: r.valor_multa,
+      valor_acrescimo: r.valor_acrescimo,
+      valor_desconto: r.valor_desconto,
+      valor_desconto_adicional: r.valor_desconto_adicional,
+      valor_baixa: r.valor_baixa,
+      valor_liquido: r.valor_liquido,
+      tipo_cobranca: r.tipo_cobranca,
+      status: r.status,
+    });
+  }
+
+  log(`\n✅ Copia e cola TUDO isso pra eu diagnosticar e corrigir.`, 'ok');
+}
+
 // ─── MAIN ─────────────────────────────────────────────
 
 async function main() {
   const args = process.argv.slice(2);
   const agora = dayjs();
   let meses = [];
+
+  if (args.includes('--debug')) {
+    const mesArg = args[args.indexOf('--debug') + 1];
+    const anoMes = (mesArg && /^\d{4}-\d{2}$/.test(mesArg)) ? mesArg : agora.format('YYYY-MM');
+    await debugReceitas(anoMes);
+    return;
+  }
 
   if (args.includes('--full')) {
     for (let i = cfg.MESES_HISTORICO - 1; i >= 0; i--) meses.push(agora.subtract(i, 'month').format('YYYY-MM'));
