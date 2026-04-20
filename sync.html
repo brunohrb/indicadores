@@ -174,16 +174,32 @@ function iterDias(dataIni, dataFim, cb) {
 // ─── Sync: Operacional ───────────────────────────────
 async function syncOperacional() {
   log('🔢 Indicadores operacionais...', 'info');
-  const [clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ] = await Promise.all([
+  const filtroAtivoTipo = (tipo) => ({
+    qtype:'cliente.ativo', query:'S', oper:'=',
+    grid_param: JSON.stringify([{ TB:'cliente.tipo_pessoa', OP:'=', P: tipo }]),
+  });
+  let [clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ] = await Promise.all([
     ixcContar('cliente',     { qtype:'cliente.ativo', query:'S', oper:'=' }),
     ixcContar('radusuarios', { qtype:'radusuarios.ativo', query:'S', oper:'=' }),
     ixcContar('cliente',     {}),
-    ixcContar('cliente',     { qtype:'cliente.tipo_pessoa', query:'F', oper:'=' }),
-    ixcContar('cliente',     { qtype:'cliente.tipo_pessoa', query:'J', oper:'=' }),
+    ixcContar('cliente',     filtroAtivoTipo('F')),
+    ixcContar('cliente',     filtroAtivoTipo('J')),
   ]);
+
+  if (Math.abs((clientesPF + clientesPJ) - clientesAtivos) > 5) {
+    log(`  ⚠️ grid_param nao funcionou (PF+PJ=${clientesPF+clientesPJ} ≠ ativos=${clientesAtivos}). Fallback: listando ativos...`, 'warn');
+    const todos = [];
+    await ixcListarPaginado('cliente', { qtype:'cliente.ativo', query:'S', oper:'=' }, async (regs) => {
+      todos.push(...regs);
+    });
+    clientesPF = todos.filter(r => r.tipo_pessoa === 'F').length;
+    clientesPJ = todos.filter(r => r.tipo_pessoa === 'J').length;
+    log(`  ✓ Fallback OK: PF=${clientesPF} · PJ=${clientesPJ} (${todos.length} ativos listados)`, 'ok');
+  }
+
   const op = { clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ, atualizadoEm: new Date().toISOString() };
   await salvarSupabase('ixc_operacional', op);
-  log(`  ✅ ${clientesAtivos} clientes ativos · ${usuariosAtivos} usuários radius`, 'ok');
+  log(`  ✅ ${clientesAtivos} clientes ativos · ${usuariosAtivos} usuários radius · PF ${clientesPF} · PJ ${clientesPJ}`, 'ok');
   return op;
 }
 

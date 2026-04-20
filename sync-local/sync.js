@@ -195,13 +195,32 @@ async function syncDespesas(anoMes) {
 
 async function syncOperacional() {
   log('  🔢 Operacional: clientes e usuários...');
-  const [clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ] = await Promise.all([
+  const filtroAtivoTipo = (tipo) => ({
+    qtype: 'cliente.ativo', query: 'S', oper: '=',
+    grid_param: JSON.stringify([{ TB: 'cliente.tipo_pessoa', OP: '=', P: tipo }]),
+  });
+  let [clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ] = await Promise.all([
     contar('cliente', { qtype: 'cliente.ativo', query: 'S', oper: '=' }),
     contar('radusuarios', { qtype: 'radusuarios.ativo', query: 'S', oper: '=' }),
     contar('cliente', {}),
-    contar('cliente', { qtype: 'cliente.tipo_pessoa', query: 'F', oper: '=' }),
-    contar('cliente', { qtype: 'cliente.tipo_pessoa', query: 'J', oper: '=' }),
+    contar('cliente', filtroAtivoTipo('F')),
+    contar('cliente', filtroAtivoTipo('J')),
   ]);
+
+  // Se o grid_param não funcionar (IXC ignora), PF+PJ vão bater com o total
+  // (não filtrou por ativo). Nesse caso cai pro fallback: lista todos os
+  // ativos e conta PF/PJ localmente.
+  const somaPFPJ = clientesPF + clientesPJ;
+  if (Math.abs(somaPFPJ - clientesAtivos) > 5) {
+    log(`     ⚠️ grid_param não funcionou (PF+PJ=${somaPFPJ} ≠ ativos=${clientesAtivos}). Usando fallback: listando ativos...`, 'warn');
+    const { registros } = await listarTodos('cliente', {
+      qtype: 'cliente.ativo', query: 'S', oper: '=',
+    });
+    clientesPF = registros.filter(r => r.tipo_pessoa === 'F').length;
+    clientesPJ = registros.filter(r => r.tipo_pessoa === 'J').length;
+    log(`     ✓ Fallback OK: PF=${clientesPF} · PJ=${clientesPJ} (${registros.length} ativos listados)`, 'ok');
+  }
+
   return { clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ, atualizadoEm: new Date().toISOString() };
 }
 
@@ -457,7 +476,7 @@ async function main() {
   try {
     const op = await syncOperacional();
     await salvarSupabase('ixc_operacional', op);
-    log(`  ✅ Operacional: ${op.clientesAtivos} ativos | ${op.usuariosAtivos} radius`, 'ok');
+    log(`  ✅ Operacional: ${op.clientesAtivos} ativos | ${op.usuariosAtivos} radius | PF ${op.clientesPF} | PJ ${op.clientesPJ}`, 'ok');
   } catch (e) { log(`  ❌ Operacional: ${e.message}`, 'erro'); }
 
   for (const anoMes of meses) {
