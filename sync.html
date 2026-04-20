@@ -37,9 +37,15 @@
 <p class="sub">Busca os dados do IXC Soft e grava no Supabase. <strong>Use do escritório</strong> (o IP precisa estar liberado no IXC).</p>
 
 <div class="alert">
-  ⚠️ Se aparecer erro de <strong>CORS</strong> ou <strong>"Seu IP não está liberado"</strong>:
-  (a) confira se está no IP do escritório; (b) peça ao IXC para adicionar
-  <code id="origemAtual"></code> às origens permitidas.
+  ⚠️ Se aparecer erro de <strong>CORS</strong> ou <strong>Failed to fetch</strong>:
+  o navegador está bloqueando a chamada ao IXC (o servidor do IXC não envia o cabeçalho
+  que o navegador exige). Nesse caso use a
+  <strong>alternativa local</strong>:
+  <a href="https://github.com/brunohrb/indicadores/tree/main/sync-local" target="_blank" rel="noopener">
+    pasta sync-local no GitHub
+  </a>
+  — instruções no arquivo <code>LEIA-ME.md</code>.
+  Dá dois cliques e pronto (requer Node.js instalado, 5 min na primeira vez).
 </div>
 
 <div class="box">
@@ -376,40 +382,61 @@ async function rodar() {
   log(`🚀 Iniciando sync — ${meses.join(', ')}`, 'info');
   log(`   Origem: ${location.origin || '(file://)'}`, 'dim');
 
+  let ok = 0, fail = 0, primeiroErro = '';
+  const marcar = (erro) => {
+    if (erro) { fail++; if (!primeiroErro) primeiroErro = erro.message || String(erro); }
+    else ok++;
+  };
+
   try {
     // Operacional (uma vez só)
     if (fazerOp) {
-      try { await syncOperacional(); }
-      catch(e) { log(`  ❌ Operacional: ${e.message}`, 'erro'); }
+      try { await syncOperacional(); marcar(); }
+      catch(e) { log(`  ❌ Operacional: ${e.message}`, 'erro'); marcar(e); }
     }
 
     for (const anoMes of meses) {
       log(`\n📅 ${anoMes}`, 'info');
       if (fazerRec) {
-        try { await syncReceitas(anoMes); }
-        catch(e) { log(`  ❌ Receitas: ${e.message}`, 'erro'); }
+        try { await syncReceitas(anoMes); marcar(); }
+        catch(e) { log(`  ❌ Receitas: ${e.message}`, 'erro'); marcar(e); }
       }
       if (fazerDesp) {
-        try { await syncDespesas(anoMes); }
-        catch(e) { log(`  ❌ Despesas: ${e.message}`, 'erro'); }
+        try { await syncDespesas(anoMes); marcar(); }
+        catch(e) { log(`  ❌ Despesas: ${e.message}`, 'erro'); marcar(e); }
       }
       if (fazerFluxo) {
-        try { await syncFluxoCaixa(anoMes); }
-        catch(e) { log(`  ❌ Fluxo: ${e.message}`, 'erro'); }
+        try { await syncFluxoCaixa(anoMes); marcar(); }
+        catch(e) { log(`  ❌ Fluxo: ${e.message}`, 'erro'); marcar(e); }
       }
     }
 
-    // Metadados
-    await salvarSupabase('ixc_ultima_sync', {
-      timestamp: new Date().toISOString(),
-      meses: meses,
-      versao: '2.0-browser',
-      origem: location.origin || 'file://',
-    });
-
     const segundos = ((Date.now() - inicio)/1000).toFixed(1);
-    log(`\n🎉 Sync concluído em ${segundos}s!`, 'ok');
-    log(`   Abra o dashboard e clique "Atualizar agora" na aba IXC.`, 'info');
+
+    if (ok === 0 && fail > 0) {
+      // Tudo falhou — NÃO grava metadados e mostra fallback claro
+      log(`\n💥 Tudo falhou (${fail} erros) em ${segundos}s.`, 'erro');
+      if (/failed to fetch|cors|networkerror/i.test(primeiroErro)) {
+        log('', 'dim');
+        log('🚫 O navegador está bloqueando as chamadas ao IXC (CORS).', 'erro');
+        log('   O servidor do IXC não envia o cabeçalho que o navegador exige', 'warn');
+        log('   para aceitar requisições vindas de https://brunohrb.github.io.', 'warn');
+        log('', 'dim');
+        log('✅ Solução: rode o sync no PC do escritório (pasta sync-local):', 'ok');
+        log('   https://github.com/brunohrb/indicadores/tree/main/sync-local', 'info');
+        log('   → Baixe, instale Node.js, clique duplo em sync.bat.', 'info');
+      }
+    } else {
+      // Pelo menos 1 sucesso — grava metadados
+      await salvarSupabase('ixc_ultima_sync', {
+        timestamp: new Date().toISOString(),
+        meses: meses,
+        versao: '2.0-browser',
+        origem: location.origin || 'file://',
+      });
+      log(`\n🎉 Sync concluído em ${segundos}s (${ok} ok, ${fail} erros).`, fail ? 'warn' : 'ok');
+      log(`   Abra o dashboard e clique "Atualizar agora" na aba IXC.`, 'info');
+    }
 
   } catch (e) {
     log(`\n❌ ERRO FATAL: ${e.message}`, 'erro');
