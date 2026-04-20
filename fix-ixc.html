@@ -22,7 +22,12 @@
 dashboard volte a exibir <strong>"Sem dados"</strong> corretamente em vez de R$ 0,00.</p>
 
 <label style="font-size:0.9rem;font-weight:600">Mês a reparar:</label><br>
-<input id="mes" value="2026-03" style="padding:0.4rem 0.8rem;border:1px solid #cbd5e1;border-radius:6px;font-size:1rem;margin:0.4rem 0">
+<input id="mes" style="padding:0.4rem 0.8rem;border:1px solid #cbd5e1;border-radius:6px;font-size:1rem;margin:0.4rem 0">
+
+<label style="font-size:0.85rem;display:block;margin:0.5rem 0 0.3rem">
+  <input type="checkbox" id="apagarTudo" style="vertical-align:middle">
+  Apagar <strong>todas</strong> as chaves do mês (zeradas ou não) — força re-sync
+</label>
 
 <br><button id="btn" onclick="rodar()">▶ Executar reparo</button>
 
@@ -33,6 +38,13 @@ const SB_URL = 'https://xuwwgprchhfshrqdhuqn.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const tipos = ['receitas', 'despesas', 'fluxo', 'comercial'];
+
+// Pré-preenche com mês atual
+(() => {
+  const d = new Date();
+  document.getElementById('mes').value =
+    d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+})();
 
 function log(msg, cls) {
   const el = document.getElementById('log');
@@ -73,7 +85,8 @@ async function rodar() {
     log('  ' + (z ? '🔴 ZERADO  ' : '🟢 OK       ') + row.key + '  (' + dt + ')', z ? 'erro' : 'ok');
   }
 
-  log('\n🧹 Limpando chaves zeradas de ' + anoMes + '...', 'info');
+  const apagarTudo = document.getElementById('apagarTudo').checked;
+  log('\n🧹 ' + (apagarTudo ? 'APAGANDO TUDO de ' : 'Limpando chaves zeradas de ') + anoMes + '...', 'info');
   let removidas = 0;
 
   for (const tipo of tipos) {
@@ -83,10 +96,10 @@ async function rodar() {
 
     let valor; try { valor = JSON.parse(data.value); } catch { valor = null; }
 
-    if (eZerado(valor)) {
+    if (apagarTudo || eZerado(valor)) {
       const { error } = await sb.from('app_storage').delete().eq('key', chave);
       if (error) { log('  ❌ ' + chave + ' — erro: ' + error.message, 'erro'); }
-      else        { log('  ✅ ' + chave + ' — REMOVIDO', 'ok'); removidas++; }
+      else        { log('  ✅ ' + chave + ' — REMOVIDO' + (apagarTudo && !eZerado(valor) ? ' (forçado)' : ''), 'ok'); removidas++; }
     } else {
       log('  ✔️  ' + chave + ' — tem dados reais, mantido', 'ok');
     }
