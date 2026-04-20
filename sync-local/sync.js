@@ -189,13 +189,21 @@ async function syncDespesas(anoMes) {
 
 async function syncOperacional() {
   log('  🔢 Operacional: clientes e usuários...');
+  const filtroAtivoTipo = (tipo) => ({
+    qtype: 'cliente.ativo', query: 'S', oper: '=',
+    grid_param: JSON.stringify([{ TB: 'cliente.tipo_pessoa', OP: '=', P: tipo }]),
+  });
   const [clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ] = await Promise.all([
     contar('cliente', { qtype: 'cliente.ativo', query: 'S', oper: '=' }),
     contar('radusuarios', { qtype: 'radusuarios.ativo', query: 'S', oper: '=' }),
     contar('cliente', {}),
-    contar('cliente', { qtype: 'cliente.tipo_pessoa', query: 'F', oper: '=' }),
-    contar('cliente', { qtype: 'cliente.tipo_pessoa', query: 'J', oper: '=' }),
+    contar('cliente', filtroAtivoTipo('F')),
+    contar('cliente', filtroAtivoTipo('J')),
   ]);
+  const somaPFPJ = clientesPF + clientesPJ;
+  if (Math.abs(somaPFPJ - clientesAtivos) > 5) {
+    log(`     ⚠️ PF+PJ ativos (${somaPFPJ}) difere de ativos (${clientesAtivos}) — IXC pode não suportar grid_param`, 'warn');
+  }
   return { clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ, atualizadoEm: new Date().toISOString() };
 }
 
@@ -282,7 +290,7 @@ async function main() {
   try {
     const op = await syncOperacional();
     await salvarSupabase('ixc_operacional', op);
-    log(`  ✅ Operacional: ${op.clientesAtivos} ativos | ${op.usuariosAtivos} radius`, 'ok');
+    log(`  ✅ Operacional: ${op.clientesAtivos} ativos | ${op.usuariosAtivos} radius | PF ${op.clientesPF} | PJ ${op.clientesPJ}`, 'ok');
   } catch (e) { log(`  ❌ Operacional: ${e.message}`, 'erro'); }
 
   for (const anoMes of meses) {
