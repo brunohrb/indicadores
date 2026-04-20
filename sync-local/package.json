@@ -1,0 +1,16 @@
+{
+  "name": "texnet-ixc-sync-local",
+  "version": "1.0.0",
+  "description": "Sync IXC → Supabase rodando do PC do escritório (contorna bloqueio de IP do GitHub Actions)",
+  "main": "sync.js",
+  "scripts": {
+    "sync": "node sync.js",
+    "sync:mes": "node sync.js --mes",
+    "sync:full": "node sync.js --full"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "axios": "^1.6.0",
+    "dayjs": "^1.11.10"
+  }
+}
