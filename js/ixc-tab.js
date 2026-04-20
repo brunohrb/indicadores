@@ -73,7 +73,7 @@ async function renderIXCTab() {
     const fluxo = fluxoRaw?.dias || (Array.isArray(fluxoRaw) ? fluxoRaw : null);
 
     // Sem dados para este período?
-    if (!resumo && !op) {
+    if (!resumo && !op && !comercial) {
       // Preenche o mês na mensagem de orientação
       const elM1 = document.getElementById('ixcTab_semDadosMes');
       const elM2 = document.getElementById('ixcTab_semDadosMes2');
@@ -82,6 +82,13 @@ async function renderIXCTab() {
       mostrarEstado('semDados');
       return;
     }
+
+    // Aviso parcial: recebemos dados comerciais/operacionais, mas o bloco
+    // financeiro (receitas/despesas) não veio no sync. O usuário precisa
+    // saber disso em vez de ver cards travados em "—".
+    const temReceitas = !!(resumo && resumo.receitas);
+    const temDespesas = !!(resumo && resumo.despesas);
+    _atualizarAvisoFinanceiro(anoMes, temReceitas, temDespesas);
 
     // ── Hora da última sync ─────────────────────────────
     const elSync = document.getElementById('ixcTabSyncHora');
@@ -128,6 +135,16 @@ async function renderIXCTab() {
 
       const barRec = document.getElementById('ixcTab_recBar');
       if (barRec) barRec.style.width = Math.min(pctRec, 100).toFixed(1) + '%';
+    } else {
+      // Sem dados de receitas: mostra placeholder explicativo nos cards
+      _setText('ixcTab_recRecebido', 'Sem dados');
+      _setText('ixcTab_recEmitido',  'Sem dados');
+      _setText('ixcTab_recBoletos',  'Aguardando sync');
+      _setText('ixcTab_recTicket',   '—');
+      _setText('ixcTab_recJuros',    '—');
+      _setText('ixcTab_recBarPct',   'Receitas não sincronizadas');
+      const barRec = document.getElementById('ixcTab_recBar');
+      if (barRec) barRec.style.width = '0%';
     }
 
     // ── DESPESAS ────────────────────────────────────────
@@ -160,6 +177,12 @@ async function renderIXCTab() {
       } else if (lista) {
         lista.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:1rem">Sem detalhamento disponível</div>';
       }
+    } else {
+      // Sem dados de despesas
+      _setText('ixcTab_despTotal', 'Sem dados');
+      _setText('ixcTab_despCount', 'Aguardando sync');
+      const lista = document.getElementById('ixcTab_despLista');
+      if (lista) lista.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:1rem">Despesas não sincronizadas para este mês</div>';
     }
 
     // ── FLUXO DE CAIXA ──────────────────────────────────
@@ -206,6 +229,16 @@ async function renderIXCTab() {
       _setText('ixcTab_fluxoSaldo',    fc(saldoFinal));
       const elSF = document.getElementById('ixcTab_fluxoSaldo');
       if (elSF) elSF.style.color = saldoFinal >= 0 ? '#059669' : '#dc2626';
+    } else {
+      _setText('ixcTab_fluxoEntradas', 'Sem dados');
+      _setText('ixcTab_fluxoSaidas',   'Sem dados');
+      _setText('ixcTab_fluxoSaldo',    '—');
+      const canvas = document.getElementById('ixcTabFluxoChart');
+      if (canvas) {
+        if (_ixcTabChart) { _ixcTabChart.destroy(); _ixcTabChart = null; }
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
     }
 
     // ── COMERCIAL ───────────────────────────────────────
@@ -285,6 +318,50 @@ async function renderIXCTab() {
 function _setText(id, txt) {
   const e = document.getElementById(id);
   if (e) e.textContent = txt;
+}
+
+function _atualizarAvisoFinanceiro(anoMes, temReceitas, temDespesas) {
+  const conteudo = document.getElementById('ixcTab_conteudo');
+  if (!conteudo) return;
+
+  const ID = 'ixcTab_avisoFinanceiro';
+  const existente = document.getElementById(ID);
+
+  if (temReceitas && temDespesas) {
+    if (existente) existente.remove();
+    return;
+  }
+
+  const faltando = [];
+  if (!temReceitas) faltando.push('receitas');
+  if (!temDespesas) faltando.push('despesas');
+  const lista = faltando.join(' e ');
+
+  const html = `
+    <div id="${ID}" style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:0.9rem 1rem;margin:0 0 1rem;display:flex;gap:0.75rem;align-items:flex-start">
+      <div style="font-size:1.2rem;line-height:1">⚠️</div>
+      <div style="flex:1;font-size:0.82rem;color:#92400e;line-height:1.4">
+        <strong>Dados financeiros incompletos para ${anoMes}.</strong>
+        Os valores de <strong>${lista}</strong> não foram sincronizados
+        (o sync pode ter rodado antes de haver transações no mês, falhado na API do IXC,
+        ou os registros no Supabase estão zerados).
+        <div style="margin-top:0.35rem;font-size:0.75rem;color:#78350f">
+          Ações: rodar o workflow <em>IXC Sync</em> no repositório
+          <code>texnet-ixc-sync</code>, ou abrir <code>fix-ixc.html</code> para limpar
+          entradas zeradas e tentar novamente.
+        </div>
+      </div>
+      <button onclick="document.getElementById('${ID}').remove()"
+              style="background:transparent;border:none;color:#92400e;font-size:1.1rem;cursor:pointer;padding:0 0.25rem"
+              title="Fechar aviso">×</button>
+    </div>
+  `;
+
+  if (existente) {
+    existente.outerHTML = html;
+  } else {
+    conteudo.insertAdjacentHTML('afterbegin', html);
+  }
 }
 
 async function ixcAtualizarAgora() {
