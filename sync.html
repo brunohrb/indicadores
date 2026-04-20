@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sincronizar IXC → Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root { --azul:#2563eb; --verde:#059669; --vermelho:#dc2626; --amarelo:#d97706; --cinza:#64748b; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; max-width: 820px; margin: 2.5rem auto; padding: 0 1rem; color: #1e293b; background:#f8fafc; }
+  h1 { font-size: 1.5rem; margin: 0 0 0.3rem; }
+  .sub { color: var(--cinza); font-size: 0.9rem; margin: 0 0 1.5rem; }
+  .box { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+  label { font-size: 0.88rem; font-weight: 600; }
+  input[type=month], input[type=text] { padding: 0.5rem 0.8rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
+  input[type=checkbox] { margin-right: 0.4rem; vertical-align: middle; }
+  button { background: var(--azul); color: white; border: none; border-radius: 8px; padding: 0.65rem 1.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: 0.15s; }
+  button:hover:not(:disabled) { filter: brightness(1.1); }
+  button:disabled { background: #94a3b8; cursor: not-allowed; }
+  button.secondary { background: white; color: var(--azul); border: 1px solid var(--azul); }
+  pre { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 1rem; font-size: 0.78rem; font-family: 'Menlo', 'Consolas', monospace; white-space: pre-wrap; max-height: 440px; overflow-y: auto; min-height: 140px; margin: 0; }
+  .ok   { color: #34d399; }
+  .erro { color: #f87171; }
+  .warn { color: #fbbf24; }
+  .info { color: #60a5fa; }
+  .dim  { color: #94a3b8; }
+  .alert { background:#fef3c7; border:1px solid #fcd34d; border-radius:8px; padding:0.75rem 1rem; font-size:0.82rem; color:#92400e; margin-bottom:1rem; }
+  .card-status { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:0.75rem; margin-top:0.75rem; }
+  .card-status > div { background:#f1f5f9; border-radius:8px; padding:0.6rem 0.8rem; font-size:0.8rem; }
+  .card-status b { display:block; font-size:1.05rem; color:#0f172a; }
+</style>
+</head>
+<body>
+
+<h1>🔄 Sincronizar IXC → Dashboard</h1>
+<p class="sub">Busca os dados do IXC Soft e grava no Supabase. <strong>Use do escritório</strong> (o IP precisa estar liberado no IXC).</p>
+
+<div class="alert">
+  ⚠️ Se aparecer erro de <strong>CORS</strong> ou <strong>"Seu IP não está liberado"</strong>:
+  (a) confira se está no IP do escritório; (b) peça ao IXC para adicionar
+  <code id="origemAtual"></code> às origens permitidas.
+</div>
+
+<div class="box">
+  <div class="row" style="margin-bottom:0.75rem">
+    <label for="mes">Mês:</label>
+    <input id="mes" type="month">
+    <label style="margin-left:0.5rem"><input type="checkbox" id="incluirAnterior"> Incluir mês anterior também</label>
+  </div>
+  <div class="row">
+    <label style="flex-basis:100%;margin-bottom:0.25rem">O que sincronizar:</label>
+    <label><input type="checkbox" id="syncOp" checked> Operacional (clientes)</label>
+    <label><input type="checkbox" id="syncRec" checked> Receitas</label>
+    <label><input type="checkbox" id="syncDesp" checked> Despesas</label>
+    <label><input type="checkbox" id="syncFluxo" checked> Fluxo de caixa</label>
+  </div>
+  <div class="row" style="margin-top:1rem">
+    <button id="btn" onclick="rodar()">▶ Sincronizar</button>
+    <button class="secondary" onclick="window.open('index.html','_blank')">📊 Abrir dashboard</button>
+    <button class="secondary" onclick="window.open('fix-ixc.html','_blank')">🧹 Limpar zerados</button>
+  </div>
+</div>
+
+<div class="box">
+  <pre id="log">Preencha o mês e clique em "Sincronizar".\nO log vai aparecer aqui.</pre>
+</div>
+
+<script>
+const CFG = {
+  IXC_URL:   'https://ixcsoft.texnet.net.br',
+  IXC_TOKEN: '185:ef49bcecf6129a5b61690ac3da0ab99acdaca9171ea63d06cc403a73eef8c547',
+  SB_URL:    'https://xuwwgprchhfshrqdhuqn.supabase.co',
+  SB_KEY:    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc',
+  PAGE_SIZE: 2000,
+};
+
+const BASIC_AUTH = 'Basic ' + btoa(CFG.IXC_TOKEN);
+const sb = supabase.createClient(CFG.SB_URL, CFG.SB_KEY);
+
+// Pré-preenche com mês atual
+(() => {
+  const d = new Date();
+  document.getElementById('mes').value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  document.getElementById('origemAtual').textContent = location.origin || '(file://)';
+})();
+
+// ─── Log ─────────────────────────────────────────────
+const elLog = document.getElementById('log');
+function log(msg, cls) {
+  const hora = new Date().toLocaleTimeString('pt-BR');
+  const span = document.createElement('span');
+  if (cls) span.className = cls;
+  span.textContent = `[${hora}] ${msg}\n`;
+  elLog.appendChild(span);
+  elLog.scrollTop = elLog.scrollHeight;
+}
+function clearLog() { elLog.innerHTML = ''; }
+function moeda(v) { return 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2}); }
+
+// ─── IXC API ─────────────────────────────────────────
+async function ixcPost(tabela, body) {
+  const res = await fetch(`${CFG.IXC_URL}/webservice/v1/${tabela}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': BASIC_AUTH,
+      'ixcsoft': 'listar',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`IXC HTTP ${res.status} em ${tabela}`);
+  const data = await res.json();
+  if (data.type === 'error') throw new Error(`IXC ${tabela}: ${data.message}`);
+  return data;
+}
+
+async function ixcContar(tabela, filtros = {}) {
+  const data = await ixcPost(tabela, { ...filtros, page: '1', rp: '1' });
+  return parseInt(data.total) || 0;
+}
+
+async function ixcListarPaginado(tabela, filtros, onPage) {
+  let page = 1;
+  while (true) {
+    const body = { ...filtros, page: String(page), rp: String(CFG.PAGE_SIZE) };
+    const data = await ixcPost(tabela, body);
+    const registros = data.registros || [];
+    const total = parseInt(data.total) || 0;
+    const stop = await onPage(registros);
+    if (stop === true) break;
+    if (registros.length < CFG.PAGE_SIZE) break;
+    if (page * CFG.PAGE_SIZE >= total) break;
+    page++;
+    await new Promise(r => setTimeout(r, 150));
+  }
+}
+
+// ─── Supabase ────────────────────────────────────────
+async function salvarSupabase(chave, valor) {
+  const { error } = await sb.from('app_storage').upsert(
+    { key: chave, value: JSON.stringify(valor), updated_at: new Date().toISOString() },
+    { onConflict: 'key' }
+  );
+  if (error) throw new Error('Supabase: ' + error.message);
+}
+
+// ─── Helpers de mês ──────────────────────────────────
+function fimDoMes(anoMes) {
+  const [a, m] = anoMes.split('-').map(Number);
+  const d = new Date(a, m, 0); // último dia
+  return `${a}-${String(m).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function iterDias(dataIni, dataFim, cb) {
+  const [ai, mi, di] = dataIni.split('-').map(Number);
+  const [af, mf, df] = dataFim.split('-').map(Number);
+  let d = new Date(ai, mi-1, di);
+  const fim = new Date(af, mf-1, df);
+  while (d <= fim) {
+    const y = d.getFullYear();
+    const mo = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    cb(`${y}-${mo}-${day}`);
+    d.setDate(d.getDate()+1);
+  }
+}
+
+// ─── Sync: Operacional ───────────────────────────────
+async function syncOperacional() {
+  log('🔢 Indicadores operacionais...', 'info');
+  const [clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ] = await Promise.all([
+    ixcContar('cliente',     { qtype:'cliente.ativo', query:'S', oper:'=' }),
+    ixcContar('radusuarios', { qtype:'radusuarios.ativo', query:'S', oper:'=' }),
+    ixcContar('cliente',     {}),
+    ixcContar('cliente',     { qtype:'cliente.tipo_pessoa', query:'F', oper:'=' }),
+    ixcContar('cliente',     { qtype:'cliente.tipo_pessoa', query:'J', oper:'=' }),
+  ]);
+  const op = { clientesAtivos, usuariosAtivos, clientesTotal, clientesPF, clientesPJ, atualizadoEm: new Date().toISOString() };
+  await salvarSupabase('ixc_operacional', op);
+  log(`  ✅ ${clientesAtivos} clientes ativos · ${usuariosAtivos} usuários radius`, 'ok');
+  return op;
+}
+
+// ─── Sync: Receitas ──────────────────────────────────
+async function syncReceitas(anoMes) {
+  const dataIni = `${anoMes}-01`;
+  const dataFim = fimDoMes(anoMes);
+  log(`📥 Receitas ${anoMes}: buscando fn_areceber...`, 'info');
+
+  let totalRecebido = 0, totalEmitido = 0, countRecebido = 0, countEmitido = 0;
+
+  await ixcListarPaginado('fn_areceber', {
+    qtype: 'fn_areceber.baixa_data',
+    query: dataIni,
+    oper:  '>=',
+    sortname:  'fn_areceber.baixa_data',
+    sortorder: 'asc',
+  }, async (registros) => {
+    for (const r of registros) {
+      const baixa = (r.baixa_data || '').substring(0,10);
+      if (baixa >= dataIni && baixa <= dataFim) {
+        totalRecebido += parseFloat(r.valor_recebido || 0);
+        countRecebido++;
+      }
+      const emissao = (r.data_emissao || '').substring(0,10);
+      if (emissao >= dataIni && emissao <= dataFim) {
+        totalEmitido += parseFloat(r.valor || 0);
+        countEmitido++;
+      }
+    }
+    const ultima = registros.length ? (registros[registros.length-1].baixa_data || '').substring(0,10) : '';
+    if (ultima && ultima > dataFim) return true; // já passou do mês — para
+  });
+
+  // juros/multa
+  let totalJurosMulta = 0;
+  try {
+    await ixcListarPaginado('fn_areceber', {
+      qtype: 'fn_areceber.baixa_data',
+      query: dataIni,
+      oper:  '>=',
+    }, async (registros) => {
+      for (const r of registros) {
+        const baixa = (r.baixa_data || '').substring(0,10);
+        if (baixa < dataIni || baixa > dataFim) continue;
+        if (r.tipo_cobranca === 'J' || r.tipo_cobranca === 'M') {
+          totalJurosMulta += parseFloat(r.valor_recebido || 0);
+        }
+      }
+      const ultima = registros.length ? (registros[registros.length-1].baixa_data || '').substring(0,10) : '';
+      if (ultima && ultima > dataFim) return true;
+    });
+  } catch(e) {
+    log(`  ⚠️ Juros/multa: ${e.message}`, 'warn');
+  }
+
+  const resultado = {
+    anoMes,
+    totalRecebido:   Math.round(totalRecebido*100)/100,
+    totalEmitido:    Math.round(totalEmitido*100)/100,
+    totalJurosMulta: Math.round(totalJurosMulta*100)/100,
+    countRecebido,
+    countEmitido,
+  };
+  await salvarSupabase(`ixc_receitas_${anoMes}`, resultado);
+  log(`  ✅ Recebido ${moeda(resultado.totalRecebido)} (${countRecebido} tít.) · Faturado ${moeda(resultado.totalEmitido)}`, 'ok');
+  return resultado;
+}
+
+// ─── Sync: Despesas ──────────────────────────────────
+async function syncDespesas(anoMes) {
+  const dataIni = `${anoMes}-01`;
+  const dataFim = fimDoMes(anoMes);
+  log(`📤 Despesas ${anoMes}: buscando fn_apagar...`, 'info');
+
+  let totalPago = 0, countPago = 0;
+  const porConta = {};
+
+  await ixcListarPaginado('fn_apagar', {
+    qtype: 'fn_apagar.data_pagamento',
+    query: dataIni,
+    oper:  '>=',
+    sortname:  'fn_apagar.data_pagamento',
+    sortorder: 'asc',
+  }, async (registros) => {
+    for (const r of registros) {
+      const dtPag = (r.data_pagamento || '').substring(0,10);
+      if (dtPag < dataIni || dtPag > dataFim) continue;
+      const vPago = parseFloat(r.valor_pago || r.valor_total_pago || 0);
+      totalPago += vPago;
+      countPago++;
+      const idConta = r.id_contas || r.id_conta || 'outros';
+      if (!porConta[idConta]) porConta[idConta] = { id: idConta, total: 0, count: 0, obs: r.obs || '' };
+      porConta[idConta].total += vPago;
+      porConta[idConta].count++;
+    }
+    const ultima = registros.length ? (registros[registros.length-1].data_pagamento || '').substring(0,10) : '';
+    if (ultima && ultima > dataFim) return true;
+  });
+
+  const resultado = {
+    anoMes,
+    totalPago: Math.round(totalPago*100)/100,
+    countPago,
+    porConta: Object.values(porConta).sort((a,b) => b.total - a.total).map(c => ({
+      ...c, total: Math.round(c.total*100)/100,
+    })),
+  };
+  await salvarSupabase(`ixc_despesas_${anoMes}`, resultado);
+  log(`  ✅ Pago ${moeda(resultado.totalPago)} (${countPago} tít.) em ${resultado.porConta.length} contas`, 'ok');
+  return resultado;
+}
+
+// ─── Sync: Fluxo de Caixa ────────────────────────────
+async function syncFluxoCaixa(anoMes) {
+  const dataIni = `${anoMes}-01`;
+  const dataFim = fimDoMes(anoMes);
+  log(`💰 Fluxo de caixa ${anoMes}: agregando por dia...`, 'info');
+
+  const entradas = {}, saidas = {};
+
+  await ixcListarPaginado('fn_areceber', {
+    qtype: 'fn_areceber.baixa_data',
+    query: dataIni,
+    oper:  '>=',
+    sortname:  'fn_areceber.baixa_data',
+    sortorder: 'asc',
+  }, async (registros) => {
+    for (const r of registros) {
+      const dia = (r.baixa_data || '').substring(0,10);
+      if (dia < dataIni || dia > dataFim) continue;
+      entradas[dia] = (entradas[dia] || 0) + parseFloat(r.valor_recebido || 0);
+    }
+    const ultima = registros.length ? (registros[registros.length-1].baixa_data || '').substring(0,10) : '';
+    if (ultima && ultima > dataFim) return true;
+  });
+
+  await ixcListarPaginado('fn_apagar', {
+    qtype: 'fn_apagar.data_pagamento',
+    query: dataIni,
+    oper:  '>=',
+    sortname:  'fn_apagar.data_pagamento',
+    sortorder: 'asc',
+  }, async (registros) => {
+    for (const r of registros) {
+      const dia = (r.data_pagamento || '').substring(0,10);
+      if (dia < dataIni || dia > dataFim) continue;
+      saidas[dia] = (saidas[dia] || 0) + parseFloat(r.valor_pago || r.valor_total_pago || 0);
+    }
+    const ultima = registros.length ? (registros[registros.length-1].data_pagamento || '').substring(0,10) : '';
+    if (ultima && ultima > dataFim) return true;
+  });
+
+  const dias = [];
+  let saldo = 0;
+  iterDias(dataIni, dataFim, (dStr) => {
+    const entrada = Math.round((entradas[dStr] || 0)*100)/100;
+    const saida   = Math.round((saidas[dStr]   || 0)*100)/100;
+    saldo += entrada - saida;
+    dias.push({ data: dStr, entrada, saida, saldo: Math.round(saldo*100)/100 });
+  });
+
+  const resultado = { anoMes, dias };
+  await salvarSupabase(`ixc_fluxo_${anoMes}`, resultado);
+  log(`  ✅ ${dias.length} dias · saldo final ${moeda(saldo)}`, 'ok');
+  return resultado;
+}
+
+// ─── Roteador principal ──────────────────────────────
+async function rodar() {
+  const mesInput = document.getElementById('mes').value;
+  if (!mesInput || !/^\d{4}-\d{2}$/.test(mesInput)) {
+    alert('Selecione um mês válido.');
+    return;
+  }
+
+  const meses = [mesInput];
+  if (document.getElementById('incluirAnterior').checked) {
+    const [a, m] = mesInput.split('-').map(Number);
+    const d = new Date(a, m-2, 1);
+    meses.unshift(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+
+  const fazerOp    = document.getElementById('syncOp').checked;
+  const fazerRec   = document.getElementById('syncRec').checked;
+  const fazerDesp  = document.getElementById('syncDesp').checked;
+  const fazerFluxo = document.getElementById('syncFluxo').checked;
+
+  const btn = document.getElementById('btn');
+  btn.disabled = true;
+  const textoOriginal = btn.textContent;
+  btn.textContent = '⏳ Sincronizando...';
+  clearLog();
+
+  const inicio = Date.now();
+  log(`🚀 Iniciando sync — ${meses.join(', ')}`, 'info');
+  log(`   Origem: ${location.origin || '(file://)'}`, 'dim');
+
+  try {
+    // Operacional (uma vez só)
+    if (fazerOp) {
+      try { await syncOperacional(); }
+      catch(e) { log(`  ❌ Operacional: ${e.message}`, 'erro'); }
+    }
+
+    for (const anoMes of meses) {
+      log(`\n📅 ${anoMes}`, 'info');
+      if (fazerRec) {
+        try { await syncReceitas(anoMes); }
+        catch(e) { log(`  ❌ Receitas: ${e.message}`, 'erro'); }
+      }
+      if (fazerDesp) {
+        try { await syncDespesas(anoMes); }
+        catch(e) { log(`  ❌ Despesas: ${e.message}`, 'erro'); }
+      }
+      if (fazerFluxo) {
+        try { await syncFluxoCaixa(anoMes); }
+        catch(e) { log(`  ❌ Fluxo: ${e.message}`, 'erro'); }
+      }
+    }
+
+    // Metadados
+    await salvarSupabase('ixc_ultima_sync', {
+      timestamp: new Date().toISOString(),
+      meses: meses,
+      versao: '2.0-browser',
+      origem: location.origin || 'file://',
+    });
+
+    const segundos = ((Date.now() - inicio)/1000).toFixed(1);
+    log(`\n🎉 Sync concluído em ${segundos}s!`, 'ok');
+    log(`   Abra o dashboard e clique "Atualizar agora" na aba IXC.`, 'info');
+
+  } catch (e) {
+    log(`\n❌ ERRO FATAL: ${e.message}`, 'erro');
+    if (String(e).match(/cors|Failed to fetch|NetworkError/i)) {
+      log('', 'dim');
+      log('🚫 Parece erro de CORS. O navegador bloqueou a chamada ao IXC.', 'erro');
+      log('   Soluções possíveis:', 'warn');
+      log('   1) Peça ao admin do IXC para liberar a origem desta página no CORS', 'warn');
+      log(`   2) Abra esta página direto do IP do escritório via HTTP`, 'warn');
+      log('   3) Como fallback, rode o sync.js localmente no computador do escritório', 'warn');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
+}
+</script>
+
+</body>
+</html>
