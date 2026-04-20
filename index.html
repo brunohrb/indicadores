@@ -2641,6 +2641,9 @@
         <button id="ixcBtnAtualizar" onclick="ixcAtualizarAgora()" style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;background:#2563eb;color:white;border:none;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
           <span id="ixcBtnIcon">🔄</span> Atualizar agora
         </button>
+        <button onclick="window.open('sync.html','_blank')" style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;background:#059669;color:white;border:none;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'" title="Abre página de sincronização — use do escritório">
+          ⚡ Sincronizar IXC
+        </button>
       </div>
     </div>
 
@@ -2653,14 +2656,17 @@
     <!-- Sem dados -->
     <div id="ixcTab_semDados" style="display:none;padding:3rem 2rem;text-align:center">
       <div style="font-size:2.5rem;margin-bottom:0.5rem">📡</div>
-      <h3 style="color:#1e293b;font-weight:700">Sem dados para este período</h3>
+      <h3 style="color:#1e293b;font-weight:700">Sem dados para <span id="ixcTab_semDadosMes">YYYY-MM</span></h3>
       <p style="color:#64748b;font-size:0.875rem">
-        Os dados estão ausentes ou foram sincronizados antes de haver transações no mês.<br>
-        Re-execute o sync: <code>node ixc-sync/sync.js --mes <span id="ixcTab_semDadosMes">YYYY-MM</span></code>
+        Os dados estão ausentes ou foram sincronizados antes de haver transações no mês.
       </p>
-      <p style="color:#94a3b8;font-size:0.8rem;margin-top:0.5rem">
-        Para diagnosticar: <code>node ixc-sync/diagnostico.js</code>
-        &nbsp;|&nbsp; Para limpar zeros: <code>node ixc-sync/diagnostico.js --limpar <span id="ixcTab_semDadosMes2">YYYY-MM</span></code>
+      <div style="margin-top:1.25rem;display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">
+        <button onclick="window.open('sync.html','_blank')" style="background:#059669;color:white;border:none;border-radius:8px;padding:0.6rem 1.25rem;font-size:0.85rem;font-weight:600;cursor:pointer">⚡ Sincronizar agora (do escritório)</button>
+        <button onclick="window.open('fix-ixc.html','_blank')" style="background:white;color:#dc2626;border:1px solid #dc2626;border-radius:8px;padding:0.6rem 1.25rem;font-size:0.85rem;font-weight:600;cursor:pointer">🧹 Limpar zerados</button>
+      </div>
+      <p style="color:#94a3b8;font-size:0.75rem;margin-top:1rem">
+        <span id="ixcTab_semDadosMes2" style="display:none"></span>
+        A sincronização abre em nova aba. Use do escritório (IP liberado no IXC).
       </p>
     </div>
 

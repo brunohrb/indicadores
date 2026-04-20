@@ -343,12 +343,19 @@ function _atualizarAvisoFinanceiro(anoMes, temReceitas, temDespesas) {
       <div style="flex:1;font-size:0.82rem;color:#92400e;line-height:1.4">
         <strong>Dados financeiros incompletos para ${anoMes}.</strong>
         Os valores de <strong>${lista}</strong> não foram sincronizados
-        (o sync pode ter rodado antes de haver transações no mês, falhado na API do IXC,
-        ou os registros no Supabase estão zerados).
-        <div style="margin-top:0.35rem;font-size:0.75rem;color:#78350f">
-          Ações: rodar o workflow <em>IXC Sync</em> no repositório
-          <code>texnet-ixc-sync</code>, ou abrir <code>fix-ixc.html</code> para limpar
-          entradas zeradas e tentar novamente.
+        (provável bloqueio de IP do sync automático na API do IXC).
+        <div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap">
+          <button onclick="window.open('sync.html','_blank')"
+                  style="background:#059669;color:white;border:none;border-radius:6px;padding:0.35rem 0.8rem;font-size:0.75rem;font-weight:600;cursor:pointer">
+            ⚡ Sincronizar agora
+          </button>
+          <button onclick="window.open('fix-ixc.html','_blank')"
+                  style="background:white;color:#92400e;border:1px solid #fcd34d;border-radius:6px;padding:0.35rem 0.8rem;font-size:0.75rem;font-weight:600;cursor:pointer">
+            🧹 Limpar zerados
+          </button>
+        </div>
+        <div style="margin-top:0.4rem;font-size:0.7rem;color:#78350f">
+          Abre em nova aba — use do escritório (IP liberado no IXC).
         </div>
       </div>
       <button onclick="document.getElementById('${ID}').remove()"
