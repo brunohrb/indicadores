@@ -259,6 +259,86 @@ async function syncFluxoCaixa(anoMes) {
   return { anoMes, dias };
 }
 
+// ─── ANÁLISE — varre mês inteiro e classifica registros ───
+
+async function analisarReceitas(anoMes) {
+  const dataIni = `${anoMes}-01`;
+  const dataFim = dayjs(dataIni).endOf('month').format('YYYY-MM-DD');
+  log(`\n🔬 ANÁLISE Receitas ${anoMes} — varrendo TODOS registros...`);
+
+  const todos = [];
+  let page = 1;
+  while (true) {
+    const data = await ixcPost('fn_areceber', {
+      qtype: 'fn_areceber.baixa_data', query: dataIni, oper: '>=',
+      sortname: 'fn_areceber.baixa_data', sortorder: 'asc',
+      page: String(page), rp: String(cfg.PAGE_SIZE),
+    });
+    const registros = data.registros || [];
+    for (const r of registros) {
+      const d = (r.baixa_data || '').substring(0, 10);
+      if (d >= dataIni && d <= dataFim) todos.push(r);
+    }
+    const ultima = registros.length > 0 ? (registros[registros.length - 1].baixa_data || '').substring(0, 10) : '';
+    if (ultima > dataFim || registros.length < cfg.PAGE_SIZE) break;
+    page++;
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  const n = (v) => parseFloat(v || 0) || 0;
+
+  log(`\n📊 Total de registros no mês: ${todos.length}`);
+
+  // IDs duplicados
+  const ids = todos.map(r => r.id);
+  const idsUnicos = new Set(ids);
+  log(`   IDs únicos: ${idsUnicos.size}   ${ids.length !== idsUnicos.size ? '⚠️ DUPLICATAS!' : '✅ sem duplicatas'}`);
+
+  // Grupos
+  const grupos = {
+    '1. TODOS':                                  todos,
+    '2. status=R (Recebido)':                    todos.filter(r => r.status === 'R'),
+    '3. status=R e estornado=N':                 todos.filter(r => r.status === 'R' && r.estornado === 'N'),
+    '4. status=R, estornado=N, valor_cancelado=0': todos.filter(r => r.status === 'R' && r.estornado === 'N' && n(r.valor_cancelado) === 0),
+    '5. + forma_recebimento=R':                  todos.filter(r => r.status === 'R' && r.estornado === 'N' && n(r.valor_cancelado) === 0 && r.forma_recebimento === 'R'),
+    '6. + aguardando_confirmacao_pagamento=N':   todos.filter(r => r.status === 'R' && r.estornado === 'N' && n(r.valor_cancelado) === 0 && r.forma_recebimento === 'R' && r.aguardando_confirmacao_pagamento === 'N'),
+  };
+
+  log(`\n💰 Soma de valor_recebido em cada subconjunto (procurando o que bate R$ 1.765.153,20):`);
+  for (const [nome, regs] of Object.entries(grupos)) {
+    const soma = regs.reduce((s, r) => s + n(r.valor_recebido), 0);
+    log(`   ${nome}:  ${regs.length} regs  ·  ${moeda(soma)}`);
+  }
+
+  // Distribuição por status
+  const porStatus = {};
+  const porEstornado = { S: 0, N: 0, outros: 0 };
+  const porForma = {};
+  const porPrevisao = { S: 0, N: 0 };
+  let somaCancelado = 0, countCancelado = 0;
+  let somaEstornado = 0, countEstornado = 0;
+
+  for (const r of todos) {
+    porStatus[r.status] = (porStatus[r.status] || 0) + 1;
+    if (r.estornado === 'S') { porEstornado.S++; somaEstornado += n(r.valor_recebido); countEstornado++; }
+    else if (r.estornado === 'N') porEstornado.N++;
+    else porEstornado.outros++;
+    porForma[r.forma_recebimento || 'sem'] = (porForma[r.forma_recebimento || 'sem'] || 0) + 1;
+    if (r.previsao === 'S') porPrevisao.S++; else porPrevisao.N++;
+    if (n(r.valor_cancelado) > 0) { somaCancelado += n(r.valor_cancelado); countCancelado++; }
+  }
+
+  log(`\n📈 Distribuição:`);
+  log(`   status:        ${JSON.stringify(porStatus)}`);
+  log(`   estornado:     ${JSON.stringify(porEstornado)}`);
+  log(`   forma_recebimento: ${JSON.stringify(porForma)}`);
+  log(`   previsao:      ${JSON.stringify(porPrevisao)}`);
+  log(`   com valor_cancelado>0: ${countCancelado} regs · soma canc ${moeda(somaCancelado)}`);
+  log(`   com estornado=S: ${countEstornado} regs · soma val_recebido ${moeda(somaEstornado)}`);
+
+  log(`\n✅ Copia o bloco inteiro e me manda.`, 'ok');
+}
+
 // ─── DEBUG — imprime campos crus de registros fn_areceber ──
 
 async function debugReceitas(anoMes) {
@@ -344,6 +424,13 @@ async function main() {
     const mesArg = args[args.indexOf('--debug') + 1];
     const anoMes = (mesArg && /^\d{4}-\d{2}$/.test(mesArg)) ? mesArg : agora.format('YYYY-MM');
     await debugReceitas(anoMes);
+    return;
+  }
+
+  if (args.includes('--analisar')) {
+    const mesArg = args[args.indexOf('--analisar') + 1];
+    const anoMes = (mesArg && /^\d{4}-\d{2}$/.test(mesArg)) ? mesArg : agora.format('YYYY-MM');
+    await analisarReceitas(anoMes);
     return;
   }
 
