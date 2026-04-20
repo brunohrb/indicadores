@@ -81,12 +81,27 @@ async function salvarSupabase(chave, valor) {
 
 // ─── Sync de Receitas ─────────────────────────────────
 
+// Filtros aplicados para bater com "Relatório de Recebimentos" do IXC:
+// - status=R (recebido)
+// - estornado!=S (não foi estornado)
+// - forma_recebimento=R (regular; exclui M=manual e vazios)
+// Valor líquido = valor_recebido − valor_cancelado
+function recValido(r) {
+  return r.status === 'R'
+      && r.estornado !== 'S'
+      && r.forma_recebimento === 'R';
+}
+function recValor(r) {
+  return (parseFloat(r.valor_recebido || 0) || 0) - (parseFloat(r.valor_cancelado || 0) || 0);
+}
+
 async function syncReceitas(anoMes) {
   const dataIni = `${anoMes}-01`;
   const dataFim = dayjs(dataIni).endOf('month').format('YYYY-MM-DD');
   log(`  📥 Receitas ${anoMes}: buscando fn_areceber...`);
 
   let totalRecebido = 0, totalEmitido = 0, countRecebido = 0, countEmitido = 0;
+  let totalJurosMulta = 0;
   let page = 1;
 
   while (true) {
@@ -101,13 +116,14 @@ async function syncReceitas(anoMes) {
 
     for (const r of registros) {
       const baixa = (r.baixa_data || '').substring(0, 10);
-      if (baixa >= dataIni && baixa <= dataFim) {
-        totalRecebido += parseFloat(r.valor_recebido || 0);
+      if (baixa >= dataIni && baixa <= dataFim && recValido(r)) {
+        totalRecebido += recValor(r);
         countRecebido++;
+        totalJurosMulta += (parseFloat(r.valor_juros || 0) || 0) + (parseFloat(r.valor_multas || 0) || 0);
       }
       const emissao = (r.data_emissao || '').substring(0, 10);
       if (emissao >= dataIni && emissao <= dataFim) {
-        totalEmitido += parseFloat(r.valor || 0);
+        totalEmitido += parseFloat(r.valor || 0) || 0;
         countEmitido++;
       }
     }
@@ -117,16 +133,6 @@ async function syncReceitas(anoMes) {
     page++;
     await new Promise(r => setTimeout(r, 150));
   }
-
-  let totalJurosMulta = 0;
-  try {
-    const { registros } = await listarTodos('fn_areceber', {
-      qtype: 'fn_areceber.baixa_data', query: dataIni, oper: '>=',
-    });
-    totalJurosMulta = registros
-      .filter(r => (r.baixa_data || '').substring(0, 10) <= dataFim && r.tipo_cobranca === 'J')
-      .reduce((s, r) => s + parseFloat(r.valor_recebido || 0), 0);
-  } catch (e) { log(`     Aviso juros: ${e.message}`, 'warn'); }
 
   return {
     anoMes,
@@ -218,7 +224,8 @@ async function syncFluxoCaixa(anoMes) {
     for (const r of registros) {
       const dia = (r.baixa_data || '').substring(0, 10);
       if (dia < dataIni || dia > dataFim) continue;
-      entradas[dia] = (entradas[dia] || 0) + parseFloat(r.valor_recebido || 0);
+      if (!recValido(r)) continue;
+      entradas[dia] = (entradas[dia] || 0) + recValor(r);
     }
     const ultima = registros.length > 0 ? (registros[registros.length - 1].baixa_data || '').substring(0, 10) : '';
     if (ultima > dataFim || registros.length < cfg.PAGE_SIZE) break;
@@ -259,12 +266,180 @@ async function syncFluxoCaixa(anoMes) {
   return { anoMes, dias };
 }
 
+// ─── ANÁLISE — varre mês inteiro e classifica registros ───
+
+async function analisarReceitas(anoMes) {
+  const dataIni = `${anoMes}-01`;
+  const dataFim = dayjs(dataIni).endOf('month').format('YYYY-MM-DD');
+  log(`\n🔬 ANÁLISE Receitas ${anoMes} — varrendo TODOS registros...`);
+
+  const todos = [];
+  let page = 1;
+  while (true) {
+    const data = await ixcPost('fn_areceber', {
+      qtype: 'fn_areceber.baixa_data', query: dataIni, oper: '>=',
+      sortname: 'fn_areceber.baixa_data', sortorder: 'asc',
+      page: String(page), rp: String(cfg.PAGE_SIZE),
+    });
+    const registros = data.registros || [];
+    for (const r of registros) {
+      const d = (r.baixa_data || '').substring(0, 10);
+      if (d >= dataIni && d <= dataFim) todos.push(r);
+    }
+    const ultima = registros.length > 0 ? (registros[registros.length - 1].baixa_data || '').substring(0, 10) : '';
+    if (ultima > dataFim || registros.length < cfg.PAGE_SIZE) break;
+    page++;
+    await new Promise(r => setTimeout(r, 150));
+  }
+
+  const n = (v) => parseFloat(v || 0) || 0;
+
+  log(`\n📊 Total de registros no mês: ${todos.length}`);
+
+  // IDs duplicados
+  const ids = todos.map(r => r.id);
+  const idsUnicos = new Set(ids);
+  log(`   IDs únicos: ${idsUnicos.size}   ${ids.length !== idsUnicos.size ? '⚠️ DUPLICATAS!' : '✅ sem duplicatas'}`);
+
+  // Grupos
+  const grupos = {
+    '1. TODOS':                                  todos,
+    '2. status=R (Recebido)':                    todos.filter(r => r.status === 'R'),
+    '3. status=R e estornado=N':                 todos.filter(r => r.status === 'R' && r.estornado === 'N'),
+    '4. status=R, estornado=N, valor_cancelado=0': todos.filter(r => r.status === 'R' && r.estornado === 'N' && n(r.valor_cancelado) === 0),
+    '5. + forma_recebimento=R':                  todos.filter(r => r.status === 'R' && r.estornado === 'N' && n(r.valor_cancelado) === 0 && r.forma_recebimento === 'R'),
+    '6. + aguardando_confirmacao_pagamento=N':   todos.filter(r => r.status === 'R' && r.estornado === 'N' && n(r.valor_cancelado) === 0 && r.forma_recebimento === 'R' && r.aguardando_confirmacao_pagamento === 'N'),
+  };
+
+  log(`\n💰 Soma de valor_recebido em cada subconjunto (procurando o que bate R$ 1.765.153,20):`);
+  for (const [nome, regs] of Object.entries(grupos)) {
+    const soma = regs.reduce((s, r) => s + n(r.valor_recebido), 0);
+    log(`   ${nome}:  ${regs.length} regs  ·  ${moeda(soma)}`);
+  }
+
+  // Distribuição por status
+  const porStatus = {};
+  const porEstornado = { S: 0, N: 0, outros: 0 };
+  const porForma = {};
+  const porPrevisao = { S: 0, N: 0 };
+  let somaCancelado = 0, countCancelado = 0;
+  let somaEstornado = 0, countEstornado = 0;
+
+  for (const r of todos) {
+    porStatus[r.status] = (porStatus[r.status] || 0) + 1;
+    if (r.estornado === 'S') { porEstornado.S++; somaEstornado += n(r.valor_recebido); countEstornado++; }
+    else if (r.estornado === 'N') porEstornado.N++;
+    else porEstornado.outros++;
+    porForma[r.forma_recebimento || 'sem'] = (porForma[r.forma_recebimento || 'sem'] || 0) + 1;
+    if (r.previsao === 'S') porPrevisao.S++; else porPrevisao.N++;
+    if (n(r.valor_cancelado) > 0) { somaCancelado += n(r.valor_cancelado); countCancelado++; }
+  }
+
+  log(`\n📈 Distribuição:`);
+  log(`   status:        ${JSON.stringify(porStatus)}`);
+  log(`   estornado:     ${JSON.stringify(porEstornado)}`);
+  log(`   forma_recebimento: ${JSON.stringify(porForma)}`);
+  log(`   previsao:      ${JSON.stringify(porPrevisao)}`);
+  log(`   com valor_cancelado>0: ${countCancelado} regs · soma canc ${moeda(somaCancelado)}`);
+  log(`   com estornado=S: ${countEstornado} regs · soma val_recebido ${moeda(somaEstornado)}`);
+
+  log(`\n✅ Copia o bloco inteiro e me manda.`, 'ok');
+}
+
+// ─── DEBUG — imprime campos crus de registros fn_areceber ──
+
+async function debugReceitas(anoMes) {
+  const dataIni = `${anoMes}-01`;
+  const dataFim = dayjs(dataIni).endOf('month').format('YYYY-MM-DD');
+  log(`\n🔍 DEBUG Receitas ${anoMes} — buscando amostras...`);
+
+  const data = await ixcPost('fn_areceber', {
+    qtype: 'fn_areceber.baixa_data', query: dataIni, oper: '>=',
+    sortname: 'fn_areceber.baixa_data', sortorder: 'asc',
+    page: '1', rp: '20',
+  });
+
+  const registros = (data.registros || []).filter(r => {
+    const d = (r.baixa_data || '').substring(0, 10);
+    return d >= dataIni && d <= dataFim;
+  }).slice(0, 5);
+
+  if (!registros.length) {
+    log('  Nenhum registro no período.', 'warn');
+    return;
+  }
+
+  log(`\n📋 Campos do 1º registro (todos):`);
+  console.log(JSON.stringify(registros[0], null, 2));
+
+  log(`\n💰 Somando ${registros.length} registros de amostra com várias fórmulas:`);
+
+  const formulas = {
+    'valor_recebido (atual)':
+      r => parseFloat(r.valor_recebido || 0),
+    'valor':
+      r => parseFloat(r.valor || 0),
+    'valor - desconto - desconto_adicional':
+      r => parseFloat(r.valor||0) - parseFloat(r.valor_desconto||0) - parseFloat(r.valor_desconto_adicional||0),
+    'valor_recebido - desconto - desconto_adicional':
+      r => parseFloat(r.valor_recebido||0) - parseFloat(r.valor_desconto||0) - parseFloat(r.valor_desconto_adicional||0),
+    'valor + juros + multa - desconto - desconto_adicional':
+      r => parseFloat(r.valor||0) + parseFloat(r.valor_juros||0) + parseFloat(r.valor_multa||0)
+         - parseFloat(r.valor_desconto||0) - parseFloat(r.valor_desconto_adicional||0),
+    'valor_baixa':
+      r => parseFloat(r.valor_baixa || 0),
+    'valor_liquido (se existir)':
+      r => parseFloat(r.valor_liquido || 0),
+  };
+
+  for (const [nome, fn] of Object.entries(formulas)) {
+    const soma = registros.reduce((s, r) => s + fn(r), 0);
+    log(`   ${nome}  →  ${moeda(soma)}`);
+  }
+
+  log(`\n📊 Por registro — Baixa / Acréscimo / Desconto / Valor Líquido esperados:`);
+  for (const r of registros) {
+    console.log({
+      id: r.id,
+      cliente: r.id_cliente,
+      baixa_data: r.baixa_data,
+      valor: r.valor,
+      valor_recebido: r.valor_recebido,
+      valor_juros: r.valor_juros,
+      valor_multa: r.valor_multa,
+      valor_acrescimo: r.valor_acrescimo,
+      valor_desconto: r.valor_desconto,
+      valor_desconto_adicional: r.valor_desconto_adicional,
+      valor_baixa: r.valor_baixa,
+      valor_liquido: r.valor_liquido,
+      tipo_cobranca: r.tipo_cobranca,
+      status: r.status,
+    });
+  }
+
+  log(`\n✅ Copia e cola TUDO isso pra eu diagnosticar e corrigir.`, 'ok');
+}
+
 // ─── MAIN ─────────────────────────────────────────────
 
 async function main() {
   const args = process.argv.slice(2);
   const agora = dayjs();
   let meses = [];
+
+  if (args.includes('--debug')) {
+    const mesArg = args[args.indexOf('--debug') + 1];
+    const anoMes = (mesArg && /^\d{4}-\d{2}$/.test(mesArg)) ? mesArg : agora.format('YYYY-MM');
+    await debugReceitas(anoMes);
+    return;
+  }
+
+  if (args.includes('--analisar')) {
+    const mesArg = args[args.indexOf('--analisar') + 1];
+    const anoMes = (mesArg && /^\d{4}-\d{2}$/.test(mesArg)) ? mesArg : agora.format('YYYY-MM');
+    await analisarReceitas(anoMes);
+    return;
+  }
 
   if (args.includes('--full')) {
     for (let i = cfg.MESES_HISTORICO - 1; i >= 0; i--) meses.push(agora.subtract(i, 'month').format('YYYY-MM'));
