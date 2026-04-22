@@ -75,7 +75,7 @@ function daxDeCard(mesNum, ano) {
   //   Isentos  = ID_Filial = 11 OR Tipo_Cliente = "ISENTO"
   // (não é por Tipo_Pessoa como estava chutado antes)
   const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
-  const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37}';
+  const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39}';
 
   // Filtros de página do relatório original (afetam só cards baseados em
   // dCancelamentos / fVendas — quando essas tabelas têm a coluna):
@@ -128,9 +128,9 @@ function daxDeCard(mesNum, ano) {
     { card: 'Reajuste Contratos PJ',           dax: venda('[$ Valor Reajuste]', FILIAIS_PJ) },
 
     // ─── VERMELHO (chutes — ajustar se não bater) ─────
-    // Base de Isentos — Tipo_Cliente "ISENTO" OU filial 11
+    // Base de Isentos — só id_filial = 11 (confirmado via print do painel)
     { card: 'Base de Isentos',
-      dax: `CALCULATE([BASE GERAL], ${filtroMes}, FILTER(ALL('dContratos'), 'dContratos'[Tipo_Cliente] = "ISENTO" || 'dContratos'[ID_Filial] = 11))` },
+      dax: `CALCULATE([BASE GERAL], ${filtroMes}, 'dContratos'[ID_Filial] = 11)` },
 
     // Resultado Líquido = Receita - Cancelamento (diferença líquida de novos vs perdidos)
     { card: 'Resultado Liquido',
