@@ -3191,12 +3191,11 @@ async function renderDiretoriaPBI() {
 
     elLoading.style.display = 'none';
 
-    if (!data || !data.value || !data.value.valores) {
+    const payload = data && typeof data.value === 'string' ? JSON.parse(data.value) : data?.value;
+    if (!payload || !payload.valores) {
       elSemDados.style.display = 'block';
       return;
     }
-
-    const payload = data.value;
     const valores = payload.valores || {};
     const mes = payload.mes_referencia || '?';
     const atualizado = payload.atualizado_em ? new Date(payload.atualizado_em) : null;
