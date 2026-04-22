@@ -71,31 +71,25 @@ function daxDeCard(mesNum, ano) {
 
   // Segmentação descoberta via prints do painel real (filtros do visual):
   //   PF       = dContratos[ID_Filial] IN {14 filiais específicas}
-  //   PJ+PME   = dContratos[ID_Filial] IN {12 filiais específicas}
-  //   Isentos  = ID_Filial = 11 OR Tipo_Cliente = "ISENTO"
-  // (não é por Tipo_Pessoa como estava chutado antes)
+  //   PJ+PME   = dContratos[ID_Filial] IN {13 filiais específicas}
+  //   Isentos  = ID_Filial = 11
+  // (não é por Tipo_Pessoa, como estava chutado antes)
   const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
   const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39}';
 
-  // Filtros de página do relatório original (afetam só cards baseados em
-  // dCancelamentos / fVendas — quando essas tabelas têm a coluna):
-  //   motivo contém "PRIMEIRA MENSALIDADE" (cancelamento inadimplente 1a men)
-  //   vendedor exclui "(Em branco)" e "Renovação de Plano..."
-  const filtroMotivoCanc = `SEARCH("PRIMEIRA MENSALIDADE", 'dCancelamentos'[motivo], 1, 0) > 0`;
-  const filtroVendedorCanc = `NOT (ISBLANK('dCancelamentos'[vendedor]) || SEARCH("Renovação", 'dCancelamentos'[vendedor], 1, 0) > 0)`;
-  const filtroVendedorVenda = `NOT (ISBLANK('fVendas'[vendedor]) || SEARCH("Renovação", 'fVendas'[vendedor], 1, 0) > 0)`;
+  // As medidas do modelo [Novos Clientes], [Novos Negócios], [Cancelamento],
+  // [New Can.] JÁ EXCLUEM internamente os motivos administrativos, filiais
+  // 11/15/26 e vendedores 1/107 (ver doc Thribus Tech 22/04/2026).
+  // Então o sync só precisa filtrar mês + ID_Filial PF ou PJ.
 
-  // Helpers — segmentação na tabela onde a medida vive
   const baseContrato = (expr, filiais) =>
     `CALCULATE(${expr}, ${filtroMes}, 'dContratos'[ID_Filial] IN ${filiais})`;
 
   const venda = (expr, filiais) =>
-    `CALCULATE(${expr}, ${filtroMes}, FILTER('fVendas', 'fVendas'[filial_id] IN ${filiais} && (${filtroVendedorVenda})))`;
+    `CALCULATE(${expr}, ${filtroMes}, 'fVendas'[filial_id] IN ${filiais})`;
 
-  // Cancelamento por filial — SEM filtro motivo (os cards PF/PJ pegam todos
-  // os cancelamentos do mês, só os "1 Men." é que aplicam motivo).
   const cancel = (expr, filiais) =>
-    `CALCULATE(${expr}, ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[id_filial] IN ${filiais} && (${filtroVendedorCanc})))`;
+    `CALCULATE(${expr}, ${filtroMes}, 'dCancelamentos'[id_filial] IN ${filiais})`;
 
   const cards = [
     // ─── VERDE ────────────────────────────────────────
@@ -144,26 +138,27 @@ function daxDeCard(mesNum, ano) {
     { card: 'Juros > 45',
       dax: `CALCULATE([Juros1], ${filtroMes}, FILTER(ALL('Recebimentos'), 'Recebimentos'[dias_pagamento] > 45))` },
 
-    // QTD / Valor Canc. 1 Men. — só com filtros de página (motivo + vendedor),
-    // sem segmentação de filial nem DATEDIFF (a medida já contempla via motivo)
+    // QTD / Valor Canc. 1 Men. — cancelamento de contrato com ativação no mesmo
+    // mês (1a mensalidade). Como não existe medida específica pra isso no modelo,
+    // filtra dCancelamentos por data_ativacao no mesmo mês+ano do filtro.
     { card: 'QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER('dCancelamentos', (${filtroMotivoCanc}) && (${filtroVendedorCanc})))` },
+      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER(ALL('dCancelamentos'), YEAR('dCancelamentos'[data_ativacao]) = ${ano} && MONTH('dCancelamentos'[data_ativacao]) = ${mesNum}))` },
     { card: 'Valor Canc. 1 Men.',
-      dax: `CALCULATE([New Can.], ${filtroMes}, FILTER('dCancelamentos', (${filtroMotivoCanc}) && (${filtroVendedorCanc})))` },
+      dax: `CALCULATE([New Can.], ${filtroMes}, FILTER(ALL('dCancelamentos'), YEAR('dCancelamentos'[data_ativacao]) = ${ano} && MONTH('dCancelamentos'[data_ativacao]) = ${mesNum}))` },
 
-    // Pós Pago — fVendas[tipo_pagamento] = "Pos" + filtro vendedor
+    // Pós Pago — usa [Novos Clientes] (não [Contratos Ativos]!) filtrando
+    // fVendas[tipo_pagamento] = "Pos"
     { card: 'Pós Pago Qtd. de Venda',
-      dax: `CALCULATE([Contratos Ativos], ${filtroMes}, FILTER('fVendas', 'fVendas'[tipo_pagamento] = "Pos" && (${filtroVendedorVenda})))` },
+      dax: `CALCULATE([Novos Clientes], ${filtroMes}, 'fVendas'[tipo_pagamento] = "Pos")` },
     { card: 'Pós Pago Novos Negocios',
-      dax: `CALCULATE([Novos Negócios], ${filtroMes}, FILTER('fVendas', 'fVendas'[tipo_pagamento] = "Pos" && (${filtroVendedorVenda})))` },
+      dax: `CALCULATE([Novos Negócios], ${filtroMes}, 'fVendas'[tipo_pagamento] = "Pos")` },
     { card: 'Pós Pago QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[tipo_pagamento] = "Pos" && (${filtroMotivoCanc}) && (${filtroVendedorCanc})))` },
+      dax: `CALCULATE([Cancelamento], ${filtroMes}, 'dCancelamentos'[tipo_pagamento] = "Pos", FILTER(ALL('dCancelamentos'), YEAR('dCancelamentos'[data_ativacao]) = ${ano} && MONTH('dCancelamentos'[data_ativacao]) = ${mesNum}))` },
 
-    // Ticket médio da Base — chute Receita/BASE GERAL até confirmar o
-    // nome exato da medida dedicada com o cara do BI ([Ticket Medio Base]
-    // deu erro DAX, nome deve ser outro).
-    { card: 'Ticket médio da Base',
-      dax: `DIVIDE(CALCULATE([Receita], ${filtroMes}), CALCULATE([BASE GERAL], ${filtroMes}))` },
+    // Ticket médio da Base — medida dedicada do modelo:
+    //   [Ticket Medio Base] = DIVIDE([Total Recebido], [BASE GERAL])
+    // (doc Thribus Tech confirmou que existe — tenta direto de novo)
+    { card: 'Ticket médio da Base',                  dax: comMes('[Ticket Medio Base]') },
   ];
 
   return cards;
