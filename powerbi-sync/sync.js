@@ -122,8 +122,13 @@ function daxDeCard(mesNum, ano) {
     { card: 'Novos Negócios PJ',               dax: venda('[Novos Negócios]', FILIAIS_PJ) },
     { card: 'Valor Cancelamento PF',           dax: cancel('[New Can.]', FILIAIS_PF) },
     { card: 'Valor Canc. PJ + PME',            dax: cancel('[New Can.]', FILIAIS_PJ) },
-    { card: 'Ticket Médio PF',                 dax: venda('[Ticket Medio]', FILIAIS_PF) },
-    { card: 'Ticket Médio PJ',                 dax: venda('[Ticket Medio]', FILIAIS_PJ) },
+    // Ticket Medio segmentado: calculamos manualmente
+    // (DIVIDE([Novos Negócios], [Novos Clientes])) porque [Ticket Medio]
+    // não respeita filtros externos de filial por causa dos CALCULATEs internos.
+    { card: 'Ticket Médio PF',
+      dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PF)}, ${venda('[Novos Clientes]', FILIAIS_PF)})` },
+    { card: 'Ticket Médio PJ',
+      dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PJ)}, ${venda('[Novos Clientes]', FILIAIS_PJ)})` },
     { card: 'Reajuste Contratos PF',           dax: venda('[$ Valor Reajuste]', FILIAIS_PF) },
     { card: 'Reajuste Contratos PJ',           dax: venda('[$ Valor Reajuste]', FILIAIS_PJ) },
 
