@@ -3,54 +3,41 @@
 Este script conecta no **Power BI** (workspace Diretoria, dataset Diretoria)
 via API oficial da Microsoft e traz os indicadores pro dashboard.
 
-## 📦 Primeiro uso (uma vez só)
+Diferente do `sync-local/` (IXC), **aqui roda tudo no GitHub Actions**:
+o Power BI é API pública da Microsoft, sem bloqueio de IP.
 
-### 1. Node.js instalado
-Se já instalou pro `sync-local/` (IXC), tá tudo certo. Senão, baixe em
-https://nodejs.org (versão LTS).
+## Testar direto no GitHub (recomendado)
 
-### 2. Preencher credenciais
+1. Adicione o Client Secret como **GitHub Secret**:
+   - https://github.com/brunohrb/indicadores/settings/secrets/actions
+   - Clica em **`New repository secret`**
+   - Name: `PBI_CLIENT_SECRET`
+   - Value: o segredo que você copiou do Bloco de Notas
+   - **Add secret**
 
-Copie `.env.local.example` pra `.env.local`:
+2. Rodar o workflow:
+   - https://github.com/brunohrb/indicadores/actions
+   - Clica em **"Testar conexão Power BI"** na lista
+   - **Run workflow** → escolhe a branch `claude/azure-ad-automation-XG3Qo` → **Run workflow**
 
-**Windows (PowerShell):**
-```
-copy .env.local.example .env.local
-```
+3. Esperar ~30s, clicar no run que apareceu e ver o log.
 
-**Mac/Linux:**
-```
-cp .env.local.example .env.local
-```
-
-Abra o `.env.local` no Bloco de Notas e **cole o Client Secret** no campo:
-```
-PBI_CLIENT_SECRET=cole-aqui-o-secret-que-voce-salvou-no-notepad
-```
-
-(Os outros IDs já vêm preenchidos.)
-
-### 3. Instalar dependências
-Na pasta `powerbi-sync/`, abra o terminal e rode:
-```
-npm install
-```
-
-## ▶️ Testar conexão
-
-```
-npm test
-```
-
-Se funcionar, vai imprimir:
+Se funcionar, vai aparecer no log:
 - ✓ Token obtido
 - Lista de tabelas do dataset
 - Lista de medidas DAX do modelo
 - "Conexão 100% funcional!"
 
-## 🔒 Segurança
+## Rodar local (opcional, só pra dev)
 
-- O arquivo `.env.local` está no `.gitignore` — **não sobe pro GitHub**.
-- O Client Secret **nunca aparece no código fonte**.
-- Em produção (GitHub Actions / sync automático), as credenciais
-  vão como "GitHub Secrets" (próximo passo, depois do teste passar).
+Copie `.env.local.example` → `.env.local`, cole o Client Secret, e rode:
+```
+npm install
+npm test
+```
+
+## Segurança
+
+- `.env.local` está no `.gitignore` — **nunca sobe pro GitHub**.
+- No workflow, o secret vem de `${{ secrets.PBI_CLIENT_SECRET }}` — o GitHub
+  mascara automaticamente em qualquer log.
