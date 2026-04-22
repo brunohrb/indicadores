@@ -70,6 +70,9 @@ function daxDeCard(mesNum, ano) {
   const comMes = (expr) => `CALCULATE(${expr}, ${filtroMes})`;
   const comMesEPessoa = (expr, pessoa) =>
     `CALCULATE(${expr}, ${filtroMes}, FILTER(ALL('dContratos'), 'dContratos'[Tipo_Pessoa] = "${pessoa}"))`;
+  // Valores reais da coluna Tipo_Pessoa: "Física", "Jurídica", "E", null
+  const PF = 'Física';
+  const PJ = 'Jurídica';
 
   const cards = [
     // ─── VERDE ────────────────────────────────────────
@@ -88,20 +91,20 @@ function daxDeCard(mesNum, ano) {
     { card: 'Receita',                         dax: comMes('[Receita]') },
 
     // ─── AMARELO (filtro PF/PJ em dContratos) ─────────
-    { card: 'Base de Cliente PF',              dax: comMesEPessoa('[BASE GERAL]', 'F') },
-    { card: 'Base Clientes PJ +PME',           dax: comMesEPessoa('[BASE GERAL]', 'J') },
-    { card: 'Novos Clientes PF',               dax: comMesEPessoa('[Novos Clientes]', 'F') },
-    { card: 'Novos Clientes PJ',               dax: comMesEPessoa('[Novos Clientes]', 'J') },
-    { card: 'Cancelamento PF',                 dax: comMesEPessoa('[Cancelamento]', 'F') },
-    { card: 'Cancelam. PME + PJ',              dax: comMesEPessoa('[Cancelamento]', 'J') },
-    { card: 'Novos Negócios PF',               dax: comMesEPessoa('[Novos Negócios]', 'F') },
-    { card: 'Novos Negócios PJ',               dax: comMesEPessoa('[Novos Negócios]', 'J') },
-    { card: 'Valor Cancelamento PF',           dax: comMesEPessoa('[New Can.]', 'F') },
-    { card: 'Valor Canc. PJ + PME',            dax: comMesEPessoa('[New Can.]', 'J') },
-    { card: 'Ticket Médio PF',                 dax: comMesEPessoa('[Ticket Medio]', 'F') },
-    { card: 'Ticket Médio PJ',                 dax: comMesEPessoa('[Ticket Medio]', 'J') },
-    { card: 'Reajuste Contratos PF',           dax: comMesEPessoa('[$ Valor Reajuste]', 'F') },
-    { card: 'Reajuste Contratos PJ',           dax: comMesEPessoa('[$ Valor Reajuste]', 'J') },
+    { card: 'Base de Cliente PF',              dax: comMesEPessoa('[BASE GERAL]', PF) },
+    { card: 'Base Clientes PJ +PME',           dax: comMesEPessoa('[BASE GERAL]', PJ) },
+    { card: 'Novos Clientes PF',               dax: comMesEPessoa('[Novos Clientes]', PF) },
+    { card: 'Novos Clientes PJ',               dax: comMesEPessoa('[Novos Clientes]', PJ) },
+    { card: 'Cancelamento PF',                 dax: comMesEPessoa('[Cancelamento]', PF) },
+    { card: 'Cancelam. PME + PJ',              dax: comMesEPessoa('[Cancelamento]', PJ) },
+    { card: 'Novos Negócios PF',               dax: comMesEPessoa('[Novos Negócios]', PF) },
+    { card: 'Novos Negócios PJ',               dax: comMesEPessoa('[Novos Negócios]', PJ) },
+    { card: 'Valor Cancelamento PF',           dax: comMesEPessoa('[New Can.]', PF) },
+    { card: 'Valor Canc. PJ + PME',            dax: comMesEPessoa('[New Can.]', PJ) },
+    { card: 'Ticket Médio PF',                 dax: comMesEPessoa('[Ticket Medio]', PF) },
+    { card: 'Ticket Médio PJ',                 dax: comMesEPessoa('[Ticket Medio]', PJ) },
+    { card: 'Reajuste Contratos PF',           dax: comMesEPessoa('[$ Valor Reajuste]', PF) },
+    { card: 'Reajuste Contratos PJ',           dax: comMesEPessoa('[$ Valor Reajuste]', PJ) },
 
     // ─── VERMELHO (chutes — ajustar se não bater) ─────
     // Base de Isentos: filial 11 parece ser a "isentos" — confirmado no print dos filtros

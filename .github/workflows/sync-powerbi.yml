@@ -8,8 +8,10 @@ on:
         required: false
         default: ''
   schedule:
-    # Todo dia às 06:00 UTC (03:00 horário de Brasília)
-    - cron: '0 6 * * *'
+    # BRT = UTC-3. 08h-19h BRT de 1/1h = 11h-22h UTC (12 runs/dia)
+    - cron: '0 11-22 * * *'
+    # 23h, 03h, 07h BRT = 02h, 06h, 10h UTC (3 runs/noite)
+    - cron: '0 2,6,10 * * *'
 
 jobs:
   sync:
