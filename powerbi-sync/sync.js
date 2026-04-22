@@ -82,14 +82,18 @@ function daxDeCard(mesNum, ano) {
   // 11/15/26 e vendedores 1/107 (ver doc Thribus Tech 22/04/2026).
   // Então o sync só precisa filtrar mês + ID_Filial PF ou PJ.
 
+  // Usa FILTER(tabela, ...) em vez de filtro de coluna direto porque as
+  // medidas do modelo filtram filial_id internamente (<> 11, 15, 26) — se eu
+  // usar `fVendas[filial_id] IN PF`, o CALCULATE interno sobrescreve. Com
+  // FILTER crio um filtro de linha que não é sobrescrito.
   const baseContrato = (expr, filiais) =>
-    `CALCULATE(${expr}, ${filtroMes}, 'dContratos'[ID_Filial] IN ${filiais})`;
+    `CALCULATE(${expr}, ${filtroMes}, FILTER('dContratos', 'dContratos'[ID_Filial] IN ${filiais}))`;
 
   const venda = (expr, filiais) =>
-    `CALCULATE(${expr}, ${filtroMes}, 'fVendas'[filial_id] IN ${filiais})`;
+    `CALCULATE(${expr}, ${filtroMes}, FILTER('fVendas', 'fVendas'[filial_id] IN ${filiais}))`;
 
   const cancel = (expr, filiais) =>
-    `CALCULATE(${expr}, ${filtroMes}, 'dCancelamentos'[id_filial] IN ${filiais})`;
+    `CALCULATE(${expr}, ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[id_filial] IN ${filiais}))`;
 
   const cards = [
     // ─── VERDE ────────────────────────────────────────
@@ -138,22 +142,21 @@ function daxDeCard(mesNum, ano) {
     { card: 'Juros > 45',
       dax: `CALCULATE([Juros1], ${filtroMes}, FILTER(ALL('Recebimentos'), 'Recebimentos'[dias_pagamento] > 45))` },
 
-    // QTD / Valor Canc. 1 Men. — cancelamento de contrato com ativação no mesmo
-    // mês (1a mensalidade). Como não existe medida específica pra isso no modelo,
-    // filtra dCancelamentos por data_ativacao no mesmo mês+ano do filtro.
+    // QTD / Valor Canc. 1 Men. — cancelamento até 30 dias após ativação
+    // (DATEDIFF bate ~42 vs 41 do Power BI — lógica por YEAR/MONTH deu 3, errado)
     { card: 'QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER(ALL('dCancelamentos'), YEAR('dCancelamentos'[data_ativacao]) = ${ano} && MONTH('dCancelamentos'[data_ativacao]) = ${mesNum}))` },
+      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER('dCancelamentos', DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
     { card: 'Valor Canc. 1 Men.',
-      dax: `CALCULATE([New Can.], ${filtroMes}, FILTER(ALL('dCancelamentos'), YEAR('dCancelamentos'[data_ativacao]) = ${ano} && MONTH('dCancelamentos'[data_ativacao]) = ${mesNum}))` },
+      dax: `CALCULATE([New Can.], ${filtroMes}, FILTER('dCancelamentos', DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
 
-    // Pós Pago — usa [Novos Clientes] (não [Contratos Ativos]!) filtrando
-    // fVendas[tipo_pagamento] = "Pos"
+    // Pós Pago — usa [Novos Clientes] filtrando tipo_pagamento="Pos" via FILTER
+    // pra não ser sobrescrito pelos filtros internos da medida
     { card: 'Pós Pago Qtd. de Venda',
-      dax: `CALCULATE([Novos Clientes], ${filtroMes}, 'fVendas'[tipo_pagamento] = "Pos")` },
+      dax: `CALCULATE([Novos Clientes], ${filtroMes}, FILTER('fVendas', 'fVendas'[tipo_pagamento] = "Pos"))` },
     { card: 'Pós Pago Novos Negocios',
-      dax: `CALCULATE([Novos Negócios], ${filtroMes}, 'fVendas'[tipo_pagamento] = "Pos")` },
+      dax: `CALCULATE([Novos Negócios], ${filtroMes}, FILTER('fVendas', 'fVendas'[tipo_pagamento] = "Pos"))` },
     { card: 'Pós Pago QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, 'dCancelamentos'[tipo_pagamento] = "Pos", FILTER(ALL('dCancelamentos'), YEAR('dCancelamentos'[data_ativacao]) = ${ano} && MONTH('dCancelamentos'[data_ativacao]) = ${mesNum}))` },
+      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[tipo_pagamento] = "Pos" && DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
 
     // Ticket médio da Base — medida dedicada do modelo:
     //   [Ticket Medio Base] = DIVIDE([Total Recebido], [BASE GERAL])
