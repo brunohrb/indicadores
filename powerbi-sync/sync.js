@@ -69,18 +69,37 @@ function daxDeCard(mesNum, ano) {
   const filtroMes = `'dCalendario'[Mês numero] = ${mesNum}, 'dCalendario'[Ano] = ${ano}`;
   const comMes = (expr) => `CALCULATE(${expr}, ${filtroMes})`;
 
-  // Segmentação no Power BI:
-  //   PF         = Tipo_Pessoa "Física", excluindo isentos
-  //   PJ + PME   = Tipo_Pessoa "Jurídica" OU "E" (Empresarial), excluindo isentos
-  //   Isentos    = Tipo_Cliente "ISENTO"
-  // Uso filtros diretos em CALCULATE (sem FILTER+ALL) pra não quebrar
-  // as relações do modelo — era isso que inflava PJ antes.
-  const semIsentos = `'dContratos'[Tipo_Cliente] <> "ISENTO"`;
-  const filtroPF = `'dContratos'[Tipo_Pessoa] = "Física"`;
-  const filtroPJ = `'dContratos'[Tipo_Pessoa] IN {"Jurídica", "E"}`;
+  // Segmentação no Power BI (PF, PJ+PME, sem isentos) varia conforme
+  // a tabela onde a medida vive:
+  //
+  //   [BASE GERAL]       → dContratos        (filtra dContratos[Tipo_Pessoa])
+  //   [Novos Clientes]   → fVendas           (filtra fVendas[tipo_pessoa])
+  //   [Novos Negócios]   → fVendas
+  //   [Ticket Medio]     → fVendas
+  //   [Cancelamento]     → dCancelamentos    (sem tipo_pessoa → TREATAS via id_contrato)
+  //   [New Can.]         → dCancelamentos
+  //   [$ Valor Reajuste] → fVendas (tentativa)
+  //
+  // Valores: Tipo_Pessoa tem "Física", "Jurídica", "E" (empresarial/PME).
 
-  const comMesPF = (expr) => `CALCULATE(${expr}, ${filtroMes}, ${filtroPF}, ${semIsentos})`;
-  const comMesPJ = (expr) => `CALCULATE(${expr}, ${filtroMes}, ${filtroPJ}, ${semIsentos})`;
+  // Base em dContratos
+  const baseContratoPF = (expr) =>
+    `CALCULATE(${expr}, ${filtroMes}, 'dContratos'[Tipo_Pessoa] = "Física", 'dContratos'[Tipo_Cliente] <> "ISENTO")`;
+  const baseContratoPJ = (expr) =>
+    `CALCULATE(${expr}, ${filtroMes}, 'dContratos'[Tipo_Pessoa] IN {"Jurídica", "E"}, 'dContratos'[Tipo_Cliente] <> "ISENTO")`;
+
+  // Venda em fVendas
+  const vendaPF = (expr) =>
+    `CALCULATE(${expr}, ${filtroMes}, 'fVendas'[tipo_pessoa] = "Física", 'fVendas'[tipo_cliente] <> "ISENTO")`;
+  const vendaPJ = (expr) =>
+    `CALCULATE(${expr}, ${filtroMes}, 'fVendas'[tipo_pessoa] IN {"Jurídica", "E"}, 'fVendas'[tipo_cliente] <> "ISENTO")`;
+
+  // Cancelamento em dCancelamentos — sem tipo_pessoa. Usamos TREATAS pra
+  // transportar o filtro de dContratos[Tipo_Pessoa] pra dCancelamentos[id_contrato].
+  const cancPF = (expr) =>
+    `CALCULATE(${expr}, ${filtroMes}, TREATAS(CALCULATETABLE(VALUES('dContratos'[ID_Contrato]), 'dContratos'[Tipo_Pessoa] = "Física", 'dContratos'[Tipo_Cliente] <> "ISENTO"), 'dCancelamentos'[id_contrato]))`;
+  const cancPJ = (expr) =>
+    `CALCULATE(${expr}, ${filtroMes}, TREATAS(CALCULATETABLE(VALUES('dContratos'[ID_Contrato]), 'dContratos'[Tipo_Pessoa] IN {"Jurídica", "E"}, 'dContratos'[Tipo_Cliente] <> "ISENTO"), 'dCancelamentos'[id_contrato]))`;
 
   const cards = [
     // ─── VERDE ────────────────────────────────────────
@@ -99,25 +118,25 @@ function daxDeCard(mesNum, ano) {
     { card: 'Receita',                         dax: comMes('[Receita]') },
 
     // ─── AMARELO (segmentação PF/PJ+PME) ──────────────
-    { card: 'Base de Cliente PF',              dax: comMesPF('[BASE GERAL]') },
-    { card: 'Base Clientes PJ +PME',           dax: comMesPJ('[BASE GERAL]') },
-    { card: 'Novos Clientes PF',               dax: comMesPF('[Novos Clientes]') },
-    { card: 'Novos Clientes PJ',               dax: comMesPJ('[Novos Clientes]') },
-    { card: 'Cancelamento PF',                 dax: comMesPF('[Cancelamento]') },
-    { card: 'Cancelam. PME + PJ',              dax: comMesPJ('[Cancelamento]') },
-    { card: 'Novos Negócios PF',               dax: comMesPF('[Novos Negócios]') },
-    { card: 'Novos Negócios PJ',               dax: comMesPJ('[Novos Negócios]') },
-    { card: 'Valor Cancelamento PF',           dax: comMesPF('[New Can.]') },
-    { card: 'Valor Canc. PJ + PME',            dax: comMesPJ('[New Can.]') },
-    { card: 'Ticket Médio PF',                 dax: comMesPF('[Ticket Medio]') },
-    { card: 'Ticket Médio PJ',                 dax: comMesPJ('[Ticket Medio]') },
-    { card: 'Reajuste Contratos PF',           dax: comMesPF('[$ Valor Reajuste]') },
-    { card: 'Reajuste Contratos PJ',           dax: comMesPJ('[$ Valor Reajuste]') },
+    { card: 'Base de Cliente PF',              dax: baseContratoPF('[BASE GERAL]') },
+    { card: 'Base Clientes PJ +PME',           dax: baseContratoPJ('[BASE GERAL]') },
+    { card: 'Novos Clientes PF',               dax: vendaPF('[Novos Clientes]') },
+    { card: 'Novos Clientes PJ',               dax: vendaPJ('[Novos Clientes]') },
+    { card: 'Cancelamento PF',                 dax: cancPF('[Cancelamento]') },
+    { card: 'Cancelam. PME + PJ',              dax: cancPJ('[Cancelamento]') },
+    { card: 'Novos Negócios PF',               dax: vendaPF('[Novos Negócios]') },
+    { card: 'Novos Negócios PJ',               dax: vendaPJ('[Novos Negócios]') },
+    { card: 'Valor Cancelamento PF',           dax: cancPF('[New Can.]') },
+    { card: 'Valor Canc. PJ + PME',            dax: cancPJ('[New Can.]') },
+    { card: 'Ticket Médio PF',                 dax: vendaPF('[Ticket Medio]') },
+    { card: 'Ticket Médio PJ',                 dax: vendaPJ('[Ticket Medio]') },
+    { card: 'Reajuste Contratos PF',           dax: vendaPF('[$ Valor Reajuste]') },
+    { card: 'Reajuste Contratos PJ',           dax: vendaPJ('[$ Valor Reajuste]') },
 
     // ─── VERMELHO (chutes — ajustar se não bater) ─────
-    // Base de Isentos — Tipo_Cliente = "ISENTO"
+    // Base de Isentos — Tipo_Cliente "ISENTO" OU filial 11
     { card: 'Base de Isentos',
-      dax: `CALCULATE([BASE GERAL], ${filtroMes}, 'dContratos'[Tipo_Cliente] = "ISENTO")` },
+      dax: `CALCULATE([BASE GERAL], ${filtroMes}, FILTER(ALL('dContratos'), 'dContratos'[Tipo_Cliente] = "ISENTO" || 'dContratos'[ID_Filial] = 11))` },
 
     // Resultado Líquido = Receita - Cancelamento (diferença líquida de novos vs perdidos)
     { card: 'Resultado Liquido',
