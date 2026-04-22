@@ -9,13 +9,16 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
-// ─── Carrega .env.local (formato KEY=value, 1 por linha) ─────────
+// ─── Carrega .env.local quando rodando local. No GitHub Actions,
+//     as vars já vêm do workflow via "env:" e esse passo é pulado.
 function carregarEnv() {
+  if (process.env.PBI_CLIENT_SECRET) return; // já setado (CI / shell)
   const caminho = path.join(__dirname, '.env.local');
   if (!fs.existsSync(caminho)) {
     throw new Error(
-      'Arquivo .env.local não encontrado.\n' +
-      '   Copie .env.local.example para .env.local e preencha o PBI_CLIENT_SECRET.'
+      'Nem variáveis de ambiente nem .env.local encontrados.\n' +
+      '   Rodando local? Copie .env.local.example → .env.local e preencha.\n' +
+      '   Rodando GitHub Actions? Configure o secret PBI_CLIENT_SECRET.'
     );
   }
   const linhas = fs.readFileSync(caminho, 'utf8').split('\n');
