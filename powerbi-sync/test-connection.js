@@ -78,27 +78,53 @@ async function executarDAX(token, dax) {
     const token = await obterToken();
     log(`Token obtido (${token.length} caracteres) ✓`, 'ok');
 
-    log('Etapa 2/3 — listando medidas e tabelas do dataset (via DAX INFO)...', 'info');
-    const tabelas = await executarDAX(
-      token,
-      'EVALUATE SELECTCOLUMNS(INFO.TABLES(), "Tabela", [Name], "Oculta", [IsHidden])'
-    );
-    log(`${tabelas.length} tabelas encontradas:`, 'ok');
-    tabelas.forEach(t => {
-      const flag = t['[Oculta]'] ? ' (oculta)' : '';
-      console.log(`   • ${t['[Tabela]']}${flag}`);
-    });
+    log('Etapa 2/4 — DAX trivial (prova que o motor executa queries)...', 'info');
+    const ping = await executarDAX(token, 'EVALUATE ROW("ping", 1)');
+    log(`Resposta: ${JSON.stringify(ping[0])} ✓`, 'ok');
 
-    log('Etapa 3/3 — listando medidas DAX do modelo...', 'info');
-    const medidas = await executarDAX(
-      token,
-      'EVALUATE SELECTCOLUMNS(INFO.MEASURES(), "Medida", [Name], "Tabela", [TableID])'
-    );
-    log(`${medidas.length} medidas encontradas:`, 'ok');
-    medidas.slice(0, 80).forEach(m => {
-      console.log(`   • ${m['[Medida]']}`);
-    });
-    if (medidas.length > 80) console.log(`   ... e mais ${medidas.length - 80}`);
+    log('Etapa 3/4 — tentando DAX INFO.TABLES() (API nova, pode falhar)...', 'info');
+    try {
+      const tabelas = await executarDAX(
+        token,
+        'EVALUATE SELECTCOLUMNS(INFO.TABLES(), "Tabela", [Name])'
+      );
+      log(`${tabelas.length} tabelas encontradas:`, 'ok');
+      tabelas.forEach(t => console.log(`   • ${t['[Tabela]']}`));
+    } catch (err) {
+      log(`INFO.TABLES() não disponível neste modelo — usando DMV fallback...`, 'warn');
+      // DMV: query SQL-like sobre o esquema do modelo (sempre funciona)
+      const tabelas = await executarDAX(
+        token,
+        'SELECT [Name], [IsHidden] FROM $SYSTEM.TMSCHEMA_TABLES'
+      );
+      log(`${tabelas.length} tabelas (via DMV):`, 'ok');
+      tabelas.forEach(t => {
+        const nome = t['Name'] || t['[Name]'];
+        const ocul = t['IsHidden'] || t['[IsHidden]'];
+        console.log(`   • ${nome}${ocul ? ' (oculta)' : ''}`);
+      });
+    }
+
+    log('Etapa 4/4 — listando as medidas DAX (nomes dos cards do relatório)...', 'info');
+    try {
+      const medidas = await executarDAX(
+        token,
+        'EVALUATE SELECTCOLUMNS(INFO.MEASURES(), "Medida", [Name])'
+      );
+      log(`${medidas.length} medidas encontradas:`, 'ok');
+      medidas.forEach(m => console.log(`   • ${m['[Medida]']}`));
+    } catch (err) {
+      log(`INFO.MEASURES() falhou — tentando via DMV...`, 'warn');
+      const medidas = await executarDAX(
+        token,
+        'SELECT [Name], [Expression] FROM $SYSTEM.TMSCHEMA_MEASURES'
+      );
+      log(`${medidas.length} medidas (via DMV):`, 'ok');
+      medidas.forEach(m => {
+        const nome = m['Name'] || m['[Name]'];
+        console.log(`   • ${nome}`);
+      });
+    }
 
     log('Conexão 100% funcional! Pronto para implementar o sync completo.', 'ok');
     process.exit(0);
