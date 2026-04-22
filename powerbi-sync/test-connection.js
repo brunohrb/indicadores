@@ -78,29 +78,74 @@ async function executarDAX(token, dax) {
     const token = await obterToken();
     log(`Token obtido (${token.length} caracteres) ✓`, 'ok');
 
-    log('Etapa 2/3 — listando medidas e tabelas do dataset (via DAX INFO)...', 'info');
-    const tabelas = await executarDAX(
-      token,
-      'EVALUATE SELECTCOLUMNS(INFO.TABLES(), "Tabela", [Name], "Oculta", [IsHidden])'
-    );
-    log(`${tabelas.length} tabelas encontradas:`, 'ok');
-    tabelas.forEach(t => {
-      const flag = t['[Oculta]'] ? ' (oculta)' : '';
-      console.log(`   • ${t['[Tabela]']}${flag}`);
-    });
+    log('Etapa 2/3 — DAX trivial (já passou antes): pulando.', 'info');
 
-    log('Etapa 3/3 — listando medidas DAX do modelo...', 'info');
-    const medidas = await executarDAX(
-      token,
-      'EVALUATE SELECTCOLUMNS(INFO.MEASURES(), "Medida", [Name], "Tabela", [TableID])'
-    );
-    log(`${medidas.length} medidas encontradas:`, 'ok');
-    medidas.slice(0, 80).forEach(m => {
-      console.log(`   • ${m['[Medida]']}`);
-    });
-    if (medidas.length > 80) console.log(`   ... e mais ${medidas.length - 80}`);
+    log('Etapa 3/3 — consultando TODAS as 34 medidas do modelo (fev/2026)...', 'info');
 
-    log('Conexão 100% funcional! Pronto para implementar o sync completo.', 'ok');
+    // Medidas descobertas pelo usuário ao expandir as tabelas no Power BI.
+    const medidasAlvo = [
+      // Tabela: dTaxaInstalacao
+      'Valor Instalacao',
+      // Tabela: Medidas
+      '% Total Ret.', 'Detalhe % Ating. Meta', 'Eqp. Retirados Real', 'Eqp. Retirados s/equip',
+      'Meta', 'Meta Retirada', 'PF - Qtd. OS PF', 'PF - Qtd. OS Suporte PF',
+      'PJ - Qtd. OS Finalizada PJ', 'Qtd. Contratos', 'Qtd. Downgrade',
+      'Qtd. Reativacoes 30 dias', 'Qtd. Suporte PJ', 'Qtd. Taxa Instalacao',
+      'Qtd. Upgrade', 'Reativados', 'Valor Downgrade',
+      'Valor Reativacoes 30 dias', 'Valor Upgrade',
+      // Tabela: Medidas Cancelamento
+      'Cancelamento',
+      // Tabela: Medidas Clientes
+      'Base Dual Net', 'BASE GERAL', 'Base Planet',
+      'Calculo Base Ativos Mês Anterior', 'Calculo Base Cancelados',
+      'Contratos Ativos', 'Novos Clientes',
+      // Tabela: Medidas Financeiro
+      '$ Valor Reajuste', 'Diferença Nv. Negocios e Cancelalemnto', 'New Can.',
+      'Novos Negócios', 'Real Cancelamento', 'Receita', 'Ticket Medio',
+      // Tabela: Recebimentos
+      'Juros1',
+    ];
+
+    const escapar = n => n.replace(/"/g, '""');
+
+    // Consulta uma por uma com CALCULATE + filtro Ano=2026, Mês=2 (fev).
+    // Mais lento que batch, mas resiliente — se uma medida der erro (nome de
+    // coluna dCalendario diferente ou outro problema), as outras seguem.
+    const resultados = [];
+    for (const m of medidasAlvo) {
+      try {
+        const dax = `EVALUATE ROW("v", CALCULATE([${m}], dCalendario[Ano]=2026, dCalendario[Mês numero]=2))`;
+        const r = await executarDAX(token, dax);
+        resultados.push({ nome: m, valor: r[0]?.['[v]'], ok: true });
+      } catch (err) {
+        // Tenta sem filtro (retorna total anual) — pra pelo menos saber se a medida existe
+        try {
+          const r = await executarDAX(token, `EVALUATE ROW("v", [${m}])`);
+          resultados.push({ nome: m, valor: r[0]?.['[v]'], ok: true, anual: true });
+        } catch (_) {
+          resultados.push({ nome: m, ok: false });
+        }
+      }
+    }
+
+    log(`Consulta de ${medidasAlvo.length} medidas concluída:`, 'ok');
+    console.log('');
+    console.log('  Valores de fev/2026 (compare com o print do relatório):');
+    console.log('  ' + '─'.repeat(78));
+    for (const r of resultados) {
+      if (!r.ok) {
+        console.log(`  ✗ ${r.nome.padEnd(42)} [erro ao consultar]`);
+      } else {
+        const vfmt = typeof r.valor === 'number'
+          ? r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : String(r.valor);
+        const flag = r.anual ? ' (anual!)' : '';
+        console.log(`  ✓ ${r.nome.padEnd(42)} ${vfmt.padStart(18)}${flag}`);
+      }
+    }
+    console.log('  ' + '─'.repeat(78));
+
+    log('Pronto. Valores listados acima — hora de mapear cada card.', 'ok');
     process.exit(0);
   } catch (e) {
     log(`FALHOU: ${e.message}`, 'erro');
