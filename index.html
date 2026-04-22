@@ -306,6 +306,7 @@
       <div class="nav-item" onclick="abrirIXCView(this)"><span class="nav-icon">📡</span><span>IXC — Dados Reais</span></div>
       <div class="nav-item" onclick="selectMenu(this,'consolidado')"><span class="nav-icon">📋</span><span>Fluxo de Caixa</span></div>
       <div class="nav-item" onclick="selectMenu(this,'powerbi')"><span class="nav-icon">📊</span><span>Relatório Power BI</span></div>
+      <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📊</span><span>Diretoria (Power BI)</span></div>
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Marcos Juca</span></div>
       <div class="nav-item" onclick="selectMenu(this,'indicadores')"><span class="nav-icon">📊</span><span>Indicadores</span></div>
       <div class="nav-item" onclick="selectMenu(this,'demonstrativo');setTimeout(function(){if(typeof dreRender==='function')dreRender();},120)"><span class="nav-icon">📉</span><span>Demonstrativo</span></div>
@@ -2895,6 +2896,43 @@
     </div><!-- /ixcTab_conteudo -->
   </div><!-- /ixcView -->
 
+  <!-- ================================================================ -->
+  <!-- DIRETORIA POWER BI — 36 indicadores sincronizados do Power BI    -->
+  <!-- ================================================================ -->
+  <div id="diretoriaPBIView" class="view-container" style="display:none">
+    <div style="padding:1.5rem 2rem 0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin:0">📊 Diretoria — Power BI</h2>
+        <p style="font-size:0.8rem;color:#64748b;margin:0.2rem 0 0">36 indicadores sincronizados automaticamente todo dia</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+        <span id="diretoriaPBI_ref" style="font-size:0.8rem;color:#64748b;padding:0.4rem 0.85rem;background:#f1f5f9;border-radius:8px;font-weight:600"></span>
+        <button onclick="renderDiretoriaPBI()" style="padding:0.45rem 0.95rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
+      </div>
+    </div>
+
+    <div id="diretoriaPBI_loading" style="padding:3rem;text-align:center;color:#64748b">⏳ Carregando indicadores...</div>
+
+    <div id="diretoriaPBI_semDados" style="display:none;margin:1.5rem 2rem;padding:2rem;background:#fef3c7;border:1px solid #fde68a;border-radius:12px;text-align:center;color:#92400e">
+      <div style="font-size:2rem;margin-bottom:0.5rem">⚠️</div>
+      <h3 style="margin:0 0 0.5rem;font-size:1rem;font-weight:700">Ainda não há dados sincronizados</h3>
+      <p style="margin:0;font-size:0.85rem">Rode o workflow <b>"Sync Power BI → Supabase"</b> no GitHub Actions para popular os dados pela primeira vez.</p>
+    </div>
+
+    <div id="diretoriaPBI_erro" style="display:none;margin:1.5rem 2rem;padding:1.25rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;color:#991b1b;font-size:0.85rem"></div>
+
+    <div id="diretoriaPBI_conteudo" style="display:none;padding:0 2rem 2rem">
+      <div id="diretoriaPBI_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem"></div>
+
+      <div style="margin-top:2rem;padding:1rem 1.25rem;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:6px;font-size:0.78rem;color:#475569;line-height:1.5">
+        <b>Como isso funciona:</b> os valores vêm direto do Power BI via API, são executados em DAX e gravados no Supabase toda madrugada (03:00).
+        Para atualizar manualmente, vá em <a href="https://github.com/brunohrb/indicadores/actions/workflows/sync-powerbi.yml" target="_blank" style="color:#2563eb;font-weight:600">GitHub Actions → Sync Power BI</a> → Run workflow.
+        <br><br>
+        <b>Atenção:</b> alguns cards marcados com ⚠️ podem ter valores diferentes do Power BI original porque o filtro/fórmula no modelo foi inferido. Compare com o relatório e me avise os que estiverem errados.
+      </div>
+    </div>
+  </div><!-- /diretoriaPBIView -->
+
   </div><!-- end .main-content -->
 
   <!-- Modal detalhamento (fora do main para overlay correto) -->
@@ -3057,6 +3095,140 @@ function abrirIXCView(navEl) {
     const errMsg = document.getElementById('ixcTab_erroMsg');
     if (errDiv) errDiv.style.display = 'block';
     if (errMsg) errMsg.textContent = 'Script ixc-tab.js não carregou. Verifique o console (F12).';
+  }
+}
+
+// ================================================================
+// DIRETORIA POWER BI — 36 indicadores sincronizados
+// ================================================================
+
+// Cards que são chutes no mapeamento DAX — marcados com ⚠️ até a gente confirmar
+const DIRETORIA_PBI_CHUTES = new Set([
+  'Base de Isentos', 'Resultado Liquido', 'Juros < 45', 'Juros > 45',
+  'QTD. Canc. 1 Men.', 'Valor Canc. 1 Men.',
+  'Pós Pago Qtd. de Venda', 'Pós Pago Novos Negocios', 'Pós Pago QTD. Canc. 1 Men.',
+  'Ticket médio da Base'
+]);
+
+// Agrupamento visual dos cards (ordem igual ao relatório Power BI)
+const DIRETORIA_PBI_GRUPOS = [
+  { titulo: 'Base / Clientes', cards: [
+    'Base de Cliente PF', 'Base Clientes PJ +PME', 'Base de Isentos', 'Base de Contratos',
+    'OS Suporte PF', 'OS Suporte PJ', 'Novos Clientes PF', 'Novos Clientes PJ',
+    'Cancelamento PF', 'Cancelam. PME + PJ',
+  ]},
+  { titulo: 'Retiradas / Operacional', cards: [
+    'Retiradas', 'Cancelamento s/ equip. retirado', 'Reativações Retiradas',
+  ]},
+  { titulo: 'Valores (R$)', cards: [
+    'Novos Negócios', 'Novos Negócios PF', 'Novos Negócios PJ',
+    'Valor Upgrade', 'Valor Downgrade',
+    'Valor Cancelamento', 'Valor Cancelamento PF', 'Valor Canc. PJ + PME',
+    'Valor Reativações',
+  ]},
+  { titulo: 'Financeiro', cards: [
+    'Receita', 'Resultado Liquido', 'Juros < 45', 'Juros > 45',
+    'Reajuste Contratos PF', 'Reajuste Contratos PJ',
+    'QTD. Canc. 1 Men.', 'Valor Canc. 1 Men.',
+    'Ticket Médio da Venda', 'Ticket Médio PF', 'Ticket Médio PJ', 'Ticket médio da Base',
+  ]},
+  { titulo: 'Pós Pago', cards: [
+    'Pós Pago Qtd. de Venda', 'Pós Pago Novos Negocios', 'Pós Pago QTD. Canc. 1 Men.',
+  ]},
+];
+
+function diretoriaPBI_formatar(card, valor) {
+  if (valor === null || valor === undefined) return '—';
+  if (typeof valor !== 'number') return String(valor);
+  const isDinheiro = /valor|novos negócios|receita|juros|reajuste|ticket|resultado/i.test(card);
+  const isPct = /\%|meta/i.test(card);
+  if (isPct && valor <= 1) return (valor * 100).toFixed(0) + '%';
+  if (isDinheiro) {
+    return 'R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  return valor.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+}
+
+function abrirDiretoriaPBIView(navEl) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  const hdr = document.getElementById('mainHeader');
+  if (hdr) hdr.style.display = 'none';
+  document.querySelectorAll('.view-container').forEach(c => {
+    c.classList.remove('active');
+    c.style.display = 'none';
+  });
+  const view = document.getElementById('diretoriaPBIView');
+  if (view) { view.style.display = 'block'; view.classList.add('active'); }
+  const vt = document.getElementById('viewType');
+  if (vt) vt.value = 'diretoria-pbi';
+  renderDiretoriaPBI();
+}
+
+async function renderDiretoriaPBI() {
+  const elLoading = document.getElementById('diretoriaPBI_loading');
+  const elConteudo = document.getElementById('diretoriaPBI_conteudo');
+  const elSemDados = document.getElementById('diretoriaPBI_semDados');
+  const elErro = document.getElementById('diretoriaPBI_erro');
+  const elRef = document.getElementById('diretoriaPBI_ref');
+  const elGrid = document.getElementById('diretoriaPBI_grid');
+
+  elLoading.style.display = 'block';
+  elConteudo.style.display = 'none';
+  elSemDados.style.display = 'none';
+  elErro.style.display = 'none';
+
+  try {
+    if (typeof sb === 'undefined') {
+      throw new Error('Supabase não inicializado.');
+    }
+    const { data, error } = await sb
+      .from('app_storage')
+      .select('value')
+      .eq('key', 'powerbi_diretoria')
+      .maybeSingle();
+    if (error) throw error;
+
+    elLoading.style.display = 'none';
+
+    if (!data || !data.value || !data.value.valores) {
+      elSemDados.style.display = 'block';
+      return;
+    }
+
+    const payload = data.value;
+    const valores = payload.valores || {};
+    const mes = payload.mes_referencia || '?';
+    const atualizado = payload.atualizado_em ? new Date(payload.atualizado_em) : null;
+    const atualizadoStr = atualizado
+      ? atualizado.toLocaleDateString('pt-BR') + ' ' + atualizado.toLocaleTimeString('pt-BR').slice(0, 5)
+      : '—';
+    elRef.innerHTML = `📅 Mês: <b>${mes}</b> · 🔄 ${atualizadoStr}`;
+
+    // Renderiza grupos
+    let html = '';
+    for (const grupo of DIRETORIA_PBI_GRUPOS) {
+      html += `<div style="grid-column:1/-1;margin-top:1rem;font-size:0.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;padding:0.4rem 0 0.2rem;border-bottom:2px solid #e2e8f0">${grupo.titulo}</div>`;
+      for (const card of grupo.cards) {
+        const v = valores[card];
+        const ehChute = DIRETORIA_PBI_CHUTES.has(card);
+        const vStr = diretoriaPBI_formatar(card, v);
+        const isVazio = v === null || v === undefined;
+        const badge = ehChute ? '<span title="Valor inferido — pode não bater com Power BI original" style="font-size:0.65rem;color:#d97706;background:#fef3c7;padding:1px 6px;border-radius:3px;margin-left:0.4rem;font-weight:600">⚠️ inferido</span>' : '';
+        const cor = isVazio ? '#94a3b8' : (ehChute ? '#b45309' : '#0f172a');
+        html += `
+          <div style="background:white;border-radius:10px;padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0">
+            <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${card}${badge}</div>
+            <div style="font-size:1.35rem;font-weight:700;color:${cor}">${vStr}</div>
+          </div>`;
+      }
+    }
+    elGrid.innerHTML = html;
+    elConteudo.style.display = 'block';
+  } catch (err) {
+    elLoading.style.display = 'none';
+    elErro.style.display = 'block';
+    elErro.textContent = 'Erro ao carregar: ' + (err.message || err);
   }
 }
 
