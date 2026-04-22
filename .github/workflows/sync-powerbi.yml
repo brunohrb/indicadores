@@ -1,0 +1,43 @@
+name: Sync Power BI → Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      mes:
+        description: 'Mês (YYYY-MM). Vazio = último mês fechado.'
+        required: false
+        default: ''
+  schedule:
+    # Todo dia às 06:00 UTC (03:00 horário de Brasília)
+    - cron: '0 6 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências
+        working-directory: powerbi-sync
+        run: npm install
+
+      - name: Rodar sync Power BI
+        working-directory: powerbi-sync
+        env:
+          PBI_TENANT_ID: b6f5c3aa-17cb-4bce-8eb6-8b30b93166e8
+          PBI_CLIENT_ID: 750dc66f-367e-4461-9a69-3dd216f0b69d
+          PBI_WORKSPACE_ID: e8de7e89-a44d-4c9b-aebf-ca7e658e1bdb
+          PBI_DATASET_ID: a05016d1-ec5c-4d9d-9e74-1592bcd165f9
+          PBI_CLIENT_SECRET: ${{ secrets.PBI_CLIENT_SECRET }}
+          SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
+          SB_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc
+        run: |
+          if [ -n "${{ github.event.inputs.mes }}" ]; then
+            node sync.js --mes=${{ github.event.inputs.mes }}
+          else
+            node sync.js
+          fi
