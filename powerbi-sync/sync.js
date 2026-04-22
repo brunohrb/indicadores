@@ -121,19 +121,20 @@ function daxDeCard(mesNum, ano) {
     { card: 'Juros > 45',
       dax: `CALCULATE([Juros1], ${filtroMes}, FILTER(ALL('Recebimentos'), 'Recebimentos'[dias_pagamento] > 45))` },
 
-    // QTD / Valor Canc. 1 Men. — assumindo cancelamento com TempoNaBase <= 1 mês
+    // QTD / Valor Canc. 1 Men. — cancelamento até 30 dias após ativação
+    // (dCancelamentos[TempoNaBase] é string tipo "3 ano(s), ..." — não serve pra comparar)
     { card: 'QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER(ALL('dCancelamentos'), 'dCancelamentos'[TempoNaBase] <= 1))` },
+      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER(ALL('dCancelamentos'), DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
     { card: 'Valor Canc. 1 Men.',
-      dax: `CALCULATE([New Can.], ${filtroMes}, FILTER(ALL('dCancelamentos'), 'dCancelamentos'[TempoNaBase] <= 1))` },
+      dax: `CALCULATE([New Can.], ${filtroMes}, FILTER(ALL('dCancelamentos'), DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
 
-    // Pós Pago — sem medida dedicada. Chute: fVendas[tipo_cobranca] contém "Pós"
+    // Pós Pago — fVendas[tipo_pagamento] = "Pos" (oposto de "Pre")
     { card: 'Pós Pago Qtd. de Venda',
-      dax: `CALCULATE([Contratos Ativos], ${filtroMes}, FILTER(ALL('fVendas'), SEARCH("Pós", 'fVendas'[tipo_cobranca], 1, 0) > 0))` },
+      dax: `CALCULATE([Contratos Ativos], ${filtroMes}, FILTER(ALL('fVendas'), 'fVendas'[tipo_pagamento] = "Pos"))` },
     { card: 'Pós Pago Novos Negocios',
-      dax: `CALCULATE([Novos Negócios], ${filtroMes}, FILTER(ALL('fVendas'), SEARCH("Pós", 'fVendas'[tipo_cobranca], 1, 0) > 0))` },
+      dax: `CALCULATE([Novos Negócios], ${filtroMes}, FILTER(ALL('fVendas'), 'fVendas'[tipo_pagamento] = "Pos"))` },
     { card: 'Pós Pago QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER(ALL('fVendas'), SEARCH("Pós", 'fVendas'[tipo_cobranca], 1, 0) > 0), FILTER(ALL('dCancelamentos'), 'dCancelamentos'[TempoNaBase] <= 1))` },
+      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER(ALL('dCancelamentos'), 'dCancelamentos'[tipo_pagamento] = "Pos"), FILTER(ALL('dCancelamentos'), DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
 
     // Ticket médio da Base = Receita / BASE GERAL
     { card: 'Ticket médio da Base',

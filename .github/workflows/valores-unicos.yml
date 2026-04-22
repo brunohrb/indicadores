@@ -1,0 +1,28 @@
+name: Listar Valores Únicos Power BI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  valores:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências
+        working-directory: powerbi-sync
+        run: npm install
+
+      - name: Listar valores únicos
+        working-directory: powerbi-sync
+        env:
+          PBI_TENANT_ID: b6f5c3aa-17cb-4bce-8eb6-8b30b93166e8
+          PBI_CLIENT_ID: 750dc66f-367e-4461-9a69-3dd216f0b69d
+          PBI_WORKSPACE_ID: e8de7e89-a44d-4c9b-aebf-ca7e658e1bdb
+          PBI_DATASET_ID: a05016d1-ec5c-4d9d-9e74-1592bcd165f9
+          PBI_CLIENT_SECRET: ${{ secrets.PBI_CLIENT_SECRET }}
+        run: node valores-unicos.js
