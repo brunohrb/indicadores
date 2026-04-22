@@ -92,8 +92,10 @@ function daxDeCard(mesNum, ano) {
   const venda = (expr, filiais) =>
     `CALCULATE(${expr}, ${filtroMes}, FILTER('fVendas', 'fVendas'[filial_id] IN ${filiais} && (${filtroVendedorVenda})))`;
 
+  // Cancelamento por filial — SEM filtro motivo (os cards PF/PJ pegam todos
+  // os cancelamentos do mês, só os "1 Men." é que aplicam motivo).
   const cancel = (expr, filiais) =>
-    `CALCULATE(${expr}, ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[id_filial] IN ${filiais} && (${filtroMotivoCanc}) && (${filtroVendedorCanc})))`;
+    `CALCULATE(${expr}, ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[id_filial] IN ${filiais} && (${filtroVendedorCanc})))`;
 
   const cards = [
     // ─── VERDE ────────────────────────────────────────
@@ -157,8 +159,11 @@ function daxDeCard(mesNum, ano) {
     { card: 'Pós Pago QTD. Canc. 1 Men.',
       dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[tipo_pagamento] = "Pos" && (${filtroMotivoCanc}) && (${filtroVendedorCanc})))` },
 
-    // Ticket médio da Base — medida dedicada do modelo (descoberta via print)
-    { card: 'Ticket médio da Base',                  dax: comMes('[Ticket Medio Base]') },
+    // Ticket médio da Base — chute Receita/BASE GERAL até confirmar o
+    // nome exato da medida dedicada com o cara do BI ([Ticket Medio Base]
+    // deu erro DAX, nome deve ser outro).
+    { card: 'Ticket médio da Base',
+      dax: `DIVIDE(CALCULATE([Receita], ${filtroMes}), CALCULATE([BASE GERAL], ${filtroMes}))` },
   ];
 
   return cards;
