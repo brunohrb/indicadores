@@ -80,59 +80,72 @@ async function executarDAX(token, dax) {
 
     log('Etapa 2/3 — DAX trivial (já passou antes): pulando.', 'info');
 
-    log('Etapa 3/3 — consultando as 36 medidas dos cards do relatório...', 'info');
-    // Nomes conforme aparecem nos cards do relatório "DIretoria Visão de Tabela"
-    // (extraídos dos prints do usuário).
+    log('Etapa 3/3 — consultando TODAS as 34 medidas do modelo (fev/2026)...', 'info');
+
+    // Medidas descobertas pelo usuário ao expandir as tabelas no Power BI.
     const medidasAlvo = [
-      'Base de Cliente PF', 'Base Clientes PJ +PME', 'Base de Isentos', 'Base de Contratos',
-      'OS Suporte PF', 'OS Suporte PJ', 'Novos Clientes PF', 'Novos Clientes PJ',
-      'Cancelamento PF', 'Cancelam. PME + PJ',
-      'Retiradas', 'Cancelamento s/ equip. retirado', 'Reativações Retiradas',
-      'Novos Negócios', 'Novos Negócios PF', 'Novos Negócios PJ',
-      'Valor Upgrade', 'Valor Cancelamento', 'Valor Cancelamento PF', 'Valor Canc. PJ + PME',
-      'Valor Downgrade', 'Resultado Liquido', 'Juros < 45', 'Juros >45',
-      'Reajuste Contratos PJ', 'QTD. Canc. 1 Men.', 'Valor Canc. 1 Men.',
-      'Valor Reativações', 'Reajuste Contratos PF', 'Ticket Médio da Venda',
-      'Pós Pago Qtd. de Venda', 'Pós Pago Novos Negocios', 'Pós Pago QTD. Canc. 1 Men.',
-      'Ticket médio da Base', 'Ticket Médio PF', 'Ticket Médio PJ',
+      // Tabela: dTaxaInstalacao
+      'Valor Instalacao',
+      // Tabela: Medidas
+      '% Total Ret.', 'Detalhe % Ating. Meta', 'Eqp. Retirados Real', 'Eqp. Retirados s/equip',
+      'Meta', 'Meta Retirada', 'PF - Qtd. OS PF', 'PF - Qtd. OS Suporte PF',
+      'PJ - Qtd. OS Finalizada PJ', 'Qtd. Contratos', 'Qtd. Downgrade',
+      'Qtd. Reativacoes 30 dias', 'Qtd. Suporte PJ', 'Qtd. Taxa Instalacao',
+      'Qtd. Upgrade', 'Reativados', 'Valor Downgrade',
+      'Valor Reativacoes 30 dias', 'Valor Upgrade',
+      // Tabela: Medidas Cancelamento
+      'Cancelamento',
+      // Tabela: Medidas Clientes
+      'Base Dual Net', 'BASE GERAL', 'Base Planet',
+      'Calculo Base Ativos Mês Anterior', 'Calculo Base Cancelados',
+      'Contratos Ativos', 'Novos Clientes',
+      // Tabela: Medidas Financeiro
+      '$ Valor Reajuste', 'Diferença Nv. Negocios e Cancelalemnto', 'New Can.',
+      'Novos Negócios', 'Real Cancelamento', 'Receita', 'Ticket Medio',
+      // Tabela: Recebimentos
+      'Juros1',
     ];
 
-    // Constrói um único EVALUATE ROW com todas as medidas de uma vez só
-    // (1 call em vez de 36).
     const escapar = n => n.replace(/"/g, '""');
-    const parts = medidasAlvo.map(m => `"${escapar(m)}", [${m}]`).join(', ');
-    const dax = `EVALUATE ROW(${parts})`;
 
-    try {
-      const linhas = await executarDAX(token, dax);
-      const linha = linhas[0] || {};
-      log(`Todas as medidas retornaram com sucesso:`, 'ok');
-      medidasAlvo.forEach(m => {
-        const valor = linha[`[${m}]`];
-        const formato = typeof valor === 'number'
-          ? valor.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
-          : valor;
-        console.log(`   • ${m.padEnd(40)} ${formato}`);
-      });
-    } catch (err) {
-      // Se der erro, tenta uma por uma pra descobrir qual tem nome diferente
-      log(`Query em lote falhou — testando uma por uma pra achar divergências...`, 'warn');
-      const ok = []; const nok = [];
-      for (const m of medidasAlvo) {
+    // Consulta uma por uma com CALCULATE + filtro Ano=2026, Mês=2 (fev).
+    // Mais lento que batch, mas resiliente — se uma medida der erro (nome de
+    // coluna dCalendario diferente ou outro problema), as outras seguem.
+    const resultados = [];
+    for (const m of medidasAlvo) {
+      try {
+        const dax = `EVALUATE ROW("v", CALCULATE([${m}], dCalendario[Ano]=2026, dCalendario[Mês numero]=2))`;
+        const r = await executarDAX(token, dax);
+        resultados.push({ nome: m, valor: r[0]?.['[v]'], ok: true });
+      } catch (err) {
+        // Tenta sem filtro (retorna total anual) — pra pelo menos saber se a medida existe
         try {
-          const r = await executarDAX(token, `EVALUATE ROW("x", [${m}])`);
-          ok.push({ nome: m, valor: r[0]?.['[x]'] });
-        } catch (_) { nok.push(m); }
-      }
-      log(`${ok.length} medidas OK, ${nok.length} com nome divergente:`, 'ok');
-      ok.forEach(r => console.log(`   ✓ ${r.nome.padEnd(40)} = ${r.valor}`));
-      if (nok.length) {
-        console.log('\nMedidas não encontradas com esse nome (card pode ter título ≠ medida):');
-        nok.forEach(m => console.log(`   ✗ ${m}`));
+          const r = await executarDAX(token, `EVALUATE ROW("v", [${m}])`);
+          resultados.push({ nome: m, valor: r[0]?.['[v]'], ok: true, anual: true });
+        } catch (_) {
+          resultados.push({ nome: m, ok: false });
+        }
       }
     }
 
-    log('Conexão 100% funcional!', 'ok');
+    log(`Consulta de ${medidasAlvo.length} medidas concluída:`, 'ok');
+    console.log('');
+    console.log('  Valores de fev/2026 (compare com o print do relatório):');
+    console.log('  ' + '─'.repeat(78));
+    for (const r of resultados) {
+      if (!r.ok) {
+        console.log(`  ✗ ${r.nome.padEnd(42)} [erro ao consultar]`);
+      } else {
+        const vfmt = typeof r.valor === 'number'
+          ? r.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : String(r.valor);
+        const flag = r.anual ? ' (anual!)' : '';
+        console.log(`  ✓ ${r.nome.padEnd(42)} ${vfmt.padStart(18)}${flag}`);
+      }
+    }
+    console.log('  ' + '─'.repeat(78));
+
+    log('Pronto. Valores listados acima — hora de mapear cada card.', 'ok');
     process.exit(0);
   } catch (e) {
     log(`FALHOU: ${e.message}`, 'erro');
