@@ -69,37 +69,31 @@ function daxDeCard(mesNum, ano) {
   const filtroMes = `'dCalendario'[Mês numero] = ${mesNum}, 'dCalendario'[Ano] = ${ano}`;
   const comMes = (expr) => `CALCULATE(${expr}, ${filtroMes})`;
 
-  // Segmentação no Power BI (PF, PJ+PME, sem isentos) varia conforme
-  // a tabela onde a medida vive:
-  //
-  //   [BASE GERAL]       → dContratos        (filtra dContratos[Tipo_Pessoa])
-  //   [Novos Clientes]   → fVendas           (filtra fVendas[tipo_pessoa])
-  //   [Novos Negócios]   → fVendas
-  //   [Ticket Medio]     → fVendas
-  //   [Cancelamento]     → dCancelamentos    (sem tipo_pessoa → TREATAS via id_contrato)
-  //   [New Can.]         → dCancelamentos
-  //   [$ Valor Reajuste] → fVendas (tentativa)
-  //
-  // Valores: Tipo_Pessoa tem "Física", "Jurídica", "E" (empresarial/PME).
+  // Segmentação descoberta via prints do painel real (filtros do visual):
+  //   PF       = dContratos[ID_Filial] IN {14 filiais específicas}
+  //   PJ+PME   = dContratos[ID_Filial] IN {12 filiais específicas}
+  //   Isentos  = ID_Filial = 11 OR Tipo_Cliente = "ISENTO"
+  // (não é por Tipo_Pessoa como estava chutado antes)
+  const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
+  const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37}';
 
-  // Base em dContratos
-  const baseContratoPF = (expr) =>
-    `CALCULATE(${expr}, ${filtroMes}, 'dContratos'[Tipo_Pessoa] = "Física", 'dContratos'[Tipo_Cliente] <> "ISENTO")`;
-  const baseContratoPJ = (expr) =>
-    `CALCULATE(${expr}, ${filtroMes}, 'dContratos'[Tipo_Pessoa] IN {"Jurídica", "E"}, 'dContratos'[Tipo_Cliente] <> "ISENTO")`;
+  // Filtros de página do relatório original (afetam só cards baseados em
+  // dCancelamentos / fVendas — quando essas tabelas têm a coluna):
+  //   motivo contém "PRIMEIRA MENSALIDADE" (cancelamento inadimplente 1a men)
+  //   vendedor exclui "(Em branco)" e "Renovação de Plano..."
+  const filtroMotivoCanc = `SEARCH("PRIMEIRA MENSALIDADE", 'dCancelamentos'[motivo], 1, 0) > 0`;
+  const filtroVendedorCanc = `NOT (ISBLANK('dCancelamentos'[vendedor]) || SEARCH("Renovação", 'dCancelamentos'[vendedor], 1, 0) > 0)`;
+  const filtroVendedorVenda = `NOT (ISBLANK('fVendas'[vendedor]) || SEARCH("Renovação", 'fVendas'[vendedor], 1, 0) > 0)`;
 
-  // Venda em fVendas
-  const vendaPF = (expr) =>
-    `CALCULATE(${expr}, ${filtroMes}, 'fVendas'[tipo_pessoa] = "Física", 'fVendas'[tipo_cliente] <> "ISENTO")`;
-  const vendaPJ = (expr) =>
-    `CALCULATE(${expr}, ${filtroMes}, 'fVendas'[tipo_pessoa] IN {"Jurídica", "E"}, 'fVendas'[tipo_cliente] <> "ISENTO")`;
+  // Helpers — segmentação na tabela onde a medida vive
+  const baseContrato = (expr, filiais) =>
+    `CALCULATE(${expr}, ${filtroMes}, 'dContratos'[ID_Filial] IN ${filiais})`;
 
-  // Cancelamento em dCancelamentos — sem tipo_pessoa. Usamos TREATAS pra
-  // transportar o filtro de dContratos[Tipo_Pessoa] pra dCancelamentos[id_contrato].
-  const cancPF = (expr) =>
-    `CALCULATE(${expr}, ${filtroMes}, TREATAS(CALCULATETABLE(VALUES('dContratos'[ID_Contrato]), 'dContratos'[Tipo_Pessoa] = "Física", 'dContratos'[Tipo_Cliente] <> "ISENTO"), 'dCancelamentos'[id_contrato]))`;
-  const cancPJ = (expr) =>
-    `CALCULATE(${expr}, ${filtroMes}, TREATAS(CALCULATETABLE(VALUES('dContratos'[ID_Contrato]), 'dContratos'[Tipo_Pessoa] IN {"Jurídica", "E"}, 'dContratos'[Tipo_Cliente] <> "ISENTO"), 'dCancelamentos'[id_contrato]))`;
+  const venda = (expr, filiais) =>
+    `CALCULATE(${expr}, ${filtroMes}, FILTER('fVendas', 'fVendas'[filial_id] IN ${filiais} && (${filtroVendedorVenda})))`;
+
+  const cancel = (expr, filiais) =>
+    `CALCULATE(${expr}, ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[id_filial] IN ${filiais} && (${filtroMotivoCanc}) && (${filtroVendedorCanc})))`;
 
   const cards = [
     // ─── VERDE ────────────────────────────────────────
@@ -117,21 +111,21 @@ function daxDeCard(mesNum, ano) {
     { card: 'Valor Cancelamento',              dax: comMes('[New Can.]') },
     { card: 'Receita',                         dax: comMes('[Receita]') },
 
-    // ─── AMARELO (segmentação PF/PJ+PME) ──────────────
-    { card: 'Base de Cliente PF',              dax: baseContratoPF('[BASE GERAL]') },
-    { card: 'Base Clientes PJ +PME',           dax: baseContratoPJ('[BASE GERAL]') },
-    { card: 'Novos Clientes PF',               dax: vendaPF('[Novos Clientes]') },
-    { card: 'Novos Clientes PJ',               dax: vendaPJ('[Novos Clientes]') },
-    { card: 'Cancelamento PF',                 dax: cancPF('[Cancelamento]') },
-    { card: 'Cancelam. PME + PJ',              dax: cancPJ('[Cancelamento]') },
-    { card: 'Novos Negócios PF',               dax: vendaPF('[Novos Negócios]') },
-    { card: 'Novos Negócios PJ',               dax: vendaPJ('[Novos Negócios]') },
-    { card: 'Valor Cancelamento PF',           dax: cancPF('[New Can.]') },
-    { card: 'Valor Canc. PJ + PME',            dax: cancPJ('[New Can.]') },
-    { card: 'Ticket Médio PF',                 dax: vendaPF('[Ticket Medio]') },
-    { card: 'Ticket Médio PJ',                 dax: vendaPJ('[Ticket Medio]') },
-    { card: 'Reajuste Contratos PF',           dax: vendaPF('[$ Valor Reajuste]') },
-    { card: 'Reajuste Contratos PJ',           dax: vendaPJ('[$ Valor Reajuste]') },
+    // ─── AMARELO (segmentação PF/PJ+PME via id_filial) ──
+    { card: 'Base de Cliente PF',              dax: baseContrato('[BASE GERAL]', FILIAIS_PF) },
+    { card: 'Base Clientes PJ +PME',           dax: baseContrato('[BASE GERAL]', FILIAIS_PJ) },
+    { card: 'Novos Clientes PF',               dax: venda('[Novos Clientes]', FILIAIS_PF) },
+    { card: 'Novos Clientes PJ',               dax: venda('[Novos Clientes]', FILIAIS_PJ) },
+    { card: 'Cancelamento PF',                 dax: cancel('[Cancelamento]', FILIAIS_PF) },
+    { card: 'Cancelam. PME + PJ',              dax: cancel('[Cancelamento]', FILIAIS_PJ) },
+    { card: 'Novos Negócios PF',               dax: venda('[Novos Negócios]', FILIAIS_PF) },
+    { card: 'Novos Negócios PJ',               dax: venda('[Novos Negócios]', FILIAIS_PJ) },
+    { card: 'Valor Cancelamento PF',           dax: cancel('[New Can.]', FILIAIS_PF) },
+    { card: 'Valor Canc. PJ + PME',            dax: cancel('[New Can.]', FILIAIS_PJ) },
+    { card: 'Ticket Médio PF',                 dax: venda('[Ticket Medio]', FILIAIS_PF) },
+    { card: 'Ticket Médio PJ',                 dax: venda('[Ticket Medio]', FILIAIS_PJ) },
+    { card: 'Reajuste Contratos PF',           dax: venda('[$ Valor Reajuste]', FILIAIS_PF) },
+    { card: 'Reajuste Contratos PJ',           dax: venda('[$ Valor Reajuste]', FILIAIS_PJ) },
 
     // ─── VERMELHO (chutes — ajustar se não bater) ─────
     // Base de Isentos — Tipo_Cliente "ISENTO" OU filial 11
@@ -148,24 +142,23 @@ function daxDeCard(mesNum, ano) {
     { card: 'Juros > 45',
       dax: `CALCULATE([Juros1], ${filtroMes}, FILTER(ALL('Recebimentos'), 'Recebimentos'[dias_pagamento] > 45))` },
 
-    // QTD / Valor Canc. 1 Men. — cancelamento até 30 dias após ativação
-    // (dCancelamentos[TempoNaBase] é string tipo "3 ano(s), ..." — não serve pra comparar)
+    // QTD / Valor Canc. 1 Men. — só com filtros de página (motivo + vendedor),
+    // sem segmentação de filial nem DATEDIFF (a medida já contempla via motivo)
     { card: 'QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER(ALL('dCancelamentos'), DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
+      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER('dCancelamentos', (${filtroMotivoCanc}) && (${filtroVendedorCanc})))` },
     { card: 'Valor Canc. 1 Men.',
-      dax: `CALCULATE([New Can.], ${filtroMes}, FILTER(ALL('dCancelamentos'), DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
+      dax: `CALCULATE([New Can.], ${filtroMes}, FILTER('dCancelamentos', (${filtroMotivoCanc}) && (${filtroVendedorCanc})))` },
 
-    // Pós Pago — fVendas[tipo_pagamento] = "Pos" (oposto de "Pre")
+    // Pós Pago — fVendas[tipo_pagamento] = "Pos" + filtro vendedor
     { card: 'Pós Pago Qtd. de Venda',
-      dax: `CALCULATE([Contratos Ativos], ${filtroMes}, FILTER(ALL('fVendas'), 'fVendas'[tipo_pagamento] = "Pos"))` },
+      dax: `CALCULATE([Contratos Ativos], ${filtroMes}, FILTER('fVendas', 'fVendas'[tipo_pagamento] = "Pos" && (${filtroVendedorVenda})))` },
     { card: 'Pós Pago Novos Negocios',
-      dax: `CALCULATE([Novos Negócios], ${filtroMes}, FILTER(ALL('fVendas'), 'fVendas'[tipo_pagamento] = "Pos"))` },
+      dax: `CALCULATE([Novos Negócios], ${filtroMes}, FILTER('fVendas', 'fVendas'[tipo_pagamento] = "Pos" && (${filtroVendedorVenda})))` },
     { card: 'Pós Pago QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER(ALL('dCancelamentos'), 'dCancelamentos'[tipo_pagamento] = "Pos"), FILTER(ALL('dCancelamentos'), DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
+      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[tipo_pagamento] = "Pos" && (${filtroMotivoCanc}) && (${filtroVendedorCanc})))` },
 
-    // Ticket médio da Base = Receita / BASE GERAL
-    { card: 'Ticket médio da Base',
-      dax: `DIVIDE(CALCULATE([Receita], ${filtroMes}), CALCULATE([BASE GERAL], ${filtroMes}))` },
+    // Ticket médio da Base — medida dedicada do modelo (descoberta via print)
+    { card: 'Ticket médio da Base',                  dax: comMes('[Ticket Medio Base]') },
   ];
 
   return cards;
