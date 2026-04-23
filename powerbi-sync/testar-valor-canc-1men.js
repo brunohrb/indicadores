@@ -90,6 +90,22 @@ async function rodar() {
       nome: 'V7: SUMX com variável em vez de EARLIER',
       dax: `SUMX(CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])), VAR _id = 'dCancelamentos'[id_contrato] RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), 'FnAReceber'[numero_parcela_recorrente] = 1, 'FnAReceber'[id_contrato] = _id))`
     },
+    {
+      nome: 'V8: ALL(dCalendario) pra quebrar propagação',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), ALL('dCalendario'), 'FnAReceber'[numero_parcela_recorrente] = 1, TREATAS(_c, 'FnAReceber'[id_contrato]))`
+    },
+    {
+      nome: 'V9: REMOVEFILTERS(FnAReceber) antes',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), REMOVEFILTERS('FnAReceber'), 'FnAReceber'[numero_parcela_recorrente] = 1, TREATAS(_c, 'FnAReceber'[id_contrato]))`
+    },
+    {
+      nome: 'V10: REMOVEFILTERS geral + filtros',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), REMOVEFILTERS(), 'FnAReceber'[numero_parcela_recorrente] = 1, TREATAS(_c, 'FnAReceber'[id_contrato]))`
+    },
+    {
+      nome: 'V11: ALL(FnAReceber) + filtros',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), ALL('FnAReceber'), 'FnAReceber'[numero_parcela_recorrente] = 1, TREATAS(_c, 'FnAReceber'[id_contrato]))`
+    },
   ];
 
   for (const v of variantes) {
