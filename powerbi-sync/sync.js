@@ -148,9 +148,14 @@ function daxDeCard(mesNum, ano) {
     { card: 'Juros > 45',
       dax: `CALCULATE([Juros1], ${filtroMes}, FILTER(ALL('Recebimentos'), 'Recebimentos'[dias_pagamento] > 45))` },
 
-    // QTD / Valor Canc. 1 Men. — medidas dedicadas do modelo (doc Thribus 22/04)
-    { card: 'QTD. Canc. 1 Men.',               dax: comMes('[Cancelamento 1a Mensalidade Qtd]') },
-    { card: 'Valor Canc. 1 Men.',              dax: comMes('[Cancelamento 1a Mensalidade Valor]') },
+    // QTD / Valor Canc. 1 Men. — as medidas [Cancelamento 1a Mensalidade Qtd]
+    // e [...Valor] existem no .pbix documentado mas NÃO estão no dataset
+    // publicado (testado 25+ variações de nome, todas falham). Então replicamos
+    // inline a fórmula que o BI forneceu (doc Thribus 22/04).
+    { card: 'QTD. Canc. 1 Men.',
+      dax: `CALCULATE(DISTINCTCOUNT('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {"CANCELAMENTO INADIMPLENTE - PRIMEIRA MENSALIDADE (PRÉ-PAGO)","CANCELAMENTO INADIMPLENTE - PRIMEIRA MENSALIDADE (PÓS-PAGO)","CANCELAMENTO INADIMPLENTE - PRIMEIRA MENSALIDADE PJ"}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta]))` },
+    { card: 'Valor Canc. 1 Men.',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), 'dCancelamentos'[motivo] IN {"CANCELAMENTO INADIMPLENTE - PRIMEIRA MENSALIDADE (PRÉ-PAGO)","CANCELAMENTO INADIMPLENTE - PRIMEIRA MENSALIDADE (PÓS-PAGO)","CANCELAMENTO INADIMPLENTE - PRIMEIRA MENSALIDADE PJ"}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), ${filtroMes}, 'FnAReceber'[numero_parcela_recorrente] = 1, TREATAS(_c, 'FnAReceber'[id_contrato]))` },
 
     // Pós Pago — usa [Novos Clientes] filtrando tipo_pagamento="Pos" via FILTER
     // pra não ser sobrescrito pelos filtros internos da medida
@@ -163,10 +168,12 @@ function daxDeCard(mesNum, ano) {
     { card: 'Pós Pago QTD. Canc. 1 Men.',
       dax: `CALCULATE(DISTINCTCOUNT('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] = "CANCELAMENTO INADIMPLENTE - PRIMEIRA MENSALIDADE (PÓS-PAGO)", USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta]))` },
 
-    // Ticket médio da Base — medida dedicada do modelo:
+    // Ticket médio da Base — [Ticket Medio Base] não está publicada no
+    // dataset, replica inline a fórmula documentada pelo BI:
     //   [Ticket Medio Base] = DIVIDE([Total Recebido], [BASE GERAL])
-    // (doc Thribus Tech confirmou que existe — tenta direto de novo)
-    { card: 'Ticket médio da Base',                  dax: comMes('[Ticket Medio Base]') },
+    //   [Total Recebido]    = SUMX(Recebimentos, Recebimentos[valor_pago])
+    { card: 'Ticket médio da Base',
+      dax: `DIVIDE(CALCULATE(SUMX('Recebimentos', 'Recebimentos'[valor_pago]), ${filtroMes}), CALCULATE([BASE GERAL], ${filtroMes}))` },
   ];
 
   return cards;
