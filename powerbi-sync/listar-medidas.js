@@ -66,24 +66,26 @@ async function listarMedidas(token) {
   ];
 
   try {
+    // Sintaxe confirmada pelo BI Thribus em 22/04/2026 — usa [Table] (não [TableID])
     const rows = await dax(token,
       `EVALUATE SELECTCOLUMNS(INFO.MEASURES(),
-        "Nome", [Name],
-        "Tabela", [TableID],
-        "Expr", [Expression])`
+        "Tabela", [Table],
+        "Medida", [Name],
+        "Expressão", [Expression],
+        "Tipo", [DataType])`
     );
     log(`→ Total de medidas: ${rows.length}\n`);
 
     // Lista tudo (nome + tabela) resumidamente
     log('── TODAS AS MEDIDAS (nome) ──');
-    const nomes = rows.map(r => safe(r['[Nome]'])).sort();
+    const nomes = rows.map(r => safe(r['[Medida]'])).sort();
     nomes.forEach(n => log(`   ${n}`));
 
     // Detalhado: só as que parecem relevantes pros cards quebrados
     log('\n── MEDIDAS RELEVANTES (com DAX) ──');
     for (const r of rows) {
-      const nome = safe(r['[Nome]']);
-      const expr = safe(r['[Expr]']);
+      const nome = safe(r['[Medida]']);
+      const expr = safe(r['[Expressão]']);
       const nomeLow = nome.toLowerCase();
       if (palavras.some(p => nomeLow.includes(p))) {
         log(`\n▸ ${nome}`);
