@@ -106,6 +106,26 @@ async function rodar() {
       nome: 'V11: ALL(FnAReceber) + filtros',
       dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), ALL('FnAReceber'), 'FnAReceber'[numero_parcela_recorrente] = 1, TREATAS(_c, 'FnAReceber'[id_contrato]))`
     },
+    {
+      nome: 'V12: parcela >= 1 (inclui reemissões)',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), 'FnAReceber'[numero_parcela_recorrente] >= 1, TREATAS(_c, 'FnAReceber'[id_contrato]))`
+    },
+    {
+      nome: 'V13: sem filtro de parcela',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), TREATAS(_c, 'FnAReceber'[id_contrato]))`
+    },
+    {
+      nome: 'V14: LASTNONBLANK (como [Cancelamento 1 Mensalidade])',
+      dax: `SUMX(CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])), CALCULATE(LASTNONBLANK('FnAReceber'[valor_recebido], 1), 'FnAReceber'[id_contrato] = EARLIER('dCancelamentos'[id_contrato]), 'FnAReceber'[numero_parcela_recorrente] >= 1))`
+    },
+    {
+      nome: 'V15: com parcela <= 1 (1a parcela ou 0)',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), 'FnAReceber'[numero_parcela_recorrente] <= 1, TREATAS(_c, 'FnAReceber'[id_contrato]))`
+    },
+    {
+      nome: 'V16: MIN parcela por contrato + SUMX',
+      dax: `SUMX(CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])), VAR _id = 'dCancelamentos'[id_contrato] VAR _minP = CALCULATE(MIN('FnAReceber'[numero_parcela_recorrente]), 'FnAReceber'[id_contrato] = _id) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), 'FnAReceber'[id_contrato] = _id, 'FnAReceber'[numero_parcela_recorrente] = _minP))`
+    },
   ];
 
   for (const v of variantes) {
