@@ -74,13 +74,16 @@ function daxDeCard(mesNum, ano) {
   //   PJ+PME   = dContratos[ID_Filial] IN {13 filiais específicas}
   //   Isentos  = ID_Filial = 11
   // (não é por Tipo_Pessoa, como estava chutado antes)
-  // Segmentação confirmada pela tabela dFilial do BI (22/04/2026):
-  //   PF:     1, 2, 3, 5, 10, 20, 21, 22, 26, 27, 28, 29, 43, 45, 47
-  //   PJ:     12, 13, 14, 16, 17, 18, 19, 31, 33, 35, 37
-  //   Outros: 6, 8, 11, 15, 25 (não entram em PF nem PJ)
-  //   Isentos (card separado) = ID_Filial = 11
-  const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 21, 22, 26, 27, 28, 29, 43, 45, 47}';
-  const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 31, 33, 35, 37}';
+  // Segmentação: lista dos FILTROS REAIS dos cards do painel Power BI,
+  // confirmada por prints de Filtros deste visual. A tabela dFilial do BI
+  // tem mapeamento diferente (inclui filial 21 em PF, exclui 39 de PJ)
+  // que resulta em Base PF +447/PJ -450 — não bate com o painel.
+  // Os cards específicos do relatório usam:
+  //   PF:  1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47
+  //   PJ:  12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39
+  //   Isentos: ID_Filial = 11
+  const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
+  const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39}';
 
   // As medidas do modelo [Novos Clientes], [Novos Negócios], [Cancelamento],
   // [New Can.] JÁ EXCLUEM internamente os motivos administrativos, filiais
@@ -135,12 +138,14 @@ function daxDeCard(mesNum, ano) {
       dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PF)}, ${venda('[Novos Clientes]', FILIAIS_PF)})` },
     { card: 'Ticket Médio PJ',
       dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PJ)}, ${venda('[Novos Clientes]', FILIAIS_PJ)})` },
-    // Reajuste — vem da tabela fReajustes (doc BI 23/04). Filtra por
-    // fReajustes[filial_id] em PF/PJ e Data_Reajuste no mês/ano do sync.
-    { card: 'Reajuste Contratos PF',
-      dax: `CALCULATE(SUM('fReajustes'[Valor_Reajustado]), 'fReajustes'[filial_id] IN ${FILIAIS_PF}, YEAR('fReajustes'[Data_Reajuste]) = ${ano}, MONTH('fReajustes'[Data_Reajuste]) = ${mesNum})` },
-    { card: 'Reajuste Contratos PJ',
-      dax: `CALCULATE(SUM('fReajustes'[Valor_Reajustado]), 'fReajustes'[filial_id] IN ${FILIAIS_PJ}, YEAR('fReajustes'[Data_Reajuste]) = ${ano}, MONTH('fReajustes'[Data_Reajuste]) = ${mesNum})` },
+    // Reajuste — idealmente seria fReajustes[Valor_Reajustado] filtrado por
+    // filial PF/PJ + Data_Reajuste no mês, mas a tabela fReajustes não está
+    // publicada no dataset (dá erro DAX). Usa fallback na medida [$ Valor
+    // Reajuste] filtrada em fVendas — retorna BLANK em meses sem reajuste
+    // (bate com "Em branco" no Power BI original). Quando o BI publicar
+    // fReajustes, trocar pra SUM('fReajustes'[Valor_Reajustado]).
+    { card: 'Reajuste Contratos PF',           dax: venda('[$ Valor Reajuste]', FILIAIS_PF) },
+    { card: 'Reajuste Contratos PJ',           dax: venda('[$ Valor Reajuste]', FILIAIS_PJ) },
 
     // ─── VERMELHO (chutes — ajustar se não bater) ─────
     // Base de Isentos — só id_filial = 11 (confirmado via print do painel)
