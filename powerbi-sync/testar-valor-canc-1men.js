@@ -126,6 +126,26 @@ async function rodar() {
       nome: 'V16: MIN parcela por contrato + SUMX',
       dax: `SUMX(CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])), VAR _id = 'dCancelamentos'[id_contrato] VAR _minP = CALCULATE(MIN('FnAReceber'[numero_parcela_recorrente]), 'FnAReceber'[id_contrato] = _id) RETURN CALCULATE(SUM('FnAReceber'[valor_recebido]), 'FnAReceber'[id_contrato] = _id, 'FnAReceber'[numero_parcela_recorrente] = _minP))`
     },
+    {
+      nome: 'V17: fVendas[valor_produto] (valor do plano)',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('fVendas'[valor_produto]), TREATAS(_c, 'fVendas'[id_contrato]))`
+    },
+    {
+      nome: 'V18: fVendas[FnAReceber.valor_recebido] parcela=1',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('fVendas'[FnAReceber.valor_recebido]), 'fVendas'[FnAreceber.numero_parcela_recorrente] = 1, TREATAS(_c, 'fVendas'[id_contrato]))`
+    },
+    {
+      nome: 'V19: fVendas[FnAReceber.valor_recebido] sem parcela',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('fVendas'[FnAReceber.valor_recebido]), TREATAS(_c, 'fVendas'[id_contrato]))`
+    },
+    {
+      nome: 'V20: Recebimentos[valor_pago] p/ esses contratos',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('Recebimentos'[valor_pago]), TREATAS(_c, 'Recebimentos'[id_contrato]))`
+    },
+    {
+      nome: 'V21: Recebimentos[valor_original] p/ esses contratos',
+      dax: `VAR _c = CALCULATETABLE(VALUES('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] IN {${motivos}}, USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta])) RETURN CALCULATE(SUM('Recebimentos'[valor_original]), TREATAS(_c, 'Recebimentos'[id_contrato]))`
+    },
   ];
 
   for (const v of variantes) {
