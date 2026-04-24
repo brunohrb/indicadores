@@ -307,6 +307,7 @@
       <div class="nav-item" onclick="selectMenu(this,'consolidado')"><span class="nav-icon">📋</span><span>Fluxo de Caixa</span></div>
       <div class="nav-item" onclick="selectMenu(this,'powerbi')"><span class="nav-icon">📊</span><span>Relatório Power BI</span></div>
       <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📊</span><span>Diretoria (Power BI)</span></div>
+      <div class="nav-item" onclick="abrirComercialPFView(this)"><span class="nav-icon">📈</span><span>Comercial PF (Power BI)</span></div>
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Marcos Juca</span></div>
       <div class="nav-item" onclick="selectMenu(this,'indicadores')"><span class="nav-icon">📊</span><span>Indicadores</span></div>
       <div class="nav-item" onclick="selectMenu(this,'demonstrativo');setTimeout(function(){if(typeof dreRender==='function')dreRender();},120)"><span class="nav-icon">📉</span><span>Demonstrativo</span></div>
@@ -2933,6 +2934,41 @@
     </div>
   </div><!-- /diretoriaPBIView -->
 
+  <!-- ================================================================ -->
+  <!-- COMERCIAL PF POWER BI — medidas do dataset Comercial PF          -->
+  <!-- ================================================================ -->
+  <div id="comercialPFView" class="view-container" style="display:none">
+    <div style="padding:1.5rem 2rem 0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin:0">📈 Comercial PF — Power BI</h2>
+        <p style="font-size:0.8rem;color:#64748b;margin:0.2rem 0 0">Indicadores do dataset "Comercial PF" — medidas nativas do Power BI</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+        <span id="comercialPF_ref" style="font-size:0.8rem;color:#64748b;padding:0.4rem 0.85rem;background:#f1f5f9;border-radius:8px;font-weight:600"></span>
+        <button onclick="renderComercialPF()" style="padding:0.45rem 0.95rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
+      </div>
+    </div>
+
+    <div id="comercialPF_loading" style="padding:3rem;text-align:center;color:#64748b">⏳ Carregando indicadores...</div>
+
+    <div id="comercialPF_semDados" style="display:none;margin:1.5rem 2rem;padding:2rem;background:#fef3c7;border:1px solid #fde68a;border-radius:12px;text-align:center;color:#92400e">
+      <div style="font-size:2rem;margin-bottom:0.5rem">⚠️</div>
+      <h3 style="margin:0 0 0.5rem;font-size:1rem;font-weight:700">Ainda não há dados sincronizados</h3>
+      <p style="margin:0;font-size:0.85rem">Rode o workflow <b>"Sync Power BI Comercial PF"</b> no GitHub Actions para popular os dados pela primeira vez.</p>
+    </div>
+
+    <div id="comercialPF_erro" style="display:none;margin:1.5rem 2rem;padding:1.25rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;color:#991b1b;font-size:0.85rem"></div>
+
+    <div id="comercialPF_conteudo" style="display:none;padding:0 2rem 2rem">
+      <div id="comercialPF_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem"></div>
+
+      <div style="margin-top:2rem;padding:1rem 1.25rem;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:6px;font-size:0.78rem;color:#475569;line-height:1.5">
+        <b>Como isso funciona:</b> dados extraídos via DAX do dataset Power BI "Comercial PF" usando as medidas publicadas no modelo. Sincronizado automaticamente 15x/dia.
+        Para atualizar manualmente, vá em <a href="https://github.com/brunohrb/indicadores/actions/workflows/sync-powerbi-comercial.yml" target="_blank" style="color:#2563eb;font-weight:600">GitHub Actions → Sync Power BI Comercial PF</a> → Run workflow.
+      </div>
+    </div>
+  </div><!-- /comercialPFView -->
+
   </div><!-- end .main-content -->
 
   <!-- Modal detalhamento (fora do main para overlay correto) -->
@@ -3218,6 +3254,128 @@ async function renderDiretoriaPBI() {
         html += `
           <div style="background:white;border-radius:10px;padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0">
             <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${card}${badge}</div>
+            <div style="font-size:1.35rem;font-weight:700;color:${cor}">${vStr}</div>
+          </div>`;
+      }
+    }
+    elGrid.innerHTML = html;
+    elConteudo.style.display = 'block';
+  } catch (err) {
+    elLoading.style.display = 'none';
+    elErro.style.display = 'block';
+    elErro.textContent = 'Erro ao carregar: ' + (err.message || err);
+  }
+}
+
+// ================================================================
+// COMERCIAL PF — Power BI (mesmo padrão da Diretoria, fonte diferente)
+// ================================================================
+const COMERCIAL_PF_GRUPOS = [
+  { titulo: 'Base de Clientes', cards: [
+    'BASE GERAL', 'Base PF', 'Base PJ', 'Isentos', 'Permuta',
+    'Base Dual Net', 'Base Planet',
+    'Contratos Ativos (novos/mês)', 'Novos Clientes',
+  ]},
+  { titulo: 'Cancelamentos', cards: [
+    'Cancelamento (mês)', 'Cancelamento 1a Mensalidade',
+    'Valor Canc. 1a Mensalidade', 'Valor Cancelamento Novo', 'Valor Cancelamento (Antigo)',
+    'Cancelamento s/ Filtro',
+    '% Churn', '% Cancelamento Base PF', '% Cancelamento Base PJ',
+  ]},
+  { titulo: 'Financeiro', cards: [
+    'Novos Negócios',
+    'Diferença Novos vs Cancel.', 'Diferença Mês Anterior',
+    '% Canc./Novos Clientes',
+    'Juros (Recebimentos)',
+  ]},
+  { titulo: 'Vendas', cards: [
+    'Meta (Vendas)', 'Total Venda', 'Performance Meta',
+    'Ticket Médio1',
+    'Qtd. Taxa Instalação', 'Valor Taxa Instalação',
+    'Qtd. Mesh', 'Valor Mesh', 'Mesh Pago', 'Mesh Não Pago',
+  ]},
+];
+
+function comercialPF_formatar(card, valor) {
+  if (valor === null || valor === undefined) return '—';
+  if (typeof valor !== 'number') return String(valor);
+  const isPct = /^%|\bperformance\b/i.test(card);
+  const isDinheiro = /valor|novos negócios|juros|ticket|taxa instala|mesh/i.test(card)
+                     && !/qtd\.|mesh pago|mesh n[aã]o pago/i.test(card);
+  if (isPct && Math.abs(valor) <= 1) return (valor * 100).toFixed(2) + '%';
+  if (isPct) return valor.toFixed(2) + '%';
+  if (isDinheiro) {
+    return 'R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  return valor.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+}
+
+function abrirComercialPFView(navEl) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (navEl) navEl.classList.add('active');
+  const hdr = document.getElementById('mainHeader');
+  if (hdr) hdr.style.display = 'none';
+  document.querySelectorAll('.view-container').forEach(c => {
+    c.classList.remove('active');
+    c.style.display = 'none';
+  });
+  const view = document.getElementById('comercialPFView');
+  if (view) { view.style.display = 'block'; view.classList.add('active'); }
+  const vt = document.getElementById('viewType');
+  if (vt) vt.value = 'comercial-pf';
+  renderComercialPF();
+}
+
+async function renderComercialPF() {
+  const elLoading = document.getElementById('comercialPF_loading');
+  const elConteudo = document.getElementById('comercialPF_conteudo');
+  const elSemDados = document.getElementById('comercialPF_semDados');
+  const elErro = document.getElementById('comercialPF_erro');
+  const elRef = document.getElementById('comercialPF_ref');
+  const elGrid = document.getElementById('comercialPF_grid');
+
+  elLoading.style.display = 'block';
+  elConteudo.style.display = 'none';
+  elSemDados.style.display = 'none';
+  elErro.style.display = 'none';
+
+  try {
+    if (typeof sb === 'undefined') {
+      throw new Error('Supabase não inicializado.');
+    }
+    const { data, error } = await sb
+      .from('app_storage')
+      .select('value')
+      .eq('key', 'powerbi_comercial_pf')
+      .maybeSingle();
+    if (error) throw error;
+
+    elLoading.style.display = 'none';
+
+    const payload = data && typeof data.value === 'string' ? JSON.parse(data.value) : data?.value;
+    if (!payload || !payload.valores) {
+      elSemDados.style.display = 'block';
+      return;
+    }
+    const valores = payload.valores || {};
+    const mes = payload.mes_referencia || '?';
+    const atualizado = payload.atualizado_em ? new Date(payload.atualizado_em) : null;
+    const atualizadoStr = atualizado
+      ? atualizado.toLocaleDateString('pt-BR') + ' ' + atualizado.toLocaleTimeString('pt-BR').slice(0, 5)
+      : '—';
+    elRef.innerHTML = `📅 Mês: <b>${mes}</b> · 🔄 ${atualizadoStr}`;
+
+    let html = '';
+    for (const grupo of COMERCIAL_PF_GRUPOS) {
+      html += `<div style="grid-column:1/-1;margin-top:1rem;font-size:0.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;padding:0.4rem 0 0.2rem;border-bottom:2px solid #e2e8f0">${grupo.titulo}</div>`;
+      for (const card of grupo.cards) {
+        const v = valores[card];
+        const vStr = comercialPF_formatar(card, v);
+        const isVazio = v === null || v === undefined;
+        const cor = isVazio ? '#94a3b8' : '#0f172a';
+        html += `
+          <div style="background:white;border-radius:10px;padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0">
+            <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${card}</div>
             <div style="font-size:1.35rem;font-weight:700;color:${cor}">${vStr}</div>
           </div>`;
       }

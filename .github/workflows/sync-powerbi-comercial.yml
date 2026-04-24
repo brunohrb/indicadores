@@ -1,0 +1,46 @@
+name: Sync Power BI Comercial PF
+
+on:
+  workflow_dispatch:
+    inputs:
+      mes:
+        description: 'Mês (YYYY-MM). Vazio = mês corrente.'
+        required: false
+        default: ''
+      workspace_id:
+        description: 'Workspace ID do Comercial PF'
+        required: true
+        default: '33ac8fe2-776f-416b-9847-0753a36c0de3'
+      dataset_id:
+        description: 'Dataset ID do Comercial PF'
+        required: true
+        default: '49077d30-c9d0-4d95-8114-8a12090ad767'
+  schedule:
+    # 15 execuções/dia: 08-19h BRT (1/1h) + 23h, 03h, 07h BRT (UTC = BRT+3)
+    - cron: '0 11,12,13,14,15,16,17,18,19,20,21,22,2,6,10 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - working-directory: powerbi-sync
+        run: npm install
+      - working-directory: powerbi-sync
+        env:
+          PBI_TENANT_ID: b6f5c3aa-17cb-4bce-8eb6-8b30b93166e8
+          PBI_CLIENT_ID: 750dc66f-367e-4461-9a69-3dd216f0b69d
+          PBI_CLIENT_SECRET: ${{ secrets.PBI_CLIENT_SECRET }}
+          PBI_WORKSPACE_COMERCIAL: ${{ github.event.inputs.workspace_id || '33ac8fe2-776f-416b-9847-0753a36c0de3' }}
+          PBI_DATASET_COMERCIAL: ${{ github.event.inputs.dataset_id || '49077d30-c9d0-4d95-8114-8a12090ad767' }}
+          SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
+          SB_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc
+        run: |
+          if [ -n "${{ github.event.inputs.mes }}" ]; then
+            node sync-comercial.js --mes=${{ github.event.inputs.mes }}
+          else
+            node sync-comercial.js
+          fi
