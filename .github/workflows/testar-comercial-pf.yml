@@ -6,9 +6,11 @@ on:
       workspace_id:
         description: 'Workspace ID do Comercial PF'
         required: true
+        default: '33ac8fe2-776f-416b-9847-0753a36c0de3'
       dataset_id:
         description: 'Dataset ID do Comercial PF'
         required: true
+        default: '49077d30-c9d0-4d95-8114-8a12090ad767'
 
 jobs:
   testar:

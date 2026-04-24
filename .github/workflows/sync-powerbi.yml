@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       mes:
-        description: 'Mês (YYYY-MM). Vazio = último mês fechado.'
+        description: 'Mês (YYYY-MM). Vazio = mês corrente.'
         required: false
         default: ''
   schedule:
