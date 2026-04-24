@@ -199,15 +199,14 @@ async function rodar() {
   const { SB_URL, SB_KEY } = process.env;
   if (!SB_URL || !SB_KEY) throw new Error('Faltam SB_URL / SB_KEY no ambiente.');
 
-  // Mês-alvo: último mês fechado (padrão) ou --mes YYYY-MM
+  // Mês-alvo: mês corrente (padrão, pra bater com o que o Power BI mostra)
+  // ou --mes YYYY-MM pra forçar um mês específico.
   const arg = process.argv.find(a => a.startsWith('--mes='));
   let mesAno;
   if (arg) {
     mesAno = arg.split('=')[1]; // "2026-02"
   } else {
     const d = new Date();
-    d.setDate(1);
-    d.setMonth(d.getMonth() - 1); // mês passado (mais provável de estar fechado)
     mesAno = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
   const [ano, mesNum] = mesAno.split('-').map(Number);
