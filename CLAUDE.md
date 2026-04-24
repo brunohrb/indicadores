@@ -56,6 +56,23 @@ Retiradas, Cancelamento s/ equip., OS Suporte PF/PJ, Valor Upgrade/Downgrade, Re
 ### 3 cards com erro DAX original (corrigidos)
 `QTD. Canc. 1 Men.`, `Valor Canc. 1 Men.`, `Pós Pago QTD. Canc. 1 Men.` — antes usavam `dCancelamentos[TempoNaBase] <= 1` (string!). Corrigido pra `DATEDIFF(data_ativacao, data_cancelamento, DAY) <= 30`.
 
+### 🚨 BLOQUEIO: Valor Canc. 1 Men. (abril/2026: R$ 5.892,30 no PBI vs R$ 89,90 no sync)
+
+**NÃO PERCA TEMPO tentando DAX novo — já foram 40+ variações.** O dataset publicado **não tem a coluna/medida necessária**:
+
+- `dCancelamentos` só tem 18 colunas, **nenhuma é numérica de valor** (ver `dump-schema-cancelamentos.js`)
+- `dCancelamentos[Total Cancelado]` existe como STRING **mas está com bug** (retorna nome da filial, não valor)
+- `fCancelamentos` **não existe** no dataset publicado (existe só no .pbix local da Thribus)
+- `fVendas[valor_produto]`, `fVendas[VALOR_SERVICO]` — retornam **R$ 0** pros 47 ids da Canc. 1 Men. (colunas vazias)
+- `FnAReceber[valor_recebido]` — só R$ 89,90 (os 46 outros não pagaram a 1ª mensalidade, por isso cancelaram)
+- `Recebimentos[valor_pago/original]` — máx. R$ 106
+- Medida `[Cancelamento 1a Mensalidade Valor]` **não existe** no dataset (testado 25+ variações)
+- `INFO.MEASURES()` bloqueada (service principal sem permissão)
+
+**Solução única:** a Thribus precisa publicar a medida OU expor a coluna. Pedido formal em `PEDIDO-BI-THRIBUS.md`.
+
+Scripts de investigação (referência): `dump-schema-cancelamentos.js`, `buscar-coluna-valor-canc-v2.js`, `testar-valor-canc-1men-v2.js`.
+
 ## Schema descoberto
 
 ### Tabelas existentes
