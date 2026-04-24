@@ -1,0 +1,32 @@
+name: Testar Canc 1a Mens v4 (invocar medidas)
+
+on:
+  workflow_dispatch:
+    inputs:
+      workspace_id:
+        description: 'Workspace ID do Comercial PF'
+        required: true
+        default: '33ac8fe2-776f-416b-9847-0753a36c0de3'
+      dataset_id:
+        description: 'Dataset ID do Comercial PF'
+        required: true
+        default: '49077d30-c9d0-4d95-8114-8a12090ad767'
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - working-directory: powerbi-sync
+        run: npm install
+      - working-directory: powerbi-sync
+        env:
+          PBI_TENANT_ID: b6f5c3aa-17cb-4bce-8eb6-8b30b93166e8
+          PBI_CLIENT_ID: 750dc66f-367e-4461-9a69-3dd216f0b69d
+          PBI_CLIENT_SECRET: ${{ secrets.PBI_CLIENT_SECRET }}
+          PBI_WORKSPACE_COMERCIAL: ${{ github.event.inputs.workspace_id }}
+          PBI_DATASET_COMERCIAL: ${{ github.event.inputs.dataset_id }}
+        run: node testar-canc-1men-v4.js
