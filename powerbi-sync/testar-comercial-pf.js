@@ -88,29 +88,55 @@ async function rodar() {
     console.log(`  ❌ ${r2.erro || '(sem linhas)'}`);
   }
 
-  // 3) Tenta agregação por mês (assume coluna data_cancelamento ou similar)
-  console.log('\n▸ Por mês (tenta várias colunas de data):');
-  const candidatosData = ['data_cancelamento', 'Data Cancelamento', 'DataCancelamento', 'data', 'Data'];
-  for (const col of candidatosData) {
-    const q = `
-      EVALUATE
-      TOPN(3,
-        SUMMARIZECOLUMNS(
-          'fCancelamentos'[${col}],
-          "qtd", COUNTROWS('fCancelamentos')
-        ),
-        'fCancelamentos'[${col}], DESC
-      )`;
-    const r = await dax(token, PBI_WORKSPACE_COMERCIAL, PBI_DATASET_COMERCIAL, q);
-    if (r.ok) {
-      console.log(`  ✅ Coluna '${col}' existe. Últimas 3 datas:`);
-      for (const row of r.rows) console.log(`     ${JSON.stringify(row)}`);
-      break;
-    }
-  }
+  // 3) Agregação mês corrente (abril/2026 default): total e primeira mensalidade
+  const hoje = new Date();
+  const ano = hoje.getUTCFullYear();
+  const mes = hoje.getUTCMonth() + 1; // 1-12
+  console.log(`\n▸ Mês corrente (${ano}-${String(mes).padStart(2, '0')}) — total de cancelamentos:`);
+  const qTotal = `
+    EVALUATE
+    ROW(
+      "qtd",    COUNTROWS( FILTER('fCancelamentos',
+                    YEAR('fCancelamentos'[data_cancelamento])  = ${ano} &&
+                    MONTH('fCancelamentos'[data_cancelamento]) = ${mes}
+                  )),
+      "valor",  CALCULATE( SUM('fCancelamentos'[valor_liquido]),
+                    YEAR('fCancelamentos'[data_cancelamento])  = ${ano},
+                    MONTH('fCancelamentos'[data_cancelamento]) = ${mes}
+                  )
+    )`;
+  const r3 = await dax(token, PBI_WORKSPACE_COMERCIAL, PBI_DATASET_COMERCIAL, qTotal);
+  if (r3.ok) console.log(`  ✅ ${JSON.stringify(r3.rows[0])}`);
+  else console.log(`  ❌ ${r3.erro}`);
 
-  // 4) Testa medidas de cancelamento 1ª mensalidade
-  console.log('\n▸ Medidas [Cancelamento 1a Mensalidade Qtd/Valor]:');
+  console.log(`\n▸ Mês corrente (${ano}-${String(mes).padStart(2, '0')}) — primeira mensalidade (DATEDIFF ≤ 30 dias):`);
+  const qPrimeira = `
+    EVALUATE
+    ROW(
+      "qtd",    COUNTROWS( FILTER('fCancelamentos',
+                    YEAR('fCancelamentos'[data_cancelamento])  = ${ano} &&
+                    MONTH('fCancelamentos'[data_cancelamento]) = ${mes} &&
+                    DATEDIFF('fCancelamentos'[data_ativacao],
+                             'fCancelamentos'[data_cancelamento], DAY) <= 30
+                  )),
+      "valor",  SUMX(
+                    FILTER('fCancelamentos',
+                      YEAR('fCancelamentos'[data_cancelamento])  = ${ano} &&
+                      MONTH('fCancelamentos'[data_cancelamento]) = ${mes} &&
+                      DATEDIFF('fCancelamentos'[data_ativacao],
+                               'fCancelamentos'[data_cancelamento], DAY) <= 30
+                    ),
+                    'fCancelamentos'[valor_liquido]
+                  )
+    )`;
+  const r4 = await dax(token, PBI_WORKSPACE_COMERCIAL, PBI_DATASET_COMERCIAL, qPrimeira);
+  if (r4.ok) console.log(`  ✅ ${JSON.stringify(r4.rows[0])}`);
+  else console.log(`  ❌ ${r4.erro}`);
+
+  console.log('\n   Power BI mostra (print abril/2026): QTD=47, Valor=R$ 5.892,30');
+
+  // 4) Testa medidas de cancelamento 1ª mensalidade (se existirem nesse dataset)
+  console.log('\n▸ Medidas [Cancelamento 1a Mensalidade Qtd/Valor] (se publicadas neste dataset):');
   for (const m of ['Cancelamento 1a Mensalidade Qtd', 'Cancelamento 1a Mensalidade Valor']) {
     const r = await dax(token, PBI_WORKSPACE_COMERCIAL, PBI_DATASET_COMERCIAL,
       `EVALUATE ROW("v", [${m}])`);
