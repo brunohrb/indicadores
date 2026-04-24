@@ -1,0 +1,30 @@
+name: Testar Dataset Comercial PF
+
+on:
+  workflow_dispatch:
+    inputs:
+      workspace_id:
+        description: 'Workspace ID do Comercial PF'
+        required: true
+      dataset_id:
+        description: 'Dataset ID do Comercial PF'
+        required: true
+
+jobs:
+  testar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - working-directory: powerbi-sync
+        run: npm install
+      - working-directory: powerbi-sync
+        env:
+          PBI_TENANT_ID: b6f5c3aa-17cb-4bce-8eb6-8b30b93166e8
+          PBI_CLIENT_ID: 750dc66f-367e-4461-9a69-3dd216f0b69d
+          PBI_CLIENT_SECRET: ${{ secrets.PBI_CLIENT_SECRET }}
+          PBI_WORKSPACE_COMERCIAL: ${{ github.event.inputs.workspace_id }}
+          PBI_DATASET_COMERCIAL: ${{ github.event.inputs.dataset_id }}
+        run: node testar-comercial-pf.js
