@@ -19,15 +19,15 @@ Backend de dados: **Supabase** (Postgres + REST). Tabela principal: `app_storage
 Estrutura nova adicionada em abril/2026 pra puxar 36 indicadores do relatório "Diretoria" do Power BI da TEXNET e jogar no Supabase.
 
 ### Arquivos
-- `powerbi-sync/sync.js` — script principal. Autentica via Azure AD (client_credentials), executa DAX no dataset, grava em `app_storage` key `powerbi_diretoria` como JSON serializado (a coluna `value` é tipo `text`).
-- `powerbi-sync/test-connection.js` — teste de conexão básico
-- `powerbi-sync/descobrir-schema.js` — lista colunas + valores únicos de uma tabela. Útil pra acertar filtros DAX.
-- `powerbi-sync/listar-medidas.js` — tenta listar medidas via INFO.MEASURES (NÃO funciona — service principal sem permissão). Explora `dCancelamentos`, `fVendas`, `Recebimentos`.
-- `powerbi-sync/valores-unicos.js` — lista valores únicos de colunas-chave de segmentação (`Tipo_Pessoa`, `tipo_pagamento`, etc).
+- `powerbi-sync/sync.js` — script principal Diretoria. Autentica via Azure AD (client_credentials), executa DAX no dataset, grava em `app_storage` key `powerbi_diretoria_YYYY-MM` (per-mês) + `powerbi_diretoria` (atalho do mais recente). Aceita `--mes=YYYY-MM`, `--meses=YYYY-MM,YYYY-MM,...` ou `--meses=last:N`.
+- `powerbi-sync/sync-comercial.js` — sync do Comercial PF (mesmo padrão).
+- Workflows de descoberta/debug foram removidos em maio/2026 — schema já está cravado. Se precisar de novo, recriar a partir do histórico git.
 
 ### Workflows correspondentes (`.github/workflows/`)
-- `sync-powerbi.yml` — agendado 15x/dia (08-19h BRT 1/1h + 23h/03h/07h BRT). Aceita `mes` como input.
-- `descobrir-schema.yml`, `listar-medidas.yml`, `valores-unicos.yml`, `testar-powerbi.yml` — utilitários disparados manualmente.
+- `sync-powerbi.yml` — agendado 15x/dia (08-19h BRT 1/1h + 23h/03h/07h BRT). Schedule roda `--meses=last:3`. Inputs: `mes` (1 mês) ou `meses` (lista ou `last:N`).
+- `sync-powerbi-comercial.yml` — agendado/manual, sync do Comercial PF.
+- `limpar-ixc-zerados.yml` — utilitário manual.
+- Roda em **Node 22** (Node 20 não tem WebSocket nativo, exigido pelo Supabase JS recente).
 
 ### Credenciais
 Hardcoded nos workflows (não-secret): `PBI_TENANT_ID`, `PBI_CLIENT_ID`, `PBI_WORKSPACE_ID`, `PBI_DATASET_ID`, `SB_URL`, `SB_KEY` (anon key). Único secret: `PBI_CLIENT_SECRET`.

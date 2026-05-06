@@ -195,29 +195,33 @@ function daxDeCard(mesNum, ano) {
 
 // ─── Sync ─────────────────────────────────────────────
 function resolverMeses() {
-  // Suporta: --mes=YYYY-MM (1 mês), --meses=YYYY-MM,YYYY-MM,... (lista),
-  //         --meses=last:N (N últimos meses incluindo o corrente),
-  //         sem nada → mês corrente.
-  const argMes = process.argv.find(a => a.startsWith('--mes='));
-  const argMeses = process.argv.find(a => a.startsWith('--meses='));
+  // Suporta: --mes=YYYY-MM, --mes=last:N, --meses=YYYY-MM,YYYY-MM,...,
+  //         --meses=last:N, sem nada → mês corrente.
+  // last:N e listas funcionam em qualquer dos dois flags (ergonomia).
+  const arg = process.argv.find(a => a.startsWith('--mes=') || a.startsWith('--meses='));
+  const v = arg ? arg.split('=')[1] : '';
 
-  if (argMeses) {
-    const v = argMeses.split('=')[1];
-    if (v.startsWith('last:')) {
-      const n = parseInt(v.split(':')[1], 10) || 1;
-      const out = [];
-      const d = new Date();
-      for (let i = n - 1; i >= 0; i--) {
-        const dd = new Date(d.getFullYear(), d.getMonth() - i, 1);
-        out.push(`${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}`);
-      }
-      return out;
-    }
-    return v.split(',').map(s => s.trim()).filter(Boolean);
+  if (!v) {
+    const d = new Date();
+    return [`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`];
   }
-  if (argMes) return [argMes.split('=')[1]];
-  const d = new Date();
-  return [`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`];
+  if (v.startsWith('last:')) {
+    const n = parseInt(v.split(':')[1], 10) || 1;
+    const out = [];
+    const d = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+      const dd = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      out.push(`${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return out;
+  }
+  const lista = v.split(',').map(s => s.trim()).filter(Boolean);
+  for (const m of lista) {
+    if (!/^\d{4}-\d{2}$/.test(m)) {
+      throw new Error(`Mês inválido: "${m}". Use formato YYYY-MM (ex: 2026-04), uma lista vírgula-separada, ou last:N (ex: last:3).`);
+    }
+  }
+  return lista;
 }
 
 async function rodar() {
@@ -245,15 +249,34 @@ async function rodar() {
   } catch (e) { log(`Aviso lendo meses_fechados: ${e.message}`, 'warn'); }
   if (mesesFechados.length) log(`Meses fechados (não serão sobrescritos): ${mesesFechados.join(', ')}`);
 
-  // Lista de meses disponíveis (atualizada ao final)
+  // Lista de meses disponíveis (atualizada ao final). Filtra entradas inválidas.
   let mesesDisponiveis = [];
   try {
     const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_diretoria_meses_disponiveis').maybeSingle();
     if (data && data.value) {
       const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-      mesesDisponiveis = Array.isArray(v) ? v : [];
+      mesesDisponiveis = (Array.isArray(v) ? v : []).filter(m => /^\d{4}-\d{2}$/.test(m));
     }
   } catch (e) { /* ignore */ }
+
+  // Limpa rows lixo (qualquer powerbi_diretoria_<algo> que não seja YYYY-MM nem fechado)
+  try {
+    const { data: rows } = await sb.from('app_storage').select('key').like('key', 'powerbi_diretoria_%');
+    if (rows) {
+      const lixo = rows
+        .map(r => r.key)
+        .filter(k => {
+          if (k === 'powerbi_diretoria_meses_fechados') return false;
+          if (k === 'powerbi_diretoria_meses_disponiveis') return false;
+          if (k.startsWith('powerbi_diretoria_fechado_')) return /^powerbi_diretoria_fechado_\d{4}-\d{2}$/.test(k) ? false : true;
+          return /^powerbi_diretoria_\d{4}-\d{2}$/.test(k) ? false : true;
+        });
+      if (lixo.length) {
+        log(`Limpando ${lixo.length} chave(s) inválida(s): ${lixo.join(', ')}`, 'warn');
+        await sb.from('app_storage').delete().in('key', lixo);
+      }
+    }
+  } catch (e) { log(`Aviso limpando lixo: ${e.message}`, 'warn'); }
 
   let mesMaisRecente = null;
   let valoresMaisRecente = null;
