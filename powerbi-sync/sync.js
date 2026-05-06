@@ -194,80 +194,144 @@ function daxDeCard(mesNum, ano) {
 }
 
 // ─── Sync ─────────────────────────────────────────────
+function resolverMeses() {
+  // Suporta: --mes=YYYY-MM (1 mês), --meses=YYYY-MM,YYYY-MM,... (lista),
+  //         --meses=last:N (N últimos meses incluindo o corrente),
+  //         sem nada → mês corrente.
+  const argMes = process.argv.find(a => a.startsWith('--mes='));
+  const argMeses = process.argv.find(a => a.startsWith('--meses='));
+
+  if (argMeses) {
+    const v = argMeses.split('=')[1];
+    if (v.startsWith('last:')) {
+      const n = parseInt(v.split(':')[1], 10) || 1;
+      const out = [];
+      const d = new Date();
+      for (let i = n - 1; i >= 0; i--) {
+        const dd = new Date(d.getFullYear(), d.getMonth() - i, 1);
+        out.push(`${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}`);
+      }
+      return out;
+    }
+    return v.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  if (argMes) return [argMes.split('=')[1]];
+  const d = new Date();
+  return [`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`];
+}
+
 async function rodar() {
   carregarEnv();
   const { SB_URL, SB_KEY } = process.env;
   if (!SB_URL || !SB_KEY) throw new Error('Faltam SB_URL / SB_KEY no ambiente.');
 
-  // Mês-alvo: mês corrente (padrão, pra bater com o que o Power BI mostra)
-  // ou --mes YYYY-MM pra forçar um mês específico.
-  const arg = process.argv.find(a => a.startsWith('--mes='));
-  let mesAno;
-  if (arg) {
-    mesAno = arg.split('=')[1]; // "2026-02"
-  } else {
-    const d = new Date();
-    mesAno = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  }
-  const [ano, mesNum] = mesAno.split('-').map(Number);
-  log(`Sync para ${mesAno} (mês ${mesNum} / ano ${ano})`);
+  const meses = resolverMeses();
+  log(`Sync de ${meses.length} mês(es): ${meses.join(', ')}`);
 
   log('Autenticando no Azure AD...');
   const token = await obterToken();
   log('Token OK ✓', 'ok');
 
-  const cards = daxDeCard(mesNum, ano);
+  const sb = createClient(SB_URL, SB_KEY);
 
-  // Monta uma única query DAX com todos os cards (ROW() único)
-  const cols = cards.map((c, i) => `"c${i}", ${c.dax}`).join(',\n    ');
-  const daxFull = `EVALUATE ROW(\n    ${cols}\n)`;
-
-  log(`Executando DAX com ${cards.length} medidas...`);
-  let valores;
+  // Lê lista atual de meses fechados — não vamos sobrescrever esses
+  let mesesFechados = [];
   try {
-    const row = await executarDAX(token, daxFull);
-    valores = {};
-    cards.forEach((c, i) => {
-      const val = row[`[c${i}]`];
-      valores[c.card] = val === undefined ? null : val;
-    });
-    log(`Todas as ${cards.length} medidas resolvidas em batch ✓`, 'ok');
-  } catch (err) {
-    log('Batch falhou — tentando uma por uma para isolar erros...', 'warn');
-    valores = {};
-    for (const c of cards) {
-      try {
-        const row = await executarDAX(token, `EVALUATE ROW("v", ${c.dax})`);
-        valores[c.card] = row['[v]'] ?? null;
-        log(`  ✓ ${c.card}`, 'ok');
-      } catch (e) {
-        valores[c.card] = null;
-        log(`  ✗ ${c.card} — ${e.response?.data?.error?.code || e.message}`, 'erro');
+    const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_diretoria_meses_fechados').maybeSingle();
+    if (data && data.value) {
+      const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      mesesFechados = Array.isArray(v) ? v : [];
+    }
+  } catch (e) { log(`Aviso lendo meses_fechados: ${e.message}`, 'warn'); }
+  if (mesesFechados.length) log(`Meses fechados (não serão sobrescritos): ${mesesFechados.join(', ')}`);
+
+  // Lista de meses disponíveis (atualizada ao final)
+  let mesesDisponiveis = [];
+  try {
+    const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_diretoria_meses_disponiveis').maybeSingle();
+    if (data && data.value) {
+      const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      mesesDisponiveis = Array.isArray(v) ? v : [];
+    }
+  } catch (e) { /* ignore */ }
+
+  let mesMaisRecente = null;
+  let valoresMaisRecente = null;
+
+  for (const mesAno of meses) {
+    if (mesesFechados.includes(mesAno)) {
+      log(`Mês ${mesAno} já está FECHADO — pulando.`, 'warn');
+      continue;
+    }
+
+    const [ano, mesNum] = mesAno.split('-').map(Number);
+    log(`─── ${mesAno} ───`);
+    const cards = daxDeCard(mesNum, ano);
+
+    // Monta uma única query DAX com todos os cards (ROW() único)
+    const cols = cards.map((c, i) => `"c${i}", ${c.dax}`).join(',\n    ');
+    const daxFull = `EVALUATE ROW(\n    ${cols}\n)`;
+
+    log(`Executando DAX com ${cards.length} medidas...`);
+    let valores;
+    try {
+      const row = await executarDAX(token, daxFull);
+      valores = {};
+      cards.forEach((c, i) => {
+        const val = row[`[c${i}]`];
+        valores[c.card] = val === undefined ? null : val;
+      });
+      log(`  Batch OK ✓`, 'ok');
+    } catch (err) {
+      log('Batch falhou — tentando uma por uma...', 'warn');
+      valores = {};
+      for (const c of cards) {
+        try {
+          const row = await executarDAX(token, `EVALUATE ROW("v", ${c.dax})`);
+          valores[c.card] = row['[v]'] ?? null;
+        } catch (e) {
+          valores[c.card] = null;
+          log(`  ✗ ${c.card} — ${e.response?.data?.error?.code || e.message}`, 'erro');
+        }
       }
     }
+
+    const payload = {
+      atualizado_em: new Date().toISOString(),
+      mes_referencia: mesAno,
+      valores,
+    };
+    // Grava por-mês (snapshot mutável até ser fechado)
+    const { error: ePm } = await sb
+      .from('app_storage')
+      .upsert({ key: `powerbi_diretoria_${mesAno}`, value: payload }, { onConflict: 'key' });
+    if (ePm) throw new Error(`Supabase ${mesAno}: ${ePm.message}`);
+    log(`  Gravado em powerbi_diretoria_${mesAno} ✓`, 'ok');
+
+    if (!mesesDisponiveis.includes(mesAno)) {
+      mesesDisponiveis.push(mesAno);
+    }
+
+    mesMaisRecente = mesAno;
+    valoresMaisRecente = payload;
   }
 
-  // Grava no Supabase
-  log('Gravando no Supabase...');
-  const sb = createClient(SB_URL, SB_KEY);
-  const payload = {
-    atualizado_em: new Date().toISOString(),
-    mes_referencia: mesAno,
-    valores,
-  };
-  const { error } = await sb
+  // Compatibilidade: powerbi_diretoria sempre aponta para o mês mais recente sincronizado nesta execução
+  if (valoresMaisRecente) {
+    const { error } = await sb
+      .from('app_storage')
+      .upsert({ key: 'powerbi_diretoria', value: valoresMaisRecente }, { onConflict: 'key' });
+    if (error) throw new Error(`Supabase (compat): ${error.message}`);
+    log(`Atalho powerbi_diretoria → ${mesMaisRecente} ✓`, 'ok');
+  }
+
+  // Atualiza lista de meses disponíveis (ordenada)
+  mesesDisponiveis.sort();
+  const { error: eMd } = await sb
     .from('app_storage')
-    .upsert({ key: 'powerbi_diretoria', value: payload }, { onConflict: 'key' });
-  if (error) throw new Error(`Supabase: ${error.message}`);
-  log('Gravado ✓', 'ok');
+    .upsert({ key: 'powerbi_diretoria_meses_disponiveis', value: JSON.stringify(mesesDisponiveis) }, { onConflict: 'key' });
+  if (eMd) log(`Aviso gravando meses_disponiveis: ${eMd.message}`, 'warn');
 
-  // Resumo na tela
-  log('─── RESUMO ───');
-  for (const c of cards) {
-    const v = valores[c.card];
-    const fmt = v === null ? '—' : (typeof v === 'number' ? v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : v);
-    log(`  ${c.card.padEnd(40)} ${String(fmt).padStart(16)}`);
-  }
   log('Sync concluído 🎉', 'ok');
 }
 
