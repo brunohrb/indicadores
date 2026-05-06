@@ -4,7 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       mes:
-        description: 'Mês (YYYY-MM). Vazio = mês corrente.'
+        description: '1 mês específico (YYYY-MM). Tem prioridade sobre "meses". Vazio = ignorar.'
+        required: false
+        default: ''
+      meses:
+        description: 'Lista (YYYY-MM,YYYY-MM,...) ou "last:N" (N últimos meses). Vazio = last:3.'
         required: false
         default: ''
   schedule:
@@ -40,6 +44,9 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.mes }}" ]; then
             node sync.js --mes=${{ github.event.inputs.mes }}
+          elif [ -n "${{ github.event.inputs.meses }}" ]; then
+            node sync.js --meses=${{ github.event.inputs.meses }}
           else
-            node sync.js
+            # Schedule e dispatch sem input: roda 3 últimos meses (corrente + 2 anteriores)
+            node sync.js --meses=last:3
           fi
