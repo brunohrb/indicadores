@@ -2901,35 +2901,40 @@
   <!-- DIRETORIA POWER BI — 36 indicadores sincronizados do Power BI    -->
   <!-- ================================================================ -->
   <div id="diretoriaPBIView" class="view-container" style="display:none">
-    <div style="padding:1.5rem 2rem 0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+    <div style="padding:1.5rem 2rem 0.5rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
       <div>
         <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin:0">📊 Diretoria — Power BI</h2>
         <p style="font-size:0.8rem;color:#64748b;margin:0.2rem 0 0">36 indicadores sincronizados automaticamente todo dia</p>
       </div>
-      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
-        <span id="diretoriaPBI_ref" style="font-size:0.8rem;color:#64748b;padding:0.4rem 0.85rem;background:#f1f5f9;border-radius:8px;font-weight:600"></span>
-        <button onclick="renderDiretoriaPBI()" style="padding:0.45rem 0.95rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+        <input type="month" id="diretoriaPBI_inputMes" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white">
+        <button onclick="diretoriaPBI_adicionarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">+ Adicionar mês</button>
+        <button onclick="renderDiretoriaPBI()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
       </div>
     </div>
+
+    <div id="diretoriaPBI_chips" style="padding:0 2rem;margin:0.25rem 0 0.75rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem"></div>
 
     <div id="diretoriaPBI_loading" style="padding:3rem;text-align:center;color:#64748b">⏳ Carregando indicadores...</div>
 
     <div id="diretoriaPBI_semDados" style="display:none;margin:1.5rem 2rem;padding:2rem;background:#fef3c7;border:1px solid #fde68a;border-radius:12px;text-align:center;color:#92400e">
       <div style="font-size:2rem;margin-bottom:0.5rem">⚠️</div>
-      <h3 style="margin:0 0 0.5rem;font-size:1rem;font-weight:700">Ainda não há dados sincronizados</h3>
-      <p style="margin:0;font-size:0.85rem">Rode o workflow <b>"Sync Power BI → Supabase"</b> no GitHub Actions para popular os dados pela primeira vez.</p>
+      <h3 style="margin:0 0 0.5rem;font-size:1rem;font-weight:700">Sem dados para os meses selecionados</h3>
+      <p style="margin:0;font-size:0.85rem">Rode o sync para um mês específico em <a href="https://github.com/brunohrb/indicadores/actions/workflows/sync-powerbi.yml" target="_blank" style="color:#2563eb;font-weight:600">GitHub Actions → Sync Power BI</a> com input <code>mes=YYYY-MM</code>. Depois volte aqui e clique em <b>🔒 Fechar mês</b> para congelar os valores.</p>
     </div>
 
     <div id="diretoriaPBI_erro" style="display:none;margin:1.5rem 2rem;padding:1.25rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;color:#991b1b;font-size:0.85rem"></div>
 
     <div id="diretoriaPBI_conteudo" style="display:none;padding:0 2rem 2rem">
+      <div id="diretoriaPBI_ref" style="font-size:0.8rem;color:#475569;margin-bottom:0.75rem;padding:0.5rem 0.85rem;background:#f1f5f9;border-radius:8px"></div>
       <div id="diretoriaPBI_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem"></div>
 
       <div style="margin-top:2rem;padding:1rem 1.25rem;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:6px;font-size:0.78rem;color:#475569;line-height:1.5">
-        <b>Como isso funciona:</b> os valores vêm direto do Power BI via API, são executados em DAX e gravados no Supabase toda madrugada (03:00).
-        Para atualizar manualmente, vá em <a href="https://github.com/brunohrb/indicadores/actions/workflows/sync-powerbi.yml" target="_blank" style="color:#2563eb;font-weight:600">GitHub Actions → Sync Power BI</a> → Run workflow.
+        <b>Como isso funciona:</b> os valores vêm do Power BI via DAX e são gravados no Supabase. O <b>mês 🔄 ao vivo</b> é o último que o sync rodou e pode mudar a cada execução. Quando os números do mês estão consolidados (~dia 5–6 do mês seguinte), clique em <b>🔒 Fechar mês</b> para criar um snapshot imutável — depois disso, os valores não mudam mais (ideal para fechar comissão).
         <br><br>
-        <b>Atenção:</b> alguns cards marcados com ⚠️ podem ter valores diferentes do Power BI original porque o filtro/fórmula no modelo foi inferido. Compare com o relatório e me avise os que estiverem errados.
+        <b>Múltiplos meses:</b> ao selecionar mais de um, os cards são agregados automaticamente — <b>soma</b> para contagens/valores (cancelamentos, novos negócios, receita...), <b>média</b> para tickets médios, e <b>último valor</b> para tamanhos de base (Base PF, PJ, Contratos, Isentos), porque base é snapshot e não acumula.
+        <br><br>
+        <b>Atenção:</b> cards marcados com ⚠️ inferido podem ter valores diferentes do Power BI original. Compare e avise os que estiverem errados.
       </div>
     </div>
   </div><!-- /diretoriaPBIView -->
@@ -3185,6 +3190,156 @@ function diretoriaPBI_formatar(card, valor) {
   return valor.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 }
 
+// Regras de agregação quando o usuário seleciona múltiplos meses.
+// Default = 'soma'. 'ultimo' usa o valor do mês mais recente. 'media' calcula média dos meses com valor numérico.
+const DIRETORIA_PBI_AGREGACAO = {
+  // Snapshots de base — não acumulam, então mostra o mais recente
+  'Base de Cliente PF': 'ultimo',
+  'Base Clientes PJ +PME': 'ultimo',
+  'Base de Isentos': 'ultimo',
+  'Base de Contratos': 'ultimo',
+  // Tickets — média entre os meses
+  'Ticket Médio da Venda': 'media',
+  'Ticket Médio PF': 'media',
+  'Ticket Médio PJ': 'media',
+  'Ticket médio da Base': 'media',
+};
+
+function diretoriaPBI_agregar(card, valoresPorMes) {
+  // valoresPorMes: array [{mes, valor}], ordenado asc por mes
+  const regra = DIRETORIA_PBI_AGREGACAO[card] || 'soma';
+  const numericos = valoresPorMes.filter(v => typeof v.valor === 'number');
+  if (numericos.length === 0) return null;
+  if (regra === 'ultimo') return numericos[numericos.length - 1].valor;
+  if (regra === 'media') return numericos.reduce((a, b) => a + b.valor, 0) / numericos.length;
+  return numericos.reduce((a, b) => a + b.valor, 0);
+}
+
+// Estado da view (persiste enquanto o usuário não recarrega a página)
+let diretoriaPBI_mesesSelecionados = [];
+let diretoriaPBI_dadosCache = {};
+let diretoriaPBI_mesesFechados = [];
+let diretoriaPBI_mesLive = null;
+
+async function diretoriaPBI_lerLive() {
+  const { data, error } = await sb.from('app_storage').select('value').eq('key', 'powerbi_diretoria').maybeSingle();
+  if (error) throw error;
+  if (!data || !data.value) return null;
+  return typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+}
+
+async function diretoriaPBI_lerFechado(mes) {
+  const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_diretoria_fechado_' + mes).maybeSingle();
+  if (!data || !data.value) return null;
+  return typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+}
+
+async function diretoriaPBI_lerMesesFechados() {
+  const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_diretoria_meses_fechados').maybeSingle();
+  if (!data || !data.value) return [];
+  const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+  return Array.isArray(v) ? v : [];
+}
+
+async function diretoriaPBI_carregarMes(mes) {
+  if (diretoriaPBI_dadosCache[mes]) return diretoriaPBI_dadosCache[mes];
+  const fechado = await diretoriaPBI_lerFechado(mes);
+  if (fechado) {
+    fechado.__status = 'fechado';
+    diretoriaPBI_dadosCache[mes] = fechado;
+    return fechado;
+  }
+  if (mes === diretoriaPBI_mesLive) {
+    const live = await diretoriaPBI_lerLive();
+    if (live) {
+      live.__status = 'live';
+      diretoriaPBI_dadosCache[mes] = live;
+      return live;
+    }
+  }
+  return null;
+}
+
+function diretoriaPBI_adicionarMes() {
+  const inp = document.getElementById('diretoriaPBI_inputMes');
+  const v = inp && inp.value;
+  if (!v || !/^\d{4}-\d{2}$/.test(v)) { alert('Selecione um mês primeiro.'); return; }
+  if (diretoriaPBI_mesesSelecionados.includes(v)) return;
+  diretoriaPBI_mesesSelecionados = [...diretoriaPBI_mesesSelecionados, v].sort();
+  renderDiretoriaPBI();
+}
+
+function diretoriaPBI_removerMes(mes) {
+  diretoriaPBI_mesesSelecionados = diretoriaPBI_mesesSelecionados.filter(m => m !== mes);
+  renderDiretoriaPBI();
+}
+
+async function diretoriaPBI_fecharMes(mes) {
+  const ok = confirm(
+    `Fechar o mês ${mes}?\n\n` +
+    `Os valores ficam CONGELADOS — nem mesmo a próxima sincronização vai alterá-los. ` +
+    `Use isso quando os números do mês já estiverem consolidados (~dia 5–6 do mês seguinte), ` +
+    `para que comissões não mudem mais.`
+  );
+  if (!ok) return;
+  try {
+    const live = await diretoriaPBI_lerLive();
+    if (!live) { alert('Sem dados ao vivo para fechar.'); return; }
+    if (live.mes_referencia !== mes) {
+      alert(`Os dados ao vivo são do mês ${live.mes_referencia || '?'}, não ${mes}.\n\nRode o sync com input mes=${mes} primeiro (Actions → Sync Power BI).`);
+      return;
+    }
+    const snap = { ...live, fechado_em: new Date().toISOString() };
+    const { error: e1 } = await sb.from('app_storage').upsert({
+      key: 'powerbi_diretoria_fechado_' + mes,
+      value: JSON.stringify(snap),
+    }, { onConflict: 'key' });
+    if (e1) throw e1;
+
+    if (!diretoriaPBI_mesesFechados.includes(mes)) {
+      diretoriaPBI_mesesFechados = [...diretoriaPBI_mesesFechados, mes].sort();
+    }
+    const { error: e2 } = await sb.from('app_storage').upsert({
+      key: 'powerbi_diretoria_meses_fechados',
+      value: JSON.stringify(diretoriaPBI_mesesFechados),
+    }, { onConflict: 'key' });
+    if (e2) throw e2;
+
+    delete diretoriaPBI_dadosCache[mes];
+    alert(`Mês ${mes} fechado com sucesso ✓`);
+    renderDiretoriaPBI();
+  } catch (e) {
+    alert('Erro ao fechar mês: ' + (e.message || e));
+  }
+}
+
+function diretoriaPBI_renderChips() {
+  const el = document.getElementById('diretoriaPBI_chips');
+  if (!el) return;
+  if (diretoriaPBI_mesesSelecionados.length === 0) {
+    el.innerHTML = '<span style="font-size:0.78rem;color:#94a3b8">Nenhum mês selecionado — escolha um mês acima e clique <b>+ Adicionar mês</b>.</span>';
+    return;
+  }
+  let html = '';
+  for (const mes of diretoriaPBI_mesesSelecionados) {
+    const isFechado = diretoriaPBI_mesesFechados.includes(mes);
+    const isLive = mes === diretoriaPBI_mesLive && !isFechado;
+    const status = isFechado ? '🔒' : (isLive ? '🔄' : '❓');
+    const cor = isFechado ? '#0f766e' : (isLive ? '#1d4ed8' : '#64748b');
+    const bg  = isFechado ? '#ccfbf1' : (isLive ? '#dbeafe' : '#f1f5f9');
+    const tip = isFechado ? 'Mês fechado (snapshot imutável)' : (isLive ? 'Mês ao vivo (próximo sync pode alterar)' : 'Sem dados — rode sync com mes=' + mes);
+    html += `<span title="${tip}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.6rem;background:${bg};color:${cor};border-radius:999px;font-size:0.78rem;font-weight:600">
+      ${status} ${mes}
+      <button onclick="diretoriaPBI_removerMes('${mes}')" title="Remover" style="background:transparent;border:none;color:${cor};cursor:pointer;font-size:1rem;line-height:1;padding:0 0 0 0.15rem">×</button>
+    </span>`;
+  }
+  const podeFechar = diretoriaPBI_mesesSelecionados.find(m => m === diretoriaPBI_mesLive && !diretoriaPBI_mesesFechados.includes(m));
+  if (podeFechar) {
+    html += `<button onclick="diretoriaPBI_fecharMes('${podeFechar}')" style="margin-left:0.5rem;padding:0.4rem 0.85rem;font-size:0.78rem;background:#0f766e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Congela os valores deste mês — não mudam mais">🔒 Fechar mês ${podeFechar}</button>`;
+  }
+  el.innerHTML = html;
+}
+
 function abrirDiretoriaPBIView(navEl) {
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   if (navEl) navEl.classList.add('active');
@@ -3202,12 +3357,12 @@ function abrirDiretoriaPBIView(navEl) {
 }
 
 async function renderDiretoriaPBI() {
-  const elLoading = document.getElementById('diretoriaPBI_loading');
+  const elLoading  = document.getElementById('diretoriaPBI_loading');
   const elConteudo = document.getElementById('diretoriaPBI_conteudo');
   const elSemDados = document.getElementById('diretoriaPBI_semDados');
-  const elErro = document.getElementById('diretoriaPBI_erro');
-  const elRef = document.getElementById('diretoriaPBI_ref');
-  const elGrid = document.getElementById('diretoriaPBI_grid');
+  const elErro     = document.getElementById('diretoriaPBI_erro');
+  const elRef      = document.getElementById('diretoriaPBI_ref');
+  const elGrid     = document.getElementById('diretoriaPBI_grid');
 
   elLoading.style.display = 'block';
   elConteudo.style.display = 'none';
@@ -3215,46 +3370,90 @@ async function renderDiretoriaPBI() {
   elErro.style.display = 'none';
 
   try {
-    if (typeof sb === 'undefined') {
-      throw new Error('Supabase não inicializado.');
+    if (typeof sb === 'undefined') throw new Error('Supabase não inicializado.');
+
+    diretoriaPBI_dadosCache = {};
+
+    const [live, mesesFechados] = await Promise.all([
+      diretoriaPBI_lerLive(),
+      diretoriaPBI_lerMesesFechados(),
+    ]);
+    diretoriaPBI_mesLive = live ? (live.mes_referencia || null) : null;
+    diretoriaPBI_mesesFechados = mesesFechados;
+
+    if (diretoriaPBI_mesesSelecionados.length === 0) {
+      if (diretoriaPBI_mesLive) diretoriaPBI_mesesSelecionados = [diretoriaPBI_mesLive];
+      else if (mesesFechados.length) diretoriaPBI_mesesSelecionados = [mesesFechados[mesesFechados.length - 1]];
     }
-    const { data, error } = await sb
-      .from('app_storage')
-      .select('value')
-      .eq('key', 'powerbi_diretoria')
-      .maybeSingle();
-    if (error) throw error;
 
-    elLoading.style.display = 'none';
+    const inp = document.getElementById('diretoriaPBI_inputMes');
+    if (inp && !inp.value) {
+      const d = new Date();
+      inp.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
 
-    const payload = data && typeof data.value === 'string' ? JSON.parse(data.value) : data?.value;
-    if (!payload || !payload.valores) {
+    diretoriaPBI_renderChips();
+
+    if (diretoriaPBI_mesesSelecionados.length === 0) {
+      elLoading.style.display = 'none';
       elSemDados.style.display = 'block';
       return;
     }
-    const valores = payload.valores || {};
-    const mes = payload.mes_referencia || '?';
-    const atualizado = payload.atualizado_em ? new Date(payload.atualizado_em) : null;
-    const atualizadoStr = atualizado
-      ? atualizado.toLocaleDateString('pt-BR') + ' ' + atualizado.toLocaleTimeString('pt-BR').slice(0, 5)
-      : '—';
-    elRef.innerHTML = `📅 Mês: <b>${mes}</b> · 🔄 ${atualizadoStr}`;
 
-    // Renderiza grupos
+    const dados = await Promise.all(diretoriaPBI_mesesSelecionados.map(m => diretoriaPBI_carregarMes(m)));
+    elLoading.style.display = 'none';
+
+    if (dados.every(p => !p)) {
+      elSemDados.style.display = 'block';
+      return;
+    }
+
+    const meses = diretoriaPBI_mesesSelecionados.map((m, i) => ({ mes: m, payload: dados[i] }));
+    const isMulti = meses.length > 1;
+
+    if (isMulti) {
+      const fechCnt = meses.filter(x => x.payload && x.payload.__status === 'fechado').length;
+      const liveCnt = meses.filter(x => x.payload && x.payload.__status === 'live').length;
+      const semCnt  = meses.filter(x => !x.payload).length;
+      let s = `<b>Agregando ${meses.length} meses</b> (${meses.map(x => x.mes).join(', ')}) · 🔒 ${fechCnt} fechado(s) · 🔄 ${liveCnt} ao vivo`;
+      if (semCnt) s += ` · ❓ ${semCnt} sem dados`;
+      elRef.innerHTML = s;
+    } else {
+      const u = meses[0];
+      if (!u.payload) {
+        elRef.innerHTML = `📅 Mês: <b>${u.mes}</b> · ❓ sem dados (rode o sync com input mes=${u.mes})`;
+      } else {
+        const status = u.payload.__status === 'fechado'
+          ? '🔒 fechado' + (u.payload.fechado_em ? ' em ' + new Date(u.payload.fechado_em).toLocaleDateString('pt-BR') : '')
+          : '🔄 ao vivo (atualiza no próximo sync)';
+        const at = u.payload.atualizado_em ? new Date(u.payload.atualizado_em) : null;
+        const atStr = at ? at.toLocaleDateString('pt-BR') + ' ' + at.toLocaleTimeString('pt-BR').slice(0, 5) : '—';
+        elRef.innerHTML = `📅 Mês: <b>${u.mes}</b> · ${status} · sync ${atStr}`;
+      }
+    }
+
     let html = '';
     for (const grupo of DIRETORIA_PBI_GRUPOS) {
       html += `<div style="grid-column:1/-1;margin-top:1rem;font-size:0.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;padding:0.4rem 0 0.2rem;border-bottom:2px solid #e2e8f0">${grupo.titulo}</div>`;
       for (const card of grupo.cards) {
-        const v = valores[card];
+        const valoresPorMes = meses.map(x => ({ mes: x.mes, valor: (x.payload && x.payload.valores) ? (x.payload.valores[card] ?? null) : null }));
+        const v = isMulti ? diretoriaPBI_agregar(card, valoresPorMes) : valoresPorMes[0].valor;
         const ehChute = DIRETORIA_PBI_CHUTES.has(card);
         const vStr = diretoriaPBI_formatar(card, v);
         const isVazio = v === null || v === undefined;
         const badge = ehChute ? '<span title="Valor inferido — pode não bater com Power BI original" style="font-size:0.65rem;color:#d97706;background:#fef3c7;padding:1px 6px;border-radius:3px;margin-left:0.4rem;font-weight:600">⚠️ inferido</span>' : '';
         const cor = isVazio ? '#94a3b8' : (ehChute ? '#b45309' : '#0f172a');
+        let tagAgg = '';
+        if (isMulti) {
+          const r = DIRETORIA_PBI_AGREGACAO[card] || 'soma';
+          const rotulo = { soma: 'Σ soma', media: 'x̄ média', ultimo: '⏱ mais recente' }[r];
+          tagAgg = `<div style="font-size:0.62rem;color:#94a3b8;margin-top:0.3rem;font-weight:600">${rotulo}</div>`;
+        }
         html += `
           <div style="background:white;border-radius:10px;padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0">
             <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${card}${badge}</div>
             <div style="font-size:1.35rem;font-weight:700;color:${cor}">${vStr}</div>
+            ${tagAgg}
           </div>`;
       }
     }
