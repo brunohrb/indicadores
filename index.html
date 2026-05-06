@@ -307,7 +307,6 @@
       <div class="nav-item" onclick="selectMenu(this,'consolidado')"><span class="nav-icon">📋</span><span>Fluxo de Caixa</span></div>
       <div class="nav-item" onclick="selectMenu(this,'powerbi')"><span class="nav-icon">📊</span><span>Relatório Power BI</span></div>
       <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📊</span><span>Diretoria (Power BI)</span></div>
-      <div class="nav-item" onclick="abrirComercialPFView(this)"><span class="nav-icon">📈</span><span>Comercial PF (Power BI)</span></div>
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Marcos Juca</span></div>
       <div class="nav-item" onclick="selectMenu(this,'indicadores')"><span class="nav-icon">📊</span><span>Indicadores</span></div>
       <div class="nav-item" onclick="selectMenu(this,'demonstrativo');setTimeout(function(){if(typeof dreRender==='function')dreRender();},120)"><span class="nav-icon">📉</span><span>Demonstrativo</span></div>
@@ -2942,47 +2941,6 @@
     </div>
   </div><!-- /diretoriaPBIView -->
 
-  <!-- ================================================================ -->
-  <!-- COMERCIAL PF POWER BI — medidas do dataset Comercial PF          -->
-  <!-- ================================================================ -->
-  <div id="comercialPFView" class="view-container" style="display:none">
-    <div style="padding:1.5rem 2rem 0.5rem;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
-      <div>
-        <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin:0">📈 Comercial PF — Power BI</h2>
-        <p style="font-size:0.8rem;color:#64748b;margin:0.2rem 0 0">Indicadores do dataset "Comercial PF" — medidas nativas do Power BI</p>
-      </div>
-      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-        <input type="month" id="comercialPF_inputMes" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white">
-        <button onclick="comercialPF_trocarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Mostra só este mês (substitui a seleção)">Ver este mês</button>
-        <button onclick="comercialPF_adicionarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Adiciona este mês aos já visíveis (soma/agrega)">+ Comparar</button>
-        <button onclick="renderComercialPF()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#64748b;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
-      </div>
-    </div>
-
-    <div id="comercialPF_chips" style="padding:0 2rem;margin:0.25rem 0 0.75rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem"></div>
-
-    <div id="comercialPF_loading" style="padding:3rem;text-align:center;color:#64748b">⏳ Carregando indicadores...</div>
-
-    <div id="comercialPF_semDados" style="display:none;margin:1.5rem 2rem;padding:2rem;background:#fef3c7;border:1px solid #fde68a;border-radius:12px;text-align:center;color:#92400e">
-      <div style="font-size:2rem;margin-bottom:0.5rem">⚠️</div>
-      <h3 style="margin:0 0 0.5rem;font-size:1rem;font-weight:700">Sem dados para os meses selecionados</h3>
-      <p style="margin:0;font-size:0.85rem">Rode o sync em <a href="https://github.com/brunohrb/indicadores/actions/workflows/sync-powerbi-comercial.yml" target="_blank" style="color:#2563eb;font-weight:600">Actions → Sync Power BI Comercial PF</a> com input <code>mes=YYYY-MM</code> ou <code>last:N</code>.</p>
-    </div>
-
-    <div id="comercialPF_erro" style="display:none;margin:1.5rem 2rem;padding:1.25rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;color:#991b1b;font-size:0.85rem"></div>
-
-    <div id="comercialPF_conteudo" style="display:none;padding:0 2rem 2rem">
-      <div id="comercialPF_ref" style="font-size:0.8rem;color:#475569;margin-bottom:0.75rem;padding:0.5rem 0.85rem;background:#f1f5f9;border-radius:8px"></div>
-      <div id="comercialPF_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem"></div>
-
-      <div style="margin-top:2rem;padding:1rem 1.25rem;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:6px;font-size:0.78rem;color:#475569;line-height:1.5">
-        <b>Botões:</b> "<b>Ver este mês</b>" mostra só o mês escolhido. "<b>+ Comparar</b>" adiciona aos já visíveis (soma/agrega vários meses).
-        <br><br>
-        <b>Como isso funciona:</b> dados via DAX do dataset Power BI "Comercial PF". Sincronizado 15x/dia. Schedule roda os 3 últimos meses por padrão. Mês 🔄 ao vivo pode mudar a cada sync; clique em <b>🔒 Fechar mês</b> para congelar valores.
-      </div>
-    </div>
-  </div><!-- /comercialPFView -->
-
   </div><!-- end .main-content -->
 
   <!-- Modal detalhamento (fora do main para overlay correto) -->
@@ -3160,15 +3118,19 @@ const DIRETORIA_PBI_CHUTES = new Set([
   'Ticket médio da Base'
 ]);
 
-// Agrupamento visual dos cards (ordem igual ao relatório Power BI)
+// Agrupamento visual dos cards (Diretoria + complementos do Comercial PF mesclados)
 const DIRETORIA_PBI_GRUPOS = [
   { titulo: 'Base / Clientes', cards: [
     'Base de Cliente PF', 'Base Clientes PJ +PME', 'Base de Isentos', 'Base de Contratos',
-    'OS Suporte PF', 'OS Suporte PJ', 'Novos Clientes PF', 'Novos Clientes PJ',
+    'Base Dual Net', 'Base Planet',
+    'OS Suporte PF', 'OS Suporte PJ',
+    'Novos Clientes PF', 'Novos Clientes PJ',
     'Cancelamento PF', 'Cancelam. PME + PJ',
+    'Contratos Ativos (novos/mês)',
   ]},
   { titulo: 'Retiradas / Operacional', cards: [
     'Retiradas', 'Cancelamento s/ equip. retirado', 'Reativações Retiradas',
+    'Diferença Novos vs Cancel.', 'Diferença Mês Anterior',
   ]},
   { titulo: 'Valores (R$)', cards: [
     'Novos Negócios', 'Novos Negócios PF', 'Novos Negócios PJ',
@@ -3177,10 +3139,24 @@ const DIRETORIA_PBI_GRUPOS = [
     'Valor Reativações',
   ]},
   { titulo: 'Financeiro', cards: [
-    'Receita', 'Resultado Liquido', 'Juros < 45', 'Juros > 45',
+    'Receita', 'Resultado Liquido',
+    'Juros < 45', 'Juros > 45', 'Juros (Recebimentos)',
     'Reajuste Contratos PF', 'Reajuste Contratos PJ',
     'QTD. Canc. 1 Men.', 'Valor Canc. 1 Men.',
+    'Cancelamento 1a Mensalidade', 'Valor Canc. 1a Mensalidade',
+  ]},
+  { titulo: 'Tickets', cards: [
     'Ticket Médio da Venda', 'Ticket Médio PF', 'Ticket Médio PJ', 'Ticket médio da Base',
+  ]},
+  { titulo: '% Churn / Cancelamento', cards: [
+    '% Churn', '% Cancelamento Base PF', '% Cancelamento Base PJ', '% Canc./Novos Clientes',
+  ]},
+  { titulo: 'Vendas / Meta', cards: [
+    'Meta (Vendas)', 'Total Venda', 'Performance Meta',
+    'Qtd. Taxa Instalação', 'Valor Taxa Instalação',
+  ]},
+  { titulo: 'Mesh', cards: [
+    'Qtd. Mesh', 'Valor Mesh', 'Mesh Pago', 'Mesh Não Pago',
   ]},
   { titulo: 'Pós Pago', cards: [
     'Pós Pago Qtd. de Venda', 'Pós Pago Novos Negocios', 'Pós Pago QTD. Canc. 1 Men.',
@@ -3207,11 +3183,20 @@ const DIRETORIA_PBI_AGREGACAO = {
   'Base Clientes PJ +PME': 'ultimo',
   'Base de Isentos': 'ultimo',
   'Base de Contratos': 'ultimo',
+  'Base Dual Net': 'ultimo',
+  'Base Planet': 'ultimo',
   // Tickets — média entre os meses
   'Ticket Médio da Venda': 'media',
   'Ticket Médio PF': 'media',
   'Ticket Médio PJ': 'media',
   'Ticket médio da Base': 'media',
+  // Percentuais e meta — média
+  '% Churn': 'media',
+  '% Cancelamento Base PF': 'media',
+  '% Cancelamento Base PJ': 'media',
+  '% Canc./Novos Clientes': 'media',
+  'Meta (Vendas)': 'media',
+  'Performance Meta': 'media',
 };
 
 function diretoriaPBI_agregar(card, valoresPorMes) {
@@ -3230,6 +3215,8 @@ let diretoriaPBI_dadosCache = {};
 let diretoriaPBI_mesesFechados = [];
 let diretoriaPBI_mesesDisponiveis = [];
 let diretoriaPBI_mesLive = null;
+let diretoriaPBI_cpfMesLive = null;
+let diretoriaPBI_cpfMesesDisponiveis = [];
 
 async function diretoriaPBI_lerKey(key) {
   const { data, error } = await sb.from('app_storage').select('value').eq('key', key).maybeSingle();
@@ -3245,30 +3232,41 @@ async function diretoriaPBI_lerLista(key) {
 
 async function diretoriaPBI_carregarMes(mes) {
   if (diretoriaPBI_dadosCache[mes]) return diretoriaPBI_dadosCache[mes];
-  // 1. Snapshot fechado (imutável)
-  const fechado = await diretoriaPBI_lerKey('powerbi_diretoria_fechado_' + mes);
-  if (fechado) {
-    fechado.__status = 'fechado';
-    diretoriaPBI_dadosCache[mes] = fechado;
-    return fechado;
+
+  // ── Diretoria source (com cascata fechado → per-mês → live) ──
+  let dirPayload = await diretoriaPBI_lerKey('powerbi_diretoria_fechado_' + mes);
+  let dirStatus = dirPayload ? 'fechado' : null;
+  if (!dirPayload) {
+    dirPayload = await diretoriaPBI_lerKey('powerbi_diretoria_' + mes);
+    if (dirPayload) dirStatus = 'live';
   }
-  // 2. Snapshot per-mês (mutável, atualizado pelo sync)
-  const perMes = await diretoriaPBI_lerKey('powerbi_diretoria_' + mes);
-  if (perMes) {
-    perMes.__status = 'live';
-    diretoriaPBI_dadosCache[mes] = perMes;
-    return perMes;
+  if (!dirPayload && mes === diretoriaPBI_mesLive) {
+    dirPayload = await diretoriaPBI_lerKey('powerbi_diretoria');
+    if (dirPayload) dirStatus = 'live';
   }
-  // 3. Compat: se for o mês mais recente sincronizado, lê do atalho
-  if (mes === diretoriaPBI_mesLive) {
-    const live = await diretoriaPBI_lerKey('powerbi_diretoria');
-    if (live) {
-      live.__status = 'live';
-      diretoriaPBI_dadosCache[mes] = live;
-      return live;
-    }
+
+  // ── Comercial PF source (mesma cascata) ──
+  let cpfPayload = await diretoriaPBI_lerKey('powerbi_comercial_pf_fechado_' + mes);
+  if (!cpfPayload) cpfPayload = await diretoriaPBI_lerKey('powerbi_comercial_pf_' + mes);
+  if (!cpfPayload && mes === diretoriaPBI_cpfMesLive) {
+    cpfPayload = await diretoriaPBI_lerKey('powerbi_comercial_pf');
   }
-  return null;
+
+  if (!dirPayload && !cpfPayload) return null;
+
+  // Merge: Comercial PF primeiro, Diretoria sobrescreve em caso de nome igual
+  const valores = {};
+  if (cpfPayload && cpfPayload.valores) Object.assign(valores, cpfPayload.valores);
+  if (dirPayload && dirPayload.valores) Object.assign(valores, dirPayload.valores);
+
+  const merged = {
+    valores,
+    mes_referencia: mes,
+    atualizado_em: (dirPayload && dirPayload.atualizado_em) || (cpfPayload && cpfPayload.atualizado_em),
+    __status: dirStatus || 'live',
+  };
+  diretoriaPBI_dadosCache[mes] = merged;
+  return merged;
 }
 
 function diretoriaPBI_adicionarMes() {
@@ -3298,34 +3296,52 @@ async function diretoriaPBI_fecharMes(mes) {
     `Fechar o mês ${mes}?\n\n` +
     `Os valores ficam CONGELADOS — nem mesmo a próxima sincronização vai alterá-los. ` +
     `Use isso quando os números do mês já estiverem consolidados (~dia 5–6 do mês seguinte), ` +
-    `para que comissões não mudem mais.`
+    `para que comissões não mudem mais.\n\n` +
+    `Fecha tanto Diretoria quanto Comercial PF do mesmo mês.`
   );
   if (!ok) return;
   try {
-    // Lê o snapshot per-mês (preferido) ou cai no atalho live se for o mês mais recente
-    let fonte = await diretoriaPBI_lerKey('powerbi_diretoria_' + mes);
-    if (!fonte && mes === diretoriaPBI_mesLive) {
-      fonte = await diretoriaPBI_lerKey('powerbi_diretoria');
-    }
-    if (!fonte) {
-      alert(`Sem dados de ${mes} para fechar.\n\nRode o sync com input meses=${mes} primeiro (Actions → Sync Power BI).`);
+    // ── Fonte Diretoria ──
+    let fonteDir = await diretoriaPBI_lerKey('powerbi_diretoria_' + mes);
+    if (!fonteDir && mes === diretoriaPBI_mesLive) fonteDir = await diretoriaPBI_lerKey('powerbi_diretoria');
+
+    // ── Fonte Comercial PF ──
+    let fonteCpf = await diretoriaPBI_lerKey('powerbi_comercial_pf_' + mes);
+    if (!fonteCpf && mes === diretoriaPBI_cpfMesLive) fonteCpf = await diretoriaPBI_lerKey('powerbi_comercial_pf');
+
+    if (!fonteDir && !fonteCpf) {
+      alert(`Sem dados de ${mes} para fechar.\n\nRode o sync (Diretoria e/ou Comercial PF) com mes=${mes} primeiro.`);
       return;
     }
-    const snap = { ...fonte, mes_referencia: mes, fechado_em: new Date().toISOString() };
-    const { error: e1 } = await sb.from('app_storage').upsert({
-      key: 'powerbi_diretoria_fechado_' + mes,
-      value: JSON.stringify(snap),
-    }, { onConflict: 'key' });
-    if (e1) throw e1;
+
+    const agora = new Date().toISOString();
+    if (fonteDir) {
+      const snap = { ...fonteDir, mes_referencia: mes, fechado_em: agora };
+      const { error } = await sb.from('app_storage').upsert({
+        key: 'powerbi_diretoria_fechado_' + mes, value: JSON.stringify(snap),
+      }, { onConflict: 'key' });
+      if (error) throw error;
+    }
+    if (fonteCpf) {
+      const snap = { ...fonteCpf, mes_referencia: mes, fechado_em: agora };
+      const { error } = await sb.from('app_storage').upsert({
+        key: 'powerbi_comercial_pf_fechado_' + mes, value: JSON.stringify(snap),
+      }, { onConflict: 'key' });
+      if (error) throw error;
+    }
 
     if (!diretoriaPBI_mesesFechados.includes(mes)) {
       diretoriaPBI_mesesFechados = [...diretoriaPBI_mesesFechados, mes].sort();
     }
-    const { error: e2 } = await sb.from('app_storage').upsert({
-      key: 'powerbi_diretoria_meses_fechados',
-      value: JSON.stringify(diretoriaPBI_mesesFechados),
-    }, { onConflict: 'key' });
-    if (e2) throw e2;
+    // Marca fechado em ambas as listas (cada sync respeita a sua)
+    await Promise.all([
+      sb.from('app_storage').upsert({
+        key: 'powerbi_diretoria_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados),
+      }, { onConflict: 'key' }),
+      sb.from('app_storage').upsert({
+        key: 'powerbi_comercial_pf_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados),
+      }, { onConflict: 'key' }),
+    ]);
 
     delete diretoriaPBI_dadosCache[mes];
     alert(`Mês ${mes} fechado com sucesso ✓`);
@@ -3345,7 +3361,8 @@ function diretoriaPBI_renderChips() {
   let html = '';
   for (const mes of diretoriaPBI_mesesSelecionados) {
     const isFechado = diretoriaPBI_mesesFechados.includes(mes);
-    const temDados = diretoriaPBI_mesesDisponiveis.includes(mes) || mes === diretoriaPBI_mesLive;
+    const temDados = diretoriaPBI_mesesDisponiveis.includes(mes) || mes === diretoriaPBI_mesLive
+                     || diretoriaPBI_cpfMesesDisponiveis.includes(mes) || mes === diretoriaPBI_cpfMesLive;
     const status = isFechado ? '🔒' : (temDados ? '🔄' : '❓');
     const cor = isFechado ? '#0f766e' : (temDados ? '#1d4ed8' : '#64748b');
     const bg  = isFechado ? '#ccfbf1' : (temDados ? '#dbeafe' : '#f1f5f9');
@@ -3358,7 +3375,8 @@ function diretoriaPBI_renderChips() {
   // Pode fechar qualquer mês selecionado que tenha dados (live ou per-mês) e ainda não esteja fechado
   const podeFechar = diretoriaPBI_mesesSelecionados.find(m =>
     !diretoriaPBI_mesesFechados.includes(m) &&
-    (diretoriaPBI_mesesDisponiveis.includes(m) || m === diretoriaPBI_mesLive)
+    (diretoriaPBI_mesesDisponiveis.includes(m) || m === diretoriaPBI_mesLive
+     || diretoriaPBI_cpfMesesDisponiveis.includes(m) || m === diretoriaPBI_cpfMesLive)
   );
   if (podeFechar) {
     html += `<button onclick="diretoriaPBI_fecharMes('${podeFechar}')" style="margin-left:0.5rem;padding:0.4rem 0.85rem;font-size:0.78rem;background:#0f766e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Congela os valores deste mês — não mudam mais">🔒 Fechar mês ${podeFechar}</button>`;
@@ -3400,20 +3418,26 @@ async function renderDiretoriaPBI() {
 
     diretoriaPBI_dadosCache = {};
 
-    const [live, mesesFechados, mesesDisponiveis] = await Promise.all([
+    const [live, mesesFechados, mesesDisponiveis, cpfLive, cpfMesesDisponiveis] = await Promise.all([
       diretoriaPBI_lerKey('powerbi_diretoria'),
       diretoriaPBI_lerLista('powerbi_diretoria_meses_fechados'),
       diretoriaPBI_lerLista('powerbi_diretoria_meses_disponiveis'),
+      diretoriaPBI_lerKey('powerbi_comercial_pf'),
+      diretoriaPBI_lerLista('powerbi_comercial_pf_meses_disponiveis'),
     ]);
     const ehMesValido = m => typeof m === 'string' && /^\d{4}-\d{2}$/.test(m);
     diretoriaPBI_mesLive = live && ehMesValido(live.mes_referencia) ? live.mes_referencia : null;
     diretoriaPBI_mesesFechados = mesesFechados.filter(ehMesValido);
     diretoriaPBI_mesesDisponiveis = mesesDisponiveis.filter(ehMesValido);
+    diretoriaPBI_cpfMesLive = cpfLive && ehMesValido(cpfLive.mes_referencia) ? cpfLive.mes_referencia : null;
+    diretoriaPBI_cpfMesesDisponiveis = cpfMesesDisponiveis.filter(ehMesValido);
 
     if (diretoriaPBI_mesesSelecionados.length === 0) {
       if (diretoriaPBI_mesLive) diretoriaPBI_mesesSelecionados = [diretoriaPBI_mesLive];
-      else if (mesesDisponiveis.length) diretoriaPBI_mesesSelecionados = [mesesDisponiveis[mesesDisponiveis.length - 1]];
-      else if (mesesFechados.length) diretoriaPBI_mesesSelecionados = [mesesFechados[mesesFechados.length - 1]];
+      else if (diretoriaPBI_cpfMesLive) diretoriaPBI_mesesSelecionados = [diretoriaPBI_cpfMesLive];
+      else if (diretoriaPBI_mesesDisponiveis.length) diretoriaPBI_mesesSelecionados = [diretoriaPBI_mesesDisponiveis[diretoriaPBI_mesesDisponiveis.length - 1]];
+      else if (diretoriaPBI_cpfMesesDisponiveis.length) diretoriaPBI_mesesSelecionados = [diretoriaPBI_cpfMesesDisponiveis[diretoriaPBI_cpfMesesDisponiveis.length - 1]];
+      else if (diretoriaPBI_mesesFechados.length) diretoriaPBI_mesesSelecionados = [diretoriaPBI_mesesFechados[diretoriaPBI_mesesFechados.length - 1]];
     }
 
     const inp = document.getElementById('diretoriaPBI_inputMes');
@@ -3496,290 +3520,6 @@ async function renderDiretoriaPBI() {
   }
 }
 
-// ================================================================
-// COMERCIAL PF — Power BI (mesmo padrão da Diretoria, fonte diferente)
-// ================================================================
-const COMERCIAL_PF_GRUPOS = [
-  { titulo: 'Base de Clientes', cards: [
-    'BASE GERAL', 'Base PF', 'Base PJ', 'Isentos', 'Permuta',
-    'Base Dual Net', 'Base Planet',
-    'Contratos Ativos (novos/mês)', 'Novos Clientes',
-  ]},
-  { titulo: 'Cancelamentos', cards: [
-    'Cancelamento (mês)', 'Cancelamento 1a Mensalidade',
-    'Valor Canc. 1a Mensalidade', 'Valor Cancelamento Novo', 'Valor Cancelamento (Antigo)',
-    'Cancelamento s/ Filtro',
-    '% Churn', '% Cancelamento Base PF', '% Cancelamento Base PJ',
-  ]},
-  { titulo: 'Financeiro', cards: [
-    'Novos Negócios',
-    'Diferença Novos vs Cancel.', 'Diferença Mês Anterior',
-    '% Canc./Novos Clientes',
-    'Juros (Recebimentos)',
-  ]},
-  { titulo: 'Vendas', cards: [
-    'Meta (Vendas)', 'Total Venda', 'Performance Meta',
-    'Ticket Médio1',
-    'Qtd. Taxa Instalação', 'Valor Taxa Instalação',
-    'Qtd. Mesh', 'Valor Mesh', 'Mesh Pago', 'Mesh Não Pago',
-  ]},
-];
-
-function comercialPF_formatar(card, valor) {
-  if (valor === null || valor === undefined) return '—';
-  if (typeof valor !== 'number') return String(valor);
-  const isPct = /^%|\bperformance\b/i.test(card);
-  const isDinheiro = /valor|novos negócios|juros|ticket|taxa instala|mesh/i.test(card)
-                     && !/qtd\.|mesh pago|mesh n[aã]o pago/i.test(card);
-  if (isPct && Math.abs(valor) <= 1) return (valor * 100).toFixed(2) + '%';
-  if (isPct) return valor.toFixed(2) + '%';
-  if (isDinheiro) {
-    return 'R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  return valor.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
-}
-
-// Regras de agregação Comercial PF — bases são "ultimo", percentuais e tickets são "media", resto soma.
-const COMERCIAL_PF_AGREGACAO = {
-  'BASE GERAL': 'ultimo', 'Base PF': 'ultimo', 'Base PJ': 'ultimo',
-  'Isentos': 'ultimo', 'Permuta': 'ultimo',
-  'Base Dual Net': 'ultimo', 'Base Planet': 'ultimo',
-  '% Churn': 'media', '% Cancelamento Base PF': 'media', '% Cancelamento Base PJ': 'media',
-  '% Canc./Novos Clientes': 'media', 'Performance Meta': 'media',
-  'Ticket Médio1': 'media',
-};
-
-function comercialPF_agregar(card, valoresPorMes) {
-  const regra = COMERCIAL_PF_AGREGACAO[card] || 'soma';
-  const numericos = valoresPorMes.filter(v => typeof v.valor === 'number');
-  if (numericos.length === 0) return null;
-  if (regra === 'ultimo') return numericos[numericos.length - 1].valor;
-  if (regra === 'media') return numericos.reduce((a, b) => a + b.valor, 0) / numericos.length;
-  return numericos.reduce((a, b) => a + b.valor, 0);
-}
-
-let comercialPF_mesesSelecionados = [];
-let comercialPF_dadosCache = {};
-let comercialPF_mesesFechados = [];
-let comercialPF_mesesDisponiveis = [];
-let comercialPF_mesLive = null;
-
-async function comercialPF_lerKey(key) {
-  const { data, error } = await sb.from('app_storage').select('value').eq('key', key).maybeSingle();
-  if (error) throw error;
-  if (!data || !data.value) return null;
-  return typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
-}
-async function comercialPF_lerLista(key) {
-  const v = await comercialPF_lerKey(key);
-  return Array.isArray(v) ? v : [];
-}
-
-async function comercialPF_carregarMes(mes) {
-  if (comercialPF_dadosCache[mes]) return comercialPF_dadosCache[mes];
-  const fechado = await comercialPF_lerKey('powerbi_comercial_pf_fechado_' + mes);
-  if (fechado) { fechado.__status = 'fechado'; comercialPF_dadosCache[mes] = fechado; return fechado; }
-  const perMes = await comercialPF_lerKey('powerbi_comercial_pf_' + mes);
-  if (perMes) { perMes.__status = 'live'; comercialPF_dadosCache[mes] = perMes; return perMes; }
-  if (mes === comercialPF_mesLive) {
-    const live = await comercialPF_lerKey('powerbi_comercial_pf');
-    if (live) { live.__status = 'live'; comercialPF_dadosCache[mes] = live; return live; }
-  }
-  return null;
-}
-
-function comercialPF_adicionarMes() {
-  const inp = document.getElementById('comercialPF_inputMes');
-  const v = inp && inp.value;
-  if (!v || !/^\d{4}-\d{2}$/.test(v)) { alert('Selecione um mês primeiro.'); return; }
-  if (comercialPF_mesesSelecionados.includes(v)) return;
-  comercialPF_mesesSelecionados = [...comercialPF_mesesSelecionados, v].sort();
-  renderComercialPF();
-}
-
-function comercialPF_trocarMes() {
-  const inp = document.getElementById('comercialPF_inputMes');
-  const v = inp && inp.value;
-  if (!v || !/^\d{4}-\d{2}$/.test(v)) { alert('Selecione um mês primeiro.'); return; }
-  comercialPF_mesesSelecionados = [v];
-  renderComercialPF();
-}
-
-function comercialPF_removerMes(mes) {
-  comercialPF_mesesSelecionados = comercialPF_mesesSelecionados.filter(m => m !== mes);
-  renderComercialPF();
-}
-
-async function comercialPF_fecharMes(mes) {
-  const ok = confirm(`Fechar o mês ${mes}?\n\nValores ficam congelados — sync futuro não altera.`);
-  if (!ok) return;
-  try {
-    let fonte = await comercialPF_lerKey('powerbi_comercial_pf_' + mes);
-    if (!fonte && mes === comercialPF_mesLive) fonte = await comercialPF_lerKey('powerbi_comercial_pf');
-    if (!fonte) { alert(`Sem dados de ${mes} para fechar.`); return; }
-    const snap = { ...fonte, mes_referencia: mes, fechado_em: new Date().toISOString() };
-    const { error: e1 } = await sb.from('app_storage').upsert({ key: 'powerbi_comercial_pf_fechado_' + mes, value: JSON.stringify(snap) }, { onConflict: 'key' });
-    if (e1) throw e1;
-    if (!comercialPF_mesesFechados.includes(mes)) comercialPF_mesesFechados = [...comercialPF_mesesFechados, mes].sort();
-    const { error: e2 } = await sb.from('app_storage').upsert({ key: 'powerbi_comercial_pf_meses_fechados', value: JSON.stringify(comercialPF_mesesFechados) }, { onConflict: 'key' });
-    if (e2) throw e2;
-    delete comercialPF_dadosCache[mes];
-    alert(`Mês ${mes} fechado ✓`);
-    renderComercialPF();
-  } catch (e) { alert('Erro ao fechar mês: ' + (e.message || e)); }
-}
-
-function comercialPF_renderChips() {
-  const el = document.getElementById('comercialPF_chips');
-  if (!el) return;
-  if (comercialPF_mesesSelecionados.length === 0) {
-    el.innerHTML = '<span style="font-size:0.78rem;color:#94a3b8">Nenhum mês selecionado.</span>';
-    return;
-  }
-  let html = '';
-  for (const mes of comercialPF_mesesSelecionados) {
-    const isFechado = comercialPF_mesesFechados.includes(mes);
-    const temDados = comercialPF_mesesDisponiveis.includes(mes) || mes === comercialPF_mesLive;
-    const status = isFechado ? '🔒' : (temDados ? '🔄' : '❓');
-    const cor = isFechado ? '#0f766e' : (temDados ? '#1d4ed8' : '#64748b');
-    const bg  = isFechado ? '#ccfbf1' : (temDados ? '#dbeafe' : '#f1f5f9');
-    html += `<span style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.6rem;background:${bg};color:${cor};border-radius:999px;font-size:0.78rem;font-weight:600">
-      ${status} ${mes}
-      <button onclick="comercialPF_removerMes('${mes}')" title="Remover" style="background:transparent;border:none;color:${cor};cursor:pointer;font-size:1rem;line-height:1;padding:0 0 0 0.15rem">×</button>
-    </span>`;
-  }
-  const podeFechar = comercialPF_mesesSelecionados.find(m => !comercialPF_mesesFechados.includes(m) && (comercialPF_mesesDisponiveis.includes(m) || m === comercialPF_mesLive));
-  if (podeFechar) {
-    html += `<button onclick="comercialPF_fecharMes('${podeFechar}')" style="margin-left:0.5rem;padding:0.4rem 0.85rem;font-size:0.78rem;background:#0f766e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔒 Fechar mês ${podeFechar}</button>`;
-  }
-  el.innerHTML = html;
-}
-
-function abrirComercialPFView(navEl) {
-  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-  if (navEl) navEl.classList.add('active');
-  const hdr = document.getElementById('mainHeader');
-  if (hdr) hdr.style.display = 'none';
-  document.querySelectorAll('.view-container').forEach(c => {
-    c.classList.remove('active');
-    c.style.display = 'none';
-  });
-  const view = document.getElementById('comercialPFView');
-  if (view) { view.style.display = 'block'; view.classList.add('active'); }
-  const vt = document.getElementById('viewType');
-  if (vt) vt.value = 'comercial-pf';
-  renderComercialPF();
-}
-
-async function renderComercialPF() {
-  const elLoading  = document.getElementById('comercialPF_loading');
-  const elConteudo = document.getElementById('comercialPF_conteudo');
-  const elSemDados = document.getElementById('comercialPF_semDados');
-  const elErro     = document.getElementById('comercialPF_erro');
-  const elRef      = document.getElementById('comercialPF_ref');
-  const elGrid     = document.getElementById('comercialPF_grid');
-
-  elLoading.style.display = 'block';
-  elConteudo.style.display = 'none';
-  elSemDados.style.display = 'none';
-  elErro.style.display = 'none';
-
-  try {
-    if (typeof sb === 'undefined') throw new Error('Supabase não inicializado.');
-    comercialPF_dadosCache = {};
-
-    const [live, mesesFechados, mesesDisponiveis] = await Promise.all([
-      comercialPF_lerKey('powerbi_comercial_pf'),
-      comercialPF_lerLista('powerbi_comercial_pf_meses_fechados'),
-      comercialPF_lerLista('powerbi_comercial_pf_meses_disponiveis'),
-    ]);
-    const ehMesValido = m => typeof m === 'string' && /^\d{4}-\d{2}$/.test(m);
-    comercialPF_mesLive = live && ehMesValido(live.mes_referencia) ? live.mes_referencia : null;
-    comercialPF_mesesFechados = mesesFechados.filter(ehMesValido);
-    comercialPF_mesesDisponiveis = mesesDisponiveis.filter(ehMesValido);
-
-    if (comercialPF_mesesSelecionados.length === 0) {
-      if (comercialPF_mesLive) comercialPF_mesesSelecionados = [comercialPF_mesLive];
-      else if (comercialPF_mesesDisponiveis.length) comercialPF_mesesSelecionados = [comercialPF_mesesDisponiveis[comercialPF_mesesDisponiveis.length - 1]];
-      else if (comercialPF_mesesFechados.length) comercialPF_mesesSelecionados = [comercialPF_mesesFechados[comercialPF_mesesFechados.length - 1]];
-    }
-
-    const inp = document.getElementById('comercialPF_inputMes');
-    if (inp && !inp.value) {
-      const d = new Date();
-      inp.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    }
-
-    comercialPF_renderChips();
-
-    if (comercialPF_mesesSelecionados.length === 0) {
-      elLoading.style.display = 'none';
-      elSemDados.style.display = 'block';
-      return;
-    }
-
-    const dados = await Promise.all(comercialPF_mesesSelecionados.map(m => comercialPF_carregarMes(m)));
-    elLoading.style.display = 'none';
-
-    if (dados.every(p => !p)) {
-      elSemDados.style.display = 'block';
-      return;
-    }
-
-    const meses = comercialPF_mesesSelecionados.map((m, i) => ({ mes: m, payload: dados[i] }));
-    const isMulti = meses.length > 1;
-
-    if (isMulti) {
-      const fechCnt = meses.filter(x => x.payload && x.payload.__status === 'fechado').length;
-      const liveCnt = meses.filter(x => x.payload && x.payload.__status === 'live').length;
-      const semCnt  = meses.filter(x => !x.payload).length;
-      let s = `<b>Agregando ${meses.length} meses</b> (${meses.map(x => x.mes).join(', ')}) · 🔒 ${fechCnt} fechado(s) · 🔄 ${liveCnt} ao vivo`;
-      if (semCnt) s += ` · ❓ ${semCnt} sem dados`;
-      elRef.innerHTML = s;
-    } else {
-      const u = meses[0];
-      if (!u.payload) elRef.innerHTML = `📅 Mês: <b>${u.mes}</b> · ❓ sem dados`;
-      else {
-        const status = u.payload.__status === 'fechado'
-          ? '🔒 fechado' + (u.payload.fechado_em ? ' em ' + new Date(u.payload.fechado_em).toLocaleDateString('pt-BR') : '')
-          : '🔄 ao vivo (atualiza no próximo sync)';
-        const at = u.payload.atualizado_em ? new Date(u.payload.atualizado_em) : null;
-        const atStr = at ? at.toLocaleDateString('pt-BR') + ' ' + at.toLocaleTimeString('pt-BR').slice(0, 5) : '—';
-        elRef.innerHTML = `📅 Mês: <b>${u.mes}</b> · ${status} · sync ${atStr}`;
-      }
-    }
-
-    let html = '';
-    for (const grupo of COMERCIAL_PF_GRUPOS) {
-      html += `<div style="grid-column:1/-1;margin-top:1rem;font-size:0.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;padding:0.4rem 0 0.2rem;border-bottom:2px solid #e2e8f0">${grupo.titulo}</div>`;
-      for (const card of grupo.cards) {
-        const valoresPorMes = meses.map(x => ({ mes: x.mes, valor: (x.payload && x.payload.valores) ? (x.payload.valores[card] ?? null) : null }));
-        const v = isMulti ? comercialPF_agregar(card, valoresPorMes) : valoresPorMes[0].valor;
-        const vStr = comercialPF_formatar(card, v);
-        const isVazio = v === null || v === undefined;
-        const cor = isVazio ? '#94a3b8' : '#0f172a';
-        let tagAgg = '';
-        if (isMulti) {
-          const r = COMERCIAL_PF_AGREGACAO[card] || 'soma';
-          const rotulo = { soma: 'Σ soma', media: 'x̄ média', ultimo: '⏱ mais recente' }[r];
-          tagAgg = `<div style="font-size:0.62rem;color:#94a3b8;margin-top:0.3rem;font-weight:600">${rotulo}</div>`;
-        }
-        html += `
-          <div style="background:white;border-radius:10px;padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${card}</div>
-            <div style="font-size:1.35rem;font-weight:700;color:${cor}">${vStr}</div>
-            ${tagAgg}
-          </div>`;
-      }
-    }
-    elGrid.innerHTML = html;
-    elConteudo.style.display = 'block';
-  } catch (err) {
-    elLoading.style.display = 'none';
-    elErro.style.display = 'block';
-    elErro.textContent = 'Erro ao carregar: ' + (err.message || err);
-  }
-}
 
 // ================================================================
 // PRB — PAINEL DO SÓCIO (Lucro Real) — inline
