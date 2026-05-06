@@ -2908,8 +2908,9 @@
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
         <input type="month" id="diretoriaPBI_inputMes" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white">
-        <button onclick="diretoriaPBI_adicionarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">+ Adicionar mês</button>
-        <button onclick="renderDiretoriaPBI()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
+        <button onclick="diretoriaPBI_trocarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Mostra só este mês (substitui a seleção)">Ver este mês</button>
+        <button onclick="diretoriaPBI_adicionarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Adiciona este mês aos já selecionados (soma/agrega)">+ Comparar</button>
+        <button onclick="renderDiretoriaPBI()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#64748b;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
       </div>
     </div>
 
@@ -2930,9 +2931,11 @@
       <div id="diretoriaPBI_grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem"></div>
 
       <div style="margin-top:2rem;padding:1rem 1.25rem;background:#f8fafc;border-left:3px solid #94a3b8;border-radius:6px;font-size:0.78rem;color:#475569;line-height:1.5">
+        <b>Botões:</b> "<b>Ver este mês</b>" mostra só o mês escolhido (substitui o que estava). "<b>+ Comparar</b>" adiciona o mês escolhido aos já visíveis (soma/agrega vários meses).
+        <br><br>
         <b>Como isso funciona:</b> os valores vêm do Power BI via DAX e são gravados no Supabase. O <b>mês 🔄 ao vivo</b> é o último que o sync rodou e pode mudar a cada execução. Quando os números do mês estão consolidados (~dia 5–6 do mês seguinte), clique em <b>🔒 Fechar mês</b> para criar um snapshot imutável — depois disso, os valores não mudam mais (ideal para fechar comissão).
         <br><br>
-        <b>Múltiplos meses:</b> ao selecionar mais de um, os cards são agregados automaticamente — <b>soma</b> para contagens/valores (cancelamentos, novos negócios, receita...), <b>média</b> para tickets médios, e <b>último valor</b> para tamanhos de base (Base PF, PJ, Contratos, Isentos), porque base é snapshot e não acumula.
+        <b>Vários meses:</b> ao comparar, os cards são agregados — <b>soma</b> para contagens/valores (cancelamentos, novos negócios, receita...), <b>média</b> para tickets médios, e <b>último valor</b> para tamanhos de base (Base PF, PJ, Contratos, Isentos), porque base é snapshot e não acumula.
         <br><br>
         <b>Atenção:</b> cards marcados com ⚠️ inferido podem ter valores diferentes do Power BI original. Compare e avise os que estiverem errados.
       </div>
@@ -3271,6 +3274,14 @@ function diretoriaPBI_adicionarMes() {
   renderDiretoriaPBI();
 }
 
+function diretoriaPBI_trocarMes() {
+  const inp = document.getElementById('diretoriaPBI_inputMes');
+  const v = inp && inp.value;
+  if (!v || !/^\d{4}-\d{2}$/.test(v)) { alert('Selecione um mês primeiro.'); return; }
+  diretoriaPBI_mesesSelecionados = [v];
+  renderDiretoriaPBI();
+}
+
 function diretoriaPBI_removerMes(mes) {
   diretoriaPBI_mesesSelecionados = diretoriaPBI_mesesSelecionados.filter(m => m !== mes);
   renderDiretoriaPBI();
@@ -3322,7 +3333,7 @@ function diretoriaPBI_renderChips() {
   const el = document.getElementById('diretoriaPBI_chips');
   if (!el) return;
   if (diretoriaPBI_mesesSelecionados.length === 0) {
-    el.innerHTML = '<span style="font-size:0.78rem;color:#94a3b8">Nenhum mês selecionado — escolha um mês acima e clique <b>+ Adicionar mês</b>.</span>';
+    el.innerHTML = '<span style="font-size:0.78rem;color:#94a3b8">Nenhum mês selecionado — escolha um mês acima e clique <b>Ver este mês</b>.</span>';
     return;
   }
   let html = '';
