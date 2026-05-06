@@ -111,78 +111,150 @@ function daxDeCard(mesNum, ano) {
   ];
 }
 
+function resolverMeses() {
+  const arg = process.argv.find(a => a.startsWith('--mes=') || a.startsWith('--meses='));
+  const v = arg ? arg.split('=')[1] : '';
+  if (!v) {
+    const d = new Date();
+    return [`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`];
+  }
+  if (v.startsWith('last:')) {
+    const n = parseInt(v.split(':')[1], 10) || 1;
+    const out = [];
+    const d = new Date();
+    for (let i = n - 1; i >= 0; i--) {
+      const dd = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      out.push(`${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return out;
+  }
+  const lista = v.split(',').map(s => s.trim()).filter(Boolean);
+  for (const m of lista) {
+    if (!/^\d{4}-\d{2}$/.test(m)) {
+      throw new Error(`Mês inválido: "${m}". Use YYYY-MM, lista, ou last:N.`);
+    }
+  }
+  return lista;
+}
+
 async function rodar() {
   carregarEnv();
   const { SB_URL, SB_KEY } = process.env;
   if (!SB_URL || !SB_KEY) throw new Error('Faltam SB_URL / SB_KEY.');
 
-  const arg = process.argv.find(a => a.startsWith('--mes='));
-  let mesAno;
-  if (arg) {
-    mesAno = arg.split('=')[1];
-  } else {
-    const d = new Date();
-    mesAno = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  }
-  const [ano, mesNum] = mesAno.split('-').map(Number);
-  log(`Sync Comercial PF para ${mesAno} (mês ${mesNum} / ano ${ano})`);
+  const meses = resolverMeses();
+  log(`Sync Comercial PF de ${meses.length} mês(es): ${meses.join(', ')}`);
 
   log('Autenticando...');
   const token = await obterToken();
   log('Token OK', 'ok');
 
-  const cards = daxDeCard(mesNum, ano);
+  const sb = createClient(SB_URL, SB_KEY);
 
-  // Query batch via ROW()
-  const cols = cards.map((c, i) => `"c${i}", ${c.dax}`).join(',\n    ');
-  const daxFull = `EVALUATE ROW(\n    ${cols}\n)`;
-
-  log(`Executando DAX com ${cards.length} medidas...`);
-  let valores;
+  // Lê meses fechados
+  let mesesFechados = [];
   try {
-    const row = await executarDAX(token, daxFull);
-    valores = {};
-    cards.forEach((c, i) => {
-      const v = row[`[c${i}]`];
-      valores[c.card] = v === undefined ? null : v;
-    });
-    log(`Batch OK (${cards.length} medidas) ✓`, 'ok');
-  } catch (err) {
-    log('Batch falhou — caindo pra 1-a-1...', 'warn');
-    valores = {};
-    for (const c of cards) {
-      try {
-        const row = await executarDAX(token, `EVALUATE ROW("v", ${c.dax})`);
-        valores[c.card] = row['[v]'] ?? null;
-        log(`  ✓ ${c.card}`, 'ok');
-      } catch (e) {
-        valores[c.card] = null;
-        log(`  ✗ ${c.card} — ${e.response?.data?.error?.code || e.message}`, 'erro');
+    const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_comercial_pf_meses_fechados').maybeSingle();
+    if (data && data.value) {
+      const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      mesesFechados = Array.isArray(v) ? v : [];
+    }
+  } catch (e) { log(`Aviso lendo meses_fechados: ${e.message}`, 'warn'); }
+  if (mesesFechados.length) log(`Meses fechados (não sobrescritos): ${mesesFechados.join(', ')}`);
+
+  // Lê + filtra meses disponíveis
+  let mesesDisponiveis = [];
+  try {
+    const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_comercial_pf_meses_disponiveis').maybeSingle();
+    if (data && data.value) {
+      const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      mesesDisponiveis = (Array.isArray(v) ? v : []).filter(m => /^\d{4}-\d{2}$/.test(m));
+    }
+  } catch (e) { /* ignore */ }
+
+  // Limpa rows lixo
+  try {
+    const { data: rows } = await sb.from('app_storage').select('key').like('key', 'powerbi_comercial_pf_%');
+    if (rows) {
+      const lixo = rows.map(r => r.key).filter(k => {
+        if (k === 'powerbi_comercial_pf_meses_fechados') return false;
+        if (k === 'powerbi_comercial_pf_meses_disponiveis') return false;
+        if (k.startsWith('powerbi_comercial_pf_fechado_')) return !/^powerbi_comercial_pf_fechado_\d{4}-\d{2}$/.test(k);
+        return !/^powerbi_comercial_pf_\d{4}-\d{2}$/.test(k);
+      });
+      if (lixo.length) {
+        log(`Limpando ${lixo.length} chave(s) lixo: ${lixo.join(', ')}`, 'warn');
+        await sb.from('app_storage').delete().in('key', lixo);
       }
     }
+  } catch (e) { log(`Aviso limpando lixo: ${e.message}`, 'warn'); }
+
+  let valoresMaisRecente = null;
+  let mesMaisRecente = null;
+
+  for (const mesAno of meses) {
+    if (mesesFechados.includes(mesAno)) {
+      log(`Mês ${mesAno} já está FECHADO — pulando.`, 'warn');
+      continue;
+    }
+    const [ano, mesNum] = mesAno.split('-').map(Number);
+    log(`─── ${mesAno} ───`);
+    const cards = daxDeCard(mesNum, ano);
+
+    const cols = cards.map((c, i) => `"c${i}", ${c.dax}`).join(',\n    ');
+    const daxFull = `EVALUATE ROW(\n    ${cols}\n)`;
+
+    log(`Executando DAX com ${cards.length} medidas...`);
+    let valores;
+    try {
+      const row = await executarDAX(token, daxFull);
+      valores = {};
+      cards.forEach((c, i) => {
+        const v = row[`[c${i}]`];
+        valores[c.card] = v === undefined ? null : v;
+      });
+      log(`  Batch OK ✓`, 'ok');
+    } catch (err) {
+      log('Batch falhou — caindo pra 1-a-1...', 'warn');
+      valores = {};
+      for (const c of cards) {
+        try {
+          const row = await executarDAX(token, `EVALUATE ROW("v", ${c.dax})`);
+          valores[c.card] = row['[v]'] ?? null;
+        } catch (e) {
+          valores[c.card] = null;
+          log(`  ✗ ${c.card} — ${e.response?.data?.error?.code || e.message}`, 'erro');
+        }
+      }
+    }
+
+    const payload = {
+      atualizado_em: new Date().toISOString(),
+      mes_referencia: mesAno,
+      valores,
+    };
+    const { error: ePm } = await sb.from('app_storage').upsert({ key: `powerbi_comercial_pf_${mesAno}`, value: payload }, { onConflict: 'key' });
+    if (ePm) throw new Error(`Supabase ${mesAno}: ${ePm.message}`);
+    log(`  Gravado em powerbi_comercial_pf_${mesAno} ✓`, 'ok');
+
+    if (!mesesDisponiveis.includes(mesAno)) mesesDisponiveis.push(mesAno);
+    valoresMaisRecente = payload;
+    mesMaisRecente = mesAno;
   }
 
-  log('Gravando no Supabase (chave: powerbi_comercial_pf)...');
-  const sb = createClient(SB_URL, SB_KEY);
-  const payload = {
-    atualizado_em: new Date().toISOString(),
-    mes_referencia: mesAno,
-    valores,
-  };
-  const { error } = await sb
-    .from('app_storage')
-    .upsert({ key: 'powerbi_comercial_pf', value: payload }, { onConflict: 'key' });
-  if (error) throw new Error(`Supabase: ${error.message}`);
-  log('Gravado ✓', 'ok');
-
-  log('─── RESUMO ───');
-  for (const c of cards) {
-    const v = valores[c.card];
-    const fmt = v === null || v === undefined
-      ? '—'
-      : (typeof v === 'number' ? v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : v);
-    log(`  ${c.card.padEnd(38)} ${String(fmt).padStart(16)}`);
+  // Atalho compat
+  if (valoresMaisRecente) {
+    const { error } = await sb.from('app_storage').upsert({ key: 'powerbi_comercial_pf', value: valoresMaisRecente }, { onConflict: 'key' });
+    if (error) throw new Error(`Supabase (compat): ${error.message}`);
+    log(`Atalho powerbi_comercial_pf → ${mesMaisRecente} ✓`, 'ok');
   }
+
+  mesesDisponiveis.sort();
+  await sb.from('app_storage').upsert({
+    key: 'powerbi_comercial_pf_meses_disponiveis',
+    value: JSON.stringify(mesesDisponiveis),
+  }, { onConflict: 'key' });
+
   log('Sync Comercial PF concluído 🎉', 'ok');
 }
 

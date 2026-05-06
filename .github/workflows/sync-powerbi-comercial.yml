@@ -4,7 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       mes:
-        description: 'Mês (YYYY-MM). Vazio = mês corrente.'
+        description: 'YYYY-MM, lista, ou last:N. Vazio = ignorar.'
+        required: false
+        default: ''
+      meses:
+        description: 'Mesmo formato. Vazio + mes vazio + schedule = last:3.'
         required: false
         default: ''
       workspace_id:
@@ -26,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - working-directory: powerbi-sync
         run: npm install
       - working-directory: powerbi-sync
@@ -41,6 +45,8 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.mes }}" ]; then
             node sync-comercial.js --mes=${{ github.event.inputs.mes }}
+          elif [ -n "${{ github.event.inputs.meses }}" ]; then
+            node sync-comercial.js --meses=${{ github.event.inputs.meses }}
           else
-            node sync-comercial.js
+            node sync-comercial.js --meses=last:3
           fi
