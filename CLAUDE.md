@@ -80,9 +80,11 @@ Base de Cliente PF (16.072), Base de Isentos (744), OS Suporte PF (107), Novos C
 
 ### ❌ Diferenças GRANDES (precisam de fix DAX)
 1. **Novos Clientes PF** — sync 42 vs PB 375 (9x menor!). DAX está filtrando algo a mais.
-2. **Valor Canc. 1 Men.** — sync `—` (null) ou R$ 269 vs PB R$ 6.172. A correção anterior do `DATEDIFF(data_ativacao, data_cancelamento, DAY) <= 30` não bateu. **Pode ser que o "1 Men." do PB seja "1 Mensalidade paga" não "1 mês na base"** — investigar relação com `dCancelamentos[Mensalidades_Pagas]` ou similar.
-3. **QTD. Canc. 1 Men.** e **Pós Pago QTD. Canc. 1 Men.** — sync mostra `—`, PB mostra 0. Provavelmente DAX retornando null que deveria ser 0 (default = soma SUM com filtro vazio = null).
-4. **Novos Negócios** total ≠ PF + PJ — sync 5.370,60 ≠ (3.982 + 1.388,60 = 5.370,60). Na verdade BATE. Mas PB mostra "Novos Negócios = R$ 5.513,53" que é o que sync chama de "Receita". Pode ser só nomenclatura confusa entre os 2 cards. Investigar se PB "Novos Negócios" = sync "Receita" ou se há duas medidas distintas.
+2. **Valor Canc. 1 Men. / QTD. Canc. 1 Men. / Pós Pago QTD. Canc. 1 Men.** — RESOLVIDO em mai/2026 revertendo pra DATEDIFF. Git log antigo documenta "bate ~42 vs 41 do Power BI". **NÃO MUDAR pra filtro por motivo** — isso quebra. Mantém:
+   ```
+   CALCULATE([Cancelamento ou New Can.], filtroMes, FILTER('dCancelamentos', DATEDIFF(data_ativacao, data_cancelamento, DAY) <= 30))
+   ```
+3. **Novos Negócios** total ≠ PF + PJ — sync 5.370,60 ≠ (3.982 + 1.388,60 = 5.370,60). Na verdade BATE. Mas PB mostra "Novos Negócios = R$ 5.513,53" que é o que sync chama de "Receita". Pode ser só nomenclatura confusa entre os 2 cards. Investigar se PB "Novos Negócios" = sync "Receita" ou se há duas medidas distintas.
 
 ### Comercial PF — cards exclusivos (não estavam na Diretoria)
 Base Dual Net, Base Planet, Contratos Ativos (novos/mês), Cancelamento 1a Mensalidade, Valor Canc. 1a Mensalidade, Valor Cancelamento Novo, % Churn, % Cancelamento Base PF/PJ, % Canc./Novos Clientes, Diferença Novos vs Cancel., Diferença Mês Anterior, Juros (Recebimentos), Meta (Vendas), Total Venda, Performance Meta, Qtd./Valor Taxa Instalação, Qtd./Valor/Pago/Não Pago Mesh.
