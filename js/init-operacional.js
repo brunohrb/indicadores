@@ -165,8 +165,8 @@
         const churnFin = fat > 0 ? (val_canc_pf + val_canc_pj) / fat : 0;
 
         // Resultado R$
-        const nn_total   = nn_pf + nn_pj + upgrade + reat + reajuste_op;
-        const canc_total = val_canc_pf + val_canc_pj + downgrade;
+        const nn_total   = nn_pf + nn_pj + upgrade + reajuste_op;
+        const canc_total = val_canc_pf + val_canc_pj + downgrade - reat;
         const resultado  = nn_total - canc_total;
 
         // === COMISSÕES MENSAIS ===
@@ -240,8 +240,8 @@
           const vcpf_m   = getM('val_canc_pf', cpf_m * TICKET_PF);
           const vcpj_m   = getM('val_canc_pj', cpj_m * TICKET_PJ);
           const dng_m    = Math.abs(getM('downgrade'));
-          const nn_tot_m = nn_pf_m + nn_pj_m + upg_m + reat_m + raj_m;
-          const cc_tot_m = vcpf_m + vcpj_m + dng_m;
+          const nn_tot_m = nn_pf_m + nn_pj_m + upg_m + raj_m;
+          const cc_tot_m = vcpf_m + vcpj_m + dng_m - reat_m;
           resultadoAcum += nn_tot_m - cc_tot_m;
         }
 
@@ -349,18 +349,18 @@
           rowLine('Novos PF', nn_pf, '#065f46') +
           rowLine('Novos PJ', nn_pj, '#065f46') +
           rowLine('UpGrade', upgrade, '#065f46') +
-          rowLine('Reativação', reat, '#065f46') +
           (reajuste_op > 0 ? rowLine('Reajuste Contratos', reajuste_op, '#065f46') : '') +
           `<div style="display:flex;justify-content:space-between;padding:0.75rem 0;font-size:0.95rem">
             <strong style="color:#065f46">TOTAL NOVOS</strong>
             <strong style="color:#065f46">${fc(nn_total)}</strong>
           </div>`;
 
-        // ── Cancelamentos ──
+        // ── Cancelamentos (Reativação entra como subtração) ──
         document.getElementById('opCancelamentos').innerHTML =
           rowLine('Cancelamentos PF', val_canc_pf, '#991b1b') +
           rowLine('Cancelamentos PJ', val_canc_pj, '#991b1b') +
           rowLine('DownGrade', downgrade, '#991b1b') +  /* downgrade já é positivo via Math.abs */
+          rowLine('Reativação (−)', -reat, '#065f46', 'reduz cancelamento') +
           `<div style="display:flex;justify-content:space-between;padding:0.75rem 0;font-size:0.95rem">
             <strong style="color:#991b1b">TOTAL CANC.</strong>
             <strong style="color:#991b1b">${fc(canc_total)}</strong>
