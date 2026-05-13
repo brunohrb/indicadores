@@ -138,13 +138,15 @@ function daxDeCard(mesNum, ano) {
       dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PF)}, ${venda('[Novos Clientes]', FILIAIS_PF)})` },
     { card: 'Ticket Médio PJ',
       dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PJ)}, ${venda('[Novos Clientes]', FILIAIS_PJ)})` },
-    // Reajuste — filtra via dContratos[ID_Filial] (não fVendas) porque [$ Valor Reajuste]
-    // não propaga filtro através de fVendas (estava retornando mesmo total p/ PF e PJ).
-    // PB mostra PF=3.895,88 e PJ=354,02; sync antes mostrava 4.249,90 nos dois.
+    // Reajuste — várias tentativas de segmentar PF/PJ falharam:
+    // - fVendas[filial_id] (não propaga p/ [$ Valor Reajuste])
+    // - dContratos[ID_Filial] (idem)
+    // Última tentativa: filtro DIRETO por dContratos[Tipo_Pessoa] (sem FILTER).
+    // Se ainda vier duplicado (PF=PJ), o frontend detecta e mostra só o total.
     { card: 'Reajuste Contratos PF',
-      dax: `CALCULATE([$ Valor Reajuste], ${filtroMes}, FILTER('dContratos', 'dContratos'[ID_Filial] IN ${FILIAIS_PF}))` },
+      dax: `CALCULATE([$ Valor Reajuste], ${filtroMes}, 'dContratos'[Tipo_Pessoa] = "Física")` },
     { card: 'Reajuste Contratos PJ',
-      dax: `CALCULATE([$ Valor Reajuste], ${filtroMes}, FILTER('dContratos', 'dContratos'[ID_Filial] IN ${FILIAIS_PJ}))` },
+      dax: `CALCULATE([$ Valor Reajuste], ${filtroMes}, 'dContratos'[Tipo_Pessoa] IN {"Jurídica", "E"})` },
 
     // ─── VERMELHO (chutes — ajustar se não bater) ─────
     // Base de Isentos — só id_filial = 11 (confirmado via print do painel)
