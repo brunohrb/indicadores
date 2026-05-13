@@ -2906,7 +2906,8 @@
         <p style="font-size:0.8rem;color:#64748b;margin:0.2rem 0 0">36 indicadores sincronizados automaticamente todo dia</p>
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-        <input type="month" id="diretoriaPBI_inputMes" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white">
+        <select id="diretoriaPBI_inputAno" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer"></select>
+        <select id="diretoriaPBI_inputMesNum" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer"></select>
         <button onclick="diretoriaPBI_trocarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Mostra só este mês (substitui a seleção)">Ver este mês</button>
         <button onclick="diretoriaPBI_adicionarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Adiciona este mês aos já selecionados (soma/agrega)">+ Comparar</button>
         <button onclick="renderDiretoriaPBI()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#64748b;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
@@ -3319,19 +3320,57 @@ async function diretoriaPBI_carregarMes(mes) {
   return merged;
 }
 
+function diretoriaPBI_getMesSelecionado() {
+  const ano = document.getElementById('diretoriaPBI_inputAno');
+  const mes = document.getElementById('diretoriaPBI_inputMesNum');
+  if (!ano || !mes || !ano.value || !mes.value) return null;
+  return `${ano.value}-${String(mes.value).padStart(2, '0')}`;
+}
+
+function diretoriaPBI_popularSeletores() {
+  const inpAno = document.getElementById('diretoriaPBI_inputAno');
+  const inpMes = document.getElementById('diretoriaPBI_inputMesNum');
+  if (!inpAno || !inpMes) return;
+
+  // Anos disponíveis: união dos meses que existem no Supabase + ano corrente
+  const todosMeses = new Set([
+    ...diretoriaPBI_mesesDisponiveis,
+    ...diretoriaPBI_cpfMesesDisponiveis,
+    ...diretoriaPBI_rejMesesDisponiveis,
+    ...diretoriaPBI_mesesFechados,
+  ]);
+  const anosSet = new Set();
+  todosMeses.forEach(m => anosSet.add(m.split('-')[0]));
+  const agora = new Date();
+  anosSet.add(String(agora.getFullYear()));
+  // Garante ano anterior e atual mesmo sem dados ainda
+  anosSet.add(String(agora.getFullYear() - 1));
+  const anos = [...anosSet].sort((a, b) => Number(b) - Number(a));
+
+  // Mantém valor atual selecionado (se houver)
+  const anoAtual = inpAno.value || String(agora.getFullYear());
+  const mesAtual = inpMes.value || String(agora.getMonth() + 1);
+
+  inpAno.innerHTML = anos.map(a => `<option value="${a}"${a === anoAtual ? ' selected' : ''}>${a}</option>`).join('');
+
+  const nomesMes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  inpMes.innerHTML = nomesMes.map((nome, i) => {
+    const val = String(i + 1);
+    return `<option value="${val}"${val === mesAtual ? ' selected' : ''}>${nome}</option>`;
+  }).join('');
+}
+
 function diretoriaPBI_adicionarMes() {
-  const inp = document.getElementById('diretoriaPBI_inputMes');
-  const v = inp && inp.value;
-  if (!v || !/^\d{4}-\d{2}$/.test(v)) { alert('Selecione um mês primeiro.'); return; }
+  const v = diretoriaPBI_getMesSelecionado();
+  if (!v) { alert('Selecione ano e mês primeiro.'); return; }
   if (diretoriaPBI_mesesSelecionados.includes(v)) return;
   diretoriaPBI_mesesSelecionados = [...diretoriaPBI_mesesSelecionados, v].sort();
   renderDiretoriaPBI();
 }
 
 function diretoriaPBI_trocarMes() {
-  const inp = document.getElementById('diretoriaPBI_inputMes');
-  const v = inp && inp.value;
-  if (!v || !/^\d{4}-\d{2}$/.test(v)) { alert('Selecione um mês primeiro.'); return; }
+  const v = diretoriaPBI_getMesSelecionado();
+  if (!v) { alert('Selecione ano e mês primeiro.'); return; }
   diretoriaPBI_mesesSelecionados = [v];
   renderDiretoriaPBI();
 }
@@ -3494,11 +3533,7 @@ async function renderDiretoriaPBI() {
       else if (diretoriaPBI_mesesFechados.length) diretoriaPBI_mesesSelecionados = [diretoriaPBI_mesesFechados[diretoriaPBI_mesesFechados.length - 1]];
     }
 
-    const inp = document.getElementById('diretoriaPBI_inputMes');
-    if (inp && !inp.value) {
-      const d = new Date();
-      inp.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    }
+    diretoriaPBI_popularSeletores();
 
     diretoriaPBI_renderChips();
 
