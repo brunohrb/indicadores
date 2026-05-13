@@ -54,26 +54,27 @@ async function executarDAX(token, dax) {
 }
 
 function daxDeCard(mesNum, ano) {
-  // PB Diretoria atribui o reajuste ao MÊS DO PRIMEIRO PAGAMENTO, não ao mês
-  // em que o reajuste foi aplicado. Reajuste aplicado em março → cliente
-  // paga em abril → aparece no card Reajuste de ABRIL.
-  // Por isso filtramos via dCalendario Pagamento + medida [Reajuste Recebido no Mes].
-  const filtroMes = `'dCalendario Pagamento'[Ano Pgto] = ${ano}, 'dCalendario Pagamento'[NumeroMes Pgto] = ${mesNum}`;
+  // PB Diretoria mostra o reajuste com OFFSET de -1 mês:
+  // - Sync direto de março ([Reajuste - Valor Aplicado]) → PF 3.895,33 / PJ 351,86
+  // - PB Diretoria abril → PF 3.895,88 / PJ 354,02 (BATE!)
+  // Então quando o user pede X, consultamos a aplicação do mês X-1.
+  // (Tentamos [Reajuste Recebido no Mes] + dCalendario Pagamento — não bateu.)
+  let mesAplicacao = mesNum - 1;
+  let anoAplicacao = ano;
+  if (mesAplicacao < 1) { mesAplicacao = 12; anoAplicacao = ano - 1; }
+  const filtroMes = `'dCalendário'[Ano] = ${anoAplicacao}, 'dCalendário'[NumeroMes] = ${mesAplicacao}`;
   // Listas de filial_id confirmadas (mesmas usadas no sync Diretoria)
   const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
   const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39}';
 
   return [
-    // [Reajuste Recebido no Mes] = "Soma do Valor_Reajustado atribuindo cada
-    // reajuste ao mês do PRIMEIRO PAGAMENTO pós-reajuste" — bate com PB Diretoria
-    // (em abril/2026: PF=3895/PJ=354 ≈ nosso sync de março com [Valor Aplicado]).
+    // [Reajuste - Valor Aplicado] do mês ANTERIOR. Valor segmentado por filial_id.
     { card: 'Reajuste Contratos PF',
-      dax: `CALCULATE([Reajuste Recebido no Mes], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF}))` },
+      dax: `CALCULATE([Reajuste - Valor Aplicado], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF}))` },
     { card: 'Reajuste Contratos PJ',
-      dax: `CALCULATE([Reajuste Recebido no Mes], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PJ}))` },
-    // Total bruto pra conferência
-    { card: 'Reajuste Recebido Total',
-      dax: `CALCULATE([Reajuste Recebido no Mes], ${filtroMes})` },
+      dax: `CALCULATE([Reajuste - Valor Aplicado], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PJ}))` },
+    { card: 'Reajuste Valor Aplicado Total',
+      dax: `CALCULATE([Reajuste - Valor Aplicado], ${filtroMes})` },
   ];
 }
 
