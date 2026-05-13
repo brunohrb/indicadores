@@ -138,14 +138,13 @@ function daxDeCard(mesNum, ano) {
       dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PF)}, ${venda('[Novos Clientes]', FILIAIS_PF)})` },
     { card: 'Ticket Médio PJ',
       dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PJ)}, ${venda('[Novos Clientes]', FILIAIS_PJ)})` },
-    // Reajuste — idealmente seria fReajustes[Valor_Reajustado] filtrado por
-    // filial PF/PJ + Data_Reajuste no mês, mas a tabela fReajustes não está
-    // publicada no dataset (dá erro DAX). Usa fallback na medida [$ Valor
-    // Reajuste] filtrada em fVendas — retorna BLANK em meses sem reajuste
-    // (bate com "Em branco" no Power BI original). Quando o BI publicar
-    // fReajustes, trocar pra SUM('fReajustes'[Valor_Reajustado]).
-    { card: 'Reajuste Contratos PF',           dax: venda('[$ Valor Reajuste]', FILIAIS_PF) },
-    { card: 'Reajuste Contratos PJ',           dax: venda('[$ Valor Reajuste]', FILIAIS_PJ) },
+    // Reajuste — filtra via dContratos[ID_Filial] (não fVendas) porque [$ Valor Reajuste]
+    // não propaga filtro através de fVendas (estava retornando mesmo total p/ PF e PJ).
+    // PB mostra PF=3.895,88 e PJ=354,02; sync antes mostrava 4.249,90 nos dois.
+    { card: 'Reajuste Contratos PF',
+      dax: `CALCULATE([$ Valor Reajuste], ${filtroMes}, FILTER('dContratos', 'dContratos'[ID_Filial] IN ${FILIAIS_PF}))` },
+    { card: 'Reajuste Contratos PJ',
+      dax: `CALCULATE([$ Valor Reajuste], ${filtroMes}, FILTER('dContratos', 'dContratos'[ID_Filial] IN ${FILIAIS_PJ}))` },
 
     // ─── VERMELHO (chutes — ajustar se não bater) ─────
     // Base de Isentos — só id_filial = 11 (confirmado via print do painel)
@@ -177,9 +176,10 @@ function daxDeCard(mesNum, ano) {
       dax: `CALCULATE([Novos Clientes], ${filtroMes}, FILTER('fVendas', 'fVendas'[tipo_pagamento] = "Pos"))` },
     { card: 'Pós Pago Novos Negocios',
       dax: `CALCULATE([Novos Negócios], ${filtroMes}, FILTER('fVendas', 'fVendas'[tipo_pagamento] = "Pos"))` },
-    // Pós Pago QTD. Canc. 1 Men. — DATEDIFF + tipo_pagamento Pos
+    // Pós Pago QTD. Canc. 1 Men. — filtra pelo motivo específico de
+    // cancelamento de 1a mensalidade pós-pago. DATEDIFF dava 1 vs PB 41.
     { card: 'Pós Pago QTD. Canc. 1 Men.',
-      dax: `CALCULATE([Cancelamento], ${filtroMes}, FILTER('dCancelamentos', 'dCancelamentos'[tipo_pagamento] = "Pos" && DATEDIFF('dCancelamentos'[data_ativacao], 'dCancelamentos'[data_cancelamento], DAY) <= 30))` },
+      dax: `CALCULATE(DISTINCTCOUNT('dCancelamentos'[id_contrato]), ${filtroMes}, 'dCancelamentos'[motivo] = "CANCELAMENTO INADIMPLENTE - PRIMEIRA MENSALIDADE (PÓS-PAGO)", USERELATIONSHIP('dCalendario'[Calendario], 'dCancelamentos'[Data de Cancelamento Correta]))` },
 
     // Ticket médio da Base — [Ticket Medio Base] não está publicada no
     // dataset, replica inline a fórmula documentada pelo BI:

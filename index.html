@@ -3273,6 +3273,20 @@ async function diretoriaPBI_carregarMes(mes) {
     valores['Valor Canc. 1 Men.'] = valores['Valor Canc. 1a Mensalidade'];
   }
 
+  // "Novos Negócios" no PB = PF + PJ + Upgrade + Reajuste (total).
+  // O [Novos Negócios] do dataset só soma PF + PJ, falta upgrade e reajuste.
+  // Recalcula somando os componentes (se Reajuste PF == PJ, total foi duplicado,
+  // usa só uma vez).
+  const nnPF = valores['Novos Negócios PF'];
+  const nnPJ = valores['Novos Negócios PJ'];
+  if (typeof nnPF === 'number' && typeof nnPJ === 'number') {
+    const upg = typeof valores['Valor Upgrade'] === 'number' ? valores['Valor Upgrade'] : 0;
+    const rPF = typeof valores['Reajuste Contratos PF'] === 'number' ? valores['Reajuste Contratos PF'] : 0;
+    const rPJ = typeof valores['Reajuste Contratos PJ'] === 'number' ? valores['Reajuste Contratos PJ'] : 0;
+    const reajTotal = (rPF && rPJ && rPF === rPJ) ? rPF : (rPF + rPJ);
+    valores['Novos Negócios'] = nnPF + nnPJ + upg + reajTotal;
+  }
+
   diretoriaPBI_dadosCache[mes] = merged;
   return merged;
 }
