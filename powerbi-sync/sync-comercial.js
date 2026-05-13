@@ -108,6 +108,15 @@ function daxDeCard(mesNum, ano) {
 
     // ─── Recebimentos ──────────────────────────────────────────
     { card: 'Juros (Recebimentos)',           dax: comMes('[Juros1]') },
+
+    // ─── Reajuste (testando — usuário acha que tá no dataset Comercial PF) ──
+    // Dashboard de Reajustes tem coluna Tipo_Pessoa filtrável. Tenta direto.
+    // Se a tabela 'Reajustes' não existir aqui, o batch falha → fallback one-by-one
+    // → essa medida vira null mas as outras seguem.
+    { card: 'Reajuste Contratos PF',
+      dax: `CALCULATE(SUM('Reajustes'[Valor_Reajustado]), ${filtroMes}, 'Reajustes'[Tipo_Pessoa] = "Física")` },
+    { card: 'Reajuste Contratos PJ',
+      dax: `CALCULATE(SUM('Reajustes'[Valor_Reajustado]), ${filtroMes}, 'Reajustes'[Tipo_Pessoa] IN {"Jurídica", "E"})` },
   ];
 }
 
