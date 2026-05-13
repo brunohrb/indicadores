@@ -8,7 +8,7 @@ on:
         required: false
         default: ''
       meses:
-        description: 'Mesmo formato. Vazio = last:3.'
+        description: 'YYYY-MM, lista, "last:N", ou "since:YYYY-MM". Vazio = last:3.'
         required: false
         default: ''
   schedule:

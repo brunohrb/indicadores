@@ -8,7 +8,7 @@ on:
         required: false
         default: ''
       meses:
-        description: 'Lista (YYYY-MM,YYYY-MM,...) ou "last:N" (N últimos meses). Vazio = last:3.'
+        description: 'YYYY-MM, lista vírgula-separada, "last:N", ou "since:YYYY-MM" (de X até hoje). Vazio = last:3.'
         required: false
         default: ''
   schedule:

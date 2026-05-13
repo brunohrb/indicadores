@@ -190,9 +190,10 @@ function daxDeCard(mesNum, ano) {
 
 // ─── Sync ─────────────────────────────────────────────
 function resolverMeses() {
-  // Suporta: --mes=YYYY-MM, --mes=last:N, --meses=YYYY-MM,YYYY-MM,...,
-  //         --meses=last:N, sem nada → mês corrente.
-  // last:N e listas funcionam em qualquer dos dois flags (ergonomia).
+  // Suporta: --mes=YYYY-MM, --mes=last:N, --mes=since:YYYY-MM,
+  //         --meses=YYYY-MM,YYYY-MM,..., --meses=last:N, --meses=since:YYYY-MM,
+  //         sem nada → mês corrente.
+  // Todos formatos funcionam em qualquer dos dois flags (ergonomia).
   const arg = process.argv.find(a => a.startsWith('--mes=') || a.startsWith('--meses='));
   const v = arg ? arg.split('=')[1] : '';
 
@@ -210,10 +211,26 @@ function resolverMeses() {
     }
     return out;
   }
+  if (v.startsWith('since:')) {
+    const inicio = v.split(':')[1];
+    if (!/^\d{4}-\d{2}$/.test(inicio)) {
+      throw new Error(`since: precisa de YYYY-MM, recebi "${inicio}"`);
+    }
+    const [anoIni, mesIni] = inicio.split('-').map(Number);
+    const hoje = new Date();
+    const out = [];
+    let cur = new Date(anoIni, mesIni - 1, 1);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    while (cur <= fim) {
+      out.push(`${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}`);
+      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+    }
+    return out;
+  }
   const lista = v.split(',').map(s => s.trim()).filter(Boolean);
   for (const m of lista) {
     if (!/^\d{4}-\d{2}$/.test(m)) {
-      throw new Error(`Mês inválido: "${m}". Use formato YYYY-MM (ex: 2026-04), uma lista vírgula-separada, ou last:N (ex: last:3).`);
+      throw new Error(`Mês inválido: "${m}". Use formato YYYY-MM (ex: 2026-04), uma lista vírgula-separada, last:N, ou since:YYYY-MM.`);
     }
   }
   return lista;
