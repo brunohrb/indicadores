@@ -45,16 +45,28 @@ async function obterToken() {
 }
 
 // ─── Execute Queries ──────────────────────────────────
-async function executarDAX(token, dax) {
+async function executarDAX(token, dax, tentativa = 1) {
   const { PBI_WORKSPACE_ID, PBI_DATASET_ID } = process.env;
   const url = `https://api.powerbi.com/v1.0/myorg/groups/${PBI_WORKSPACE_ID}/datasets/${PBI_DATASET_ID}/executeQueries`;
-  const { data } = await axios.post(
-    url,
-    { queries: [{ query: dax }], serializerSettings: { includeNulls: true } },
-    { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 60000 }
-  );
-  return data.results?.[0]?.tables?.[0]?.rows?.[0] || {};
+  try {
+    const { data } = await axios.post(
+      url,
+      { queries: [{ query: dax }], serializerSettings: { includeNulls: true } },
+      { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 60000 }
+    );
+    return data.results?.[0]?.tables?.[0]?.rows?.[0] || {};
+  } catch (e) {
+    if (e.response?.status === 429 && tentativa <= 5) {
+      const espera = Math.min(60, 5 * Math.pow(2, tentativa - 1));
+      log(`  Rate limit (429), aguardando ${espera}s — tentativa ${tentativa + 1}/6`, 'warn');
+      await new Promise(r => setTimeout(r, espera * 1000));
+      return executarDAX(token, dax, tentativa + 1);
+    }
+    throw e;
+  }
 }
+
+async function dormir(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ─── Mapeamento dos 36 cards ──────────────────────────
 //
@@ -293,11 +305,14 @@ async function rodar() {
   let mesMaisRecente = null;
   let valoresMaisRecente = null;
 
-  for (const mesAno of meses) {
+  for (let i = 0; i < meses.length; i++) {
+    const mesAno = meses[i];
     if (mesesFechados.includes(mesAno)) {
       log(`Mês ${mesAno} já está FECHADO — pulando.`, 'warn');
       continue;
     }
+    // Sleep entre meses pra não saturar rate limit do Power BI
+    if (i > 0) await dormir(1500);
 
     const [ano, mesNum] = mesAno.split('-').map(Number);
     log(`─── ${mesAno} ───`);
