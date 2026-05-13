@@ -3138,7 +3138,7 @@ const DIRETORIA_PBI_GRUPOS = [
   ]},
   { titulo: 'Financeiro', cards: [
     'Receita', 'Resultado Liquido',
-    'Juros < 45', 'Juros > 45', 'Juros (Recebimentos)',
+    'Juros < 45', 'Juros > 45',
     'Reajuste Contratos PF', 'Reajuste Contratos PJ',
     'QTD. Canc. 1 Men.', 'Valor Canc. 1 Men.',
   ]},
@@ -3287,13 +3287,12 @@ async function diretoriaPBI_carregarMes(mes) {
     valores['Novos Negócios'] = nnPF + nnPJ + upg + reajTotal;
   }
 
-  // Se Reajuste PF == Reajuste PJ (DAX não consegue segmentar), mostra só o total.
-  // Marca PJ como null pra UI esconder, e renomeia PF como total no display via DIRETORIA_PBI_RENAMES.
+  // Se Reajuste PF == Reajuste PJ, o DAX não conseguiu segmentar (medida não
+  // propaga filtro). Marca pra UI mostrar ⚠️ inferido nos 2 cards.
   const rPF = valores['Reajuste Contratos PF'];
   const rPJ = valores['Reajuste Contratos PJ'];
   if (typeof rPF === 'number' && typeof rPJ === 'number' && rPF === rPJ && rPF !== 0) {
-    valores['Reajuste Contratos PJ'] = null;
-    valores['__reajusteEhTotal'] = true;
+    valores['__reajusteDuplicado'] = true;
   }
 
   diretoriaPBI_dadosCache[mes] = merged;
@@ -3517,24 +3516,24 @@ async function renderDiretoriaPBI() {
       }
     }
 
-    // Se Reajuste PF e PJ vieram iguais do sync (DAX não segmenta), oculta PJ
-    // e renomeia PF como "Reajuste Contratos (total)".
-    const reajusteEhTotal = meses.some(x => x.payload && x.payload.valores && x.payload.valores['__reajusteEhTotal']);
+    // Se Reajuste PF/PJ vieram iguais, mostra ambos cards mas com ⚠️ inferido.
+    const reajusteDuplicado = meses.some(x => x.payload && x.payload.valores && x.payload.valores['__reajusteDuplicado']);
 
     let html = '';
     for (const grupo of DIRETORIA_PBI_GRUPOS) {
       html += `<div style="grid-column:1/-1;margin-top:1rem;font-size:0.78rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.06em;padding:0.4rem 0 0.2rem;border-bottom:2px solid #e2e8f0">${grupo.titulo}</div>`;
       for (const card of grupo.cards) {
-        // Pula Reajuste PJ se virou "total" único
-        if (reajusteEhTotal && card === 'Reajuste Contratos PJ') continue;
-
         const valoresPorMes = meses.map(x => ({ mes: x.mes, valor: (x.payload && x.payload.valores) ? (x.payload.valores[card] ?? null) : null }));
         const v = isMulti ? diretoriaPBI_agregar(card, valoresPorMes) : valoresPorMes[0].valor;
-        const ehChute = DIRETORIA_PBI_CHUTES.has(card);
+        const ehChuteOrig = DIRETORIA_PBI_CHUTES.has(card);
+        const ehReajusteDup = reajusteDuplicado && (card === 'Reajuste Contratos PF' || card === 'Reajuste Contratos PJ');
+        const ehChute = ehChuteOrig || ehReajusteDup;
         const vStr = diretoriaPBI_formatar(card, v);
         const isVazio = v === null || v === undefined;
-        const cardLabel = (reajusteEhTotal && card === 'Reajuste Contratos PF') ? 'Reajuste Contratos (total)' : card;
-        const badge = ehChute ? '<span title="Valor inferido — pode não bater com Power BI original" style="font-size:0.65rem;color:#d97706;background:#fef3c7;padding:1px 6px;border-radius:3px;margin-left:0.4rem;font-weight:600">⚠️ inferido</span>' : '';
+        const tituloBadge = ehReajusteDup
+          ? 'DAX não conseguiu segmentar PF/PJ — está mostrando o total nos 2 cards'
+          : 'Valor inferido — pode não bater com Power BI original';
+        const badge = ehChute ? `<span title="${tituloBadge}" style="font-size:0.65rem;color:#d97706;background:#fef3c7;padding:1px 6px;border-radius:3px;margin-left:0.4rem;font-weight:600">⚠️ inferido</span>` : '';
         const cor = isVazio ? '#94a3b8' : (ehChute ? '#b45309' : '#0f172a');
         let tagAgg = '';
         if (isMulti) {
@@ -3544,7 +3543,7 @@ async function renderDiretoriaPBI() {
         }
         html += `
           <div style="background:white;border-radius:10px;padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${cardLabel}${badge}</div>
+            <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${card}${badge}</div>
             <div style="font-size:1.35rem;font-weight:700;color:${cor}">${vStr}</div>
             ${tagAgg}
           </div>`;
