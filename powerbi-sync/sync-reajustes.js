@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // =====================================================
-// Power BI Comercial PF → Supabase Sync
-// Puxa as medidas publicadas do dataset "Comercial PF" e
-// grava no Supabase app_storage sob a chave "powerbi_comercial_pf".
-// Complementa o sync.js principal (Diretoria) — não o substitui.
+// Power BI Reajustes → Supabase Sync
+// Dataset DEDICADO: "Dashboard de Reajustes" — workspace Diretoria.
+// Tem tabela fReajustes com Valor_Reajustado + dFilial[Tipo_Pessoa].
+// Grava em powerbi_reajustes_YYYY-MM e powerbi_reajustes (atalho).
+// Frontend já lê e mescla com Diretoria.
 // =====================================================
 
 const fs = require('fs');
@@ -41,8 +42,9 @@ async function obterToken() {
 }
 
 async function executarDAX(token, dax) {
-  const { PBI_WORKSPACE_COMERCIAL, PBI_DATASET_COMERCIAL } = process.env;
-  const url = `https://api.powerbi.com/v1.0/myorg/groups/${PBI_WORKSPACE_COMERCIAL}/datasets/${PBI_DATASET_COMERCIAL}/executeQueries`;
+  const workspace = process.env.PBI_WORKSPACE_REAJUSTES || process.env.PBI_WORKSPACE_ID;
+  const dataset = process.env.PBI_DATASET_REAJUSTES;
+  const url = `https://api.powerbi.com/v1.0/myorg/groups/${workspace}/datasets/${dataset}/executeQueries`;
   const { data } = await axios.post(
     url,
     { queries: [{ query: dax }], serializerSettings: { includeNulls: true } },
@@ -52,62 +54,26 @@ async function executarDAX(token, dax) {
 }
 
 function daxDeCard(mesNum, ano) {
-  const filtroMes = `'dCalendario'[Ano] = ${ano}, 'dCalendario'[Mês numero] = ${mesNum}`;
-  const comMes = (expr) => `CALCULATE(${expr}, ${filtroMes})`;
-
-  // Valor Canc. 1a Mens. — medida não existe no dataset; calcula inline via
-  // motivo CONTAINS "PRIMEIRA MENSALIDADE" (confirmado em testar-canc-1men-v3:
-  // dá exatamente R$ 5.892,30 que é o que o Power BI mostra).
-  const valorCanc1Mens = `
-    CALCULATE(
-      SUM('fCancelamentos'[valor_liquido]),
-      ${filtroMes},
-      SEARCH("PRIMEIRA MENSALIDADE", 'fCancelamentos'[motivo], 1, 0) > 0
-    )`;
+  // dCalendário (com acento) + NumeroMes (não 'Mês numero')
+  const filtroMes = `'dCalendário'[Ano] = ${ano}, 'dCalendário'[NumeroMes] = ${mesNum}`;
+  const comFiltro = (medida, tipoPessoa) =>
+    tipoPessoa
+      ? `CALCULATE(${medida}, ${filtroMes}, 'dFilial'[Tipo_Pessoa] ${tipoPessoa})`
+      : `CALCULATE(${medida}, ${filtroMes})`;
 
   return [
-    // ─── Cancelamentos ──────────────────────────────────────────
-    { card: 'Cancelamento (mês)',             dax: comMes('[Cancelamento]') },
-    { card: 'Cancelamento 1a Mensalidade',    dax: comMes('[Cancelamento 1a Mensalidade]') },
-    { card: 'Valor Canc. 1a Mensalidade',     dax: valorCanc1Mens },
-    { card: 'Valor Cancelamento Novo',        dax: comMes('[Valor Cancelamento Novo]') },
-    { card: 'Valor Cancelamento (Antigo)',    dax: comMes('[Valor Cancelamento (Antigo)]') },
-    { card: 'Cancelamento s/ Filtro',         dax: comMes('[Cancelamento s/ Filtro]') },
-    { card: '% Churn',                        dax: comMes('[% Churn]') },
-    { card: '% Cancelamento Base PF',         dax: comMes('[% Cancelamento B PF]') },
-    { card: '% Cancelamento Base PJ',         dax: comMes('[% Cancelamento B PJ]') },
-
-    // ─── Base de Clientes ───────────────────────────────────────
-    { card: 'BASE GERAL',                     dax: comMes('[BASE GERAL]') },
-    { card: 'Base PF',                        dax: comMes('[Base PF]') },
-    { card: 'Base PJ',                        dax: comMes('[Base PJ]') },
-    { card: 'Isentos',                        dax: comMes('[Isentos]') },
-    { card: 'Permuta',                        dax: comMes('[Permuta]') },
-    { card: 'Base Dual Net',                  dax: comMes('[Base Dual Net]') },
-    { card: 'Base Planet',                    dax: comMes('[Base Planet]') },
-    { card: 'Contratos Ativos (novos/mês)',   dax: comMes('[Contratos Ativos]') },
-    { card: 'Novos Clientes',                 dax: comMes('[Novos Clientes]') },
-
-    // ─── Financeiro ─────────────────────────────────────────────
-    { card: 'Novos Negócios',                 dax: comMes('[Novos Negócios]') },
-    { card: 'Diferença Novos vs Cancel.',     dax: comMes('[Diferença Nv. Negocios e Cancelalemnto]') },
-    { card: 'Diferença Mês Anterior',         dax: comMes('[Diferença Mês Anterior]') },
-    { card: '% Canc./Novos Clientes',         dax: comMes('[% Canc./Novos Clientes]') },
-
-    // ─── Vendas ────────────────────────────────────────────────
-    { card: 'Meta (Vendas)',                  dax: comMes('[Meta]') },
-    { card: 'Total Venda',                    dax: comMes('[Total Venda]') },
-    { card: 'Performance Meta',               dax: comMes('[Performance Meta]') },
-    { card: 'Ticket Médio1',                  dax: comMes('[Ticket Médio1]') },
-    { card: 'Qtd. Taxa Instalação',           dax: comMes('[Qtd. Taxa Instalacao]') },
-    { card: 'Valor Taxa Instalação',          dax: comMes('[Valor Taxa Instalacao]') },
-    { card: 'Qtd. Mesh',                      dax: comMes('[Qtd. Mesh]') },
-    { card: 'Valor Mesh',                     dax: comMes('[Valor Mesh]') },
-    { card: 'Mesh Pago',                      dax: comMes('[Mesh Pago]') },
-    { card: 'Mesh Não Pago',                  dax: comMes('[Mesh Nao Pago]') },
-
-    // ─── Recebimentos ──────────────────────────────────────────
-    { card: 'Juros (Recebimentos)',           dax: comMes('[Juros1]') },
+    // Reajuste Aplicado Total = "Soma total dos valores de reajuste aplicados nos contratos ativos no período"
+    { card: 'Reajuste Contratos PF',
+      dax: comFiltro('[Reajuste Aplicado Total]', `= "Física"`) },
+    { card: 'Reajuste Contratos PJ',
+      dax: comFiltro('[Reajuste Aplicado Total]', `IN {"Jurídica", "E"}`) },
+    // Totais brutos pra debug/conferência (sem segmentação)
+    { card: 'Reajuste Aplicado Total',
+      dax: comFiltro('[Reajuste Aplicado Total]') },
+    { card: 'Reajuste Valor Pago',
+      dax: comFiltro('[Reajuste Pago Total]') },
+    { card: 'Reajuste Valor Pendente',
+      dax: comFiltro('[Reajuste Pendente Total]') },
   ];
 }
 
@@ -143,7 +109,7 @@ async function rodar() {
   if (!SB_URL || !SB_KEY) throw new Error('Faltam SB_URL / SB_KEY.');
 
   const meses = resolverMeses();
-  log(`Sync Comercial PF de ${meses.length} mês(es): ${meses.join(', ')}`);
+  log(`Sync Reajustes de ${meses.length} mês(es): ${meses.join(', ')}`);
 
   log('Autenticando...');
   const token = await obterToken();
@@ -151,10 +117,10 @@ async function rodar() {
 
   const sb = createClient(SB_URL, SB_KEY);
 
-  // Lê meses fechados
+  // Lê meses fechados (compartilha com Diretoria — usa mesmo "fechar mês")
   let mesesFechados = [];
   try {
-    const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_comercial_pf_meses_fechados').maybeSingle();
+    const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_diretoria_meses_fechados').maybeSingle();
     if (data && data.value) {
       const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
       mesesFechados = Array.isArray(v) ? v : [];
@@ -162,10 +128,9 @@ async function rodar() {
   } catch (e) { log(`Aviso lendo meses_fechados: ${e.message}`, 'warn'); }
   if (mesesFechados.length) log(`Meses fechados (não sobrescritos): ${mesesFechados.join(', ')}`);
 
-  // Lê + filtra meses disponíveis
   let mesesDisponiveis = [];
   try {
-    const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_comercial_pf_meses_disponiveis').maybeSingle();
+    const { data } = await sb.from('app_storage').select('value').eq('key', 'powerbi_reajustes_meses_disponiveis').maybeSingle();
     if (data && data.value) {
       const v = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
       mesesDisponiveis = (Array.isArray(v) ? v : []).filter(m => /^\d{4}-\d{2}$/.test(m));
@@ -174,13 +139,11 @@ async function rodar() {
 
   // Limpa rows lixo
   try {
-    const { data: rows } = await sb.from('app_storage').select('key').like('key', 'powerbi_comercial_pf_%');
+    const { data: rows } = await sb.from('app_storage').select('key').like('key', 'powerbi_reajustes_%');
     if (rows) {
       const lixo = rows.map(r => r.key).filter(k => {
-        if (k === 'powerbi_comercial_pf_meses_fechados') return false;
-        if (k === 'powerbi_comercial_pf_meses_disponiveis') return false;
-        if (k.startsWith('powerbi_comercial_pf_fechado_')) return !/^powerbi_comercial_pf_fechado_\d{4}-\d{2}$/.test(k);
-        return !/^powerbi_comercial_pf_\d{4}-\d{2}$/.test(k);
+        if (k === 'powerbi_reajustes_meses_disponiveis') return false;
+        return !/^powerbi_reajustes_\d{4}-\d{2}$/.test(k);
       });
       if (lixo.length) {
         log(`Limpando ${lixo.length} chave(s) lixo: ${lixo.join(', ')}`, 'warn');
@@ -221,6 +184,7 @@ async function rodar() {
         try {
           const row = await executarDAX(token, `EVALUATE ROW("v", ${c.dax})`);
           valores[c.card] = row['[v]'] ?? null;
+          log(`  ✓ ${c.card}`, 'ok');
         } catch (e) {
           valores[c.card] = null;
           log(`  ✗ ${c.card} — ${e.response?.data?.error?.code || e.message}`, 'erro');
@@ -233,29 +197,37 @@ async function rodar() {
       mes_referencia: mesAno,
       valores,
     };
-    const { error: ePm } = await sb.from('app_storage').upsert({ key: `powerbi_comercial_pf_${mesAno}`, value: payload }, { onConflict: 'key' });
+    const { error: ePm } = await sb.from('app_storage').upsert({ key: `powerbi_reajustes_${mesAno}`, value: payload }, { onConflict: 'key' });
     if (ePm) throw new Error(`Supabase ${mesAno}: ${ePm.message}`);
-    log(`  Gravado em powerbi_comercial_pf_${mesAno} ✓`, 'ok');
+    log(`  Gravado em powerbi_reajustes_${mesAno} ✓`, 'ok');
 
     if (!mesesDisponiveis.includes(mesAno)) mesesDisponiveis.push(mesAno);
     valoresMaisRecente = payload;
     mesMaisRecente = mesAno;
+
+    log('  ─── RESUMO ───');
+    for (const c of cards) {
+      const v = valores[c.card];
+      const fmt = v === null || v === undefined
+        ? '—'
+        : (typeof v === 'number' ? v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : v);
+      log(`    ${c.card.padEnd(30)} ${String(fmt).padStart(16)}`);
+    }
   }
 
-  // Atalho compat
   if (valoresMaisRecente) {
-    const { error } = await sb.from('app_storage').upsert({ key: 'powerbi_comercial_pf', value: valoresMaisRecente }, { onConflict: 'key' });
+    const { error } = await sb.from('app_storage').upsert({ key: 'powerbi_reajustes', value: valoresMaisRecente }, { onConflict: 'key' });
     if (error) throw new Error(`Supabase (compat): ${error.message}`);
-    log(`Atalho powerbi_comercial_pf → ${mesMaisRecente} ✓`, 'ok');
+    log(`Atalho powerbi_reajustes → ${mesMaisRecente} ✓`, 'ok');
   }
 
   mesesDisponiveis.sort();
   await sb.from('app_storage').upsert({
-    key: 'powerbi_comercial_pf_meses_disponiveis',
+    key: 'powerbi_reajustes_meses_disponiveis',
     value: JSON.stringify(mesesDisponiveis),
   }, { onConflict: 'key' });
 
-  log('Sync Comercial PF concluído 🎉', 'ok');
+  log('Sync Reajustes concluído 🎉', 'ok');
 }
 
 rodar().catch((e) => {
