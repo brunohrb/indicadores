@@ -3214,6 +3214,8 @@ let diretoriaPBI_mesesDisponiveis = [];
 let diretoriaPBI_mesLive = null;
 let diretoriaPBI_cpfMesLive = null;
 let diretoriaPBI_cpfMesesDisponiveis = [];
+let diretoriaPBI_rejMesLive = null;
+let diretoriaPBI_rejMesesDisponiveis = [];
 
 async function diretoriaPBI_lerKey(key) {
   const { data, error } = await sb.from('app_storage').select('value').eq('key', key).maybeSingle();
@@ -3249,17 +3251,35 @@ async function diretoriaPBI_carregarMes(mes) {
     cpfPayload = await diretoriaPBI_lerKey('powerbi_comercial_pf');
   }
 
-  if (!dirPayload && !cpfPayload) return null;
+  // ── Reajustes source (dataset dedicado) ──
+  let rejPayload = await diretoriaPBI_lerKey('powerbi_reajustes_' + mes);
+  if (!rejPayload && mes === diretoriaPBI_rejMesLive) {
+    rejPayload = await diretoriaPBI_lerKey('powerbi_reajustes');
+  }
 
-  // Merge: Comercial PF primeiro, Diretoria sobrescreve em caso de nome igual
+  if (!dirPayload && !cpfPayload && !rejPayload) return null;
+
+  // Merge: Comercial PF → Reajustes → Diretoria (último sobrescreve em conflitos)
   const valores = {};
   if (cpfPayload && cpfPayload.valores) Object.assign(valores, cpfPayload.valores);
+  if (rejPayload && rejPayload.valores) Object.assign(valores, rejPayload.valores);
   if (dirPayload && dirPayload.valores) Object.assign(valores, dirPayload.valores);
+
+  // Mas Reajuste Contratos PF/PJ vêm SEMPRE de Reajustes (sobrescreve Diretoria
+  // que tinha valores duplicados R$ 4.249,90 nos 2).
+  if (rejPayload && rejPayload.valores) {
+    if (rejPayload.valores['Reajuste Contratos PF'] != null) {
+      valores['Reajuste Contratos PF'] = rejPayload.valores['Reajuste Contratos PF'];
+    }
+    if (rejPayload.valores['Reajuste Contratos PJ'] != null) {
+      valores['Reajuste Contratos PJ'] = rejPayload.valores['Reajuste Contratos PJ'];
+    }
+  }
 
   const merged = {
     valores,
     mes_referencia: mes,
-    atualizado_em: (dirPayload && dirPayload.atualizado_em) || (cpfPayload && cpfPayload.atualizado_em),
+    atualizado_em: (dirPayload && dirPayload.atualizado_em) || (cpfPayload && cpfPayload.atualizado_em) || (rejPayload && rejPayload.atualizado_em),
     __status: dirStatus || 'live',
   };
 
@@ -3287,8 +3307,8 @@ async function diretoriaPBI_carregarMes(mes) {
     valores['Novos Negócios'] = nnPF + nnPJ + upg + reajTotal;
   }
 
-  // Se Reajuste PF == Reajuste PJ, o DAX não conseguiu segmentar (medida não
-  // propaga filtro). Marca pra UI mostrar ⚠️ inferido nos 2 cards.
+  // Detecta duplicação só como fallback (sync-reajustes deve preencher
+  // valores corretos segmentados — se não, mantém alerta).
   const rPF = valores['Reajuste Contratos PF'];
   const rPJ = valores['Reajuste Contratos PJ'];
   if (typeof rPF === 'number' && typeof rPJ === 'number' && rPF === rPJ && rPF !== 0) {
@@ -3448,12 +3468,14 @@ async function renderDiretoriaPBI() {
 
     diretoriaPBI_dadosCache = {};
 
-    const [live, mesesFechados, mesesDisponiveis, cpfLive, cpfMesesDisponiveis] = await Promise.all([
+    const [live, mesesFechados, mesesDisponiveis, cpfLive, cpfMesesDisponiveis, rejLive, rejMesesDisponiveis] = await Promise.all([
       diretoriaPBI_lerKey('powerbi_diretoria'),
       diretoriaPBI_lerLista('powerbi_diretoria_meses_fechados'),
       diretoriaPBI_lerLista('powerbi_diretoria_meses_disponiveis'),
       diretoriaPBI_lerKey('powerbi_comercial_pf'),
       diretoriaPBI_lerLista('powerbi_comercial_pf_meses_disponiveis'),
+      diretoriaPBI_lerKey('powerbi_reajustes'),
+      diretoriaPBI_lerLista('powerbi_reajustes_meses_disponiveis'),
     ]);
     const ehMesValido = m => typeof m === 'string' && /^\d{4}-\d{2}$/.test(m);
     diretoriaPBI_mesLive = live && ehMesValido(live.mes_referencia) ? live.mes_referencia : null;
@@ -3461,6 +3483,8 @@ async function renderDiretoriaPBI() {
     diretoriaPBI_mesesDisponiveis = mesesDisponiveis.filter(ehMesValido);
     diretoriaPBI_cpfMesLive = cpfLive && ehMesValido(cpfLive.mes_referencia) ? cpfLive.mes_referencia : null;
     diretoriaPBI_cpfMesesDisponiveis = cpfMesesDisponiveis.filter(ehMesValido);
+    diretoriaPBI_rejMesLive = rejLive && ehMesValido(rejLive.mes_referencia) ? rejLive.mes_referencia : null;
+    diretoriaPBI_rejMesesDisponiveis = rejMesesDisponiveis.filter(ehMesValido);
 
     if (diretoriaPBI_mesesSelecionados.length === 0) {
       if (diretoriaPBI_mesLive) diretoriaPBI_mesesSelecionados = [diretoriaPBI_mesLive];

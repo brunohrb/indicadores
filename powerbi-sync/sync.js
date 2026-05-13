@@ -138,13 +138,9 @@ function daxDeCard(mesNum, ano) {
       dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PF)}, ${venda('[Novos Clientes]', FILIAIS_PF)})` },
     { card: 'Ticket Médio PJ',
       dax: `DIVIDE(${venda('[Novos Negócios]', FILIAIS_PJ)}, ${venda('[Novos Clientes]', FILIAIS_PJ)})` },
-    // Reajuste — tenta nomes prováveis de medida via IFERROR (PB tem PF=3895/PJ=354
-    // mas [$ Valor Reajuste] retorna mesmo total não-segmentado). Se medida não
-    // existir, IFERROR cai pro fallback. Frontend detecta duplicação se nada funcionar.
-    { card: 'Reajuste Contratos PF',
-      dax: `IFERROR(CALCULATE([Reajuste Contratos PF], ${filtroMes}), IFERROR(CALCULATE([Reajuste PF], ${filtroMes}), IFERROR(CALCULATE([$ Reajuste PF], ${filtroMes}), CALCULATE([$ Valor Reajuste], ${filtroMes}, 'dContratos'[Tipo_Pessoa] = "Física"))))` },
-    { card: 'Reajuste Contratos PJ',
-      dax: `IFERROR(CALCULATE([Reajuste Contratos PJ], ${filtroMes}), IFERROR(CALCULATE([Reajuste PJ], ${filtroMes}), IFERROR(CALCULATE([$ Reajuste PJ], ${filtroMes}), CALCULATE([$ Valor Reajuste], ${filtroMes}, 'dContratos'[Tipo_Pessoa] IN {"Jurídica", "E"}))))` },
+    // Reajuste — vem do dataset DEDICADO "Dashboard de Reajustes" via sync-reajustes.js.
+    // Este sync (Diretoria) não consulta mais reajuste — a tabela fReajustes não existe
+    // aqui e [$ Valor Reajuste] não segmenta. Frontend mescla os 3 datasets.
 
     // ─── VERMELHO (chutes — ajustar se não bater) ─────
     // Base de Isentos — só id_filial = 11 (confirmado via print do painel)
