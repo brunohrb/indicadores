@@ -254,8 +254,8 @@
         <div style="font-size:0.85rem;color:#64748b;margin-top:0.25rem">Dashboard Financeiro</div>
       </div>
       <div style="margin-bottom:1rem">
-        <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.4rem">E-MAIL</label>
-        <input id="loginEmail" type="email" placeholder="seu@email.com.br" autocomplete="email"
+        <label style="font-size:0.8rem;font-weight:600;color:#374151;display:block;margin-bottom:0.4rem">USUÁRIO</label>
+        <input id="loginEmail" type="text" placeholder="seu_usuario" autocomplete="username"
           style="width:100%;padding:0.75rem 1rem;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;outline:none;box-sizing:border-box;transition:border 0.2s"
           onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'"
           onkeydown="if(event.key==='Enter')document.getElementById('loginSenha').focus()">
@@ -303,12 +303,9 @@
     </div>
     <nav class="sidebar-nav">
       <div class="nav-item active" onclick="selectMenu(this,'dashboard')"><span class="nav-icon">💰</span><span>Dashboard</span></div>
-      <div class="nav-item" onclick="abrirIXCView(this)"><span class="nav-icon">📡</span><span>IXC — Dados Reais</span></div>
       <div class="nav-item" onclick="selectMenu(this,'consolidado')"><span class="nav-icon">📋</span><span>Fluxo de Caixa</span></div>
-      <div class="nav-item" onclick="selectMenu(this,'powerbi')"><span class="nav-icon">📊</span><span>Relatório Power BI</span></div>
       <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📊</span><span>Diretoria (Power BI)</span></div>
-      <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Marcos Juca</span></div>
-      <div class="nav-item" onclick="selectMenu(this,'indicadores')"><span class="nav-icon">📊</span><span>Indicadores</span></div>
+      <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Estudo com IA</span></div>
       <div class="nav-item" onclick="selectMenu(this,'demonstrativo');setTimeout(function(){if(typeof dreRender==='function')dreRender();},120)"><span class="nav-icon">📉</span><span>Demonstrativo</span></div>
       <div class="nav-item" onclick="selectMenu(this,'diretoria')"><span class="nav-icon">⚙️</span><span>Parâmetros</span></div>
       <div class="nav-item" onclick="selectMenu(this,'comissao-financeiro')"><span class="nav-icon">💼</span><span>Comissão Financeiro</span></div>
@@ -330,10 +327,8 @@
         <option value="dashboard">Dashboard Geral</option>
         <option value="consolidado">Fluxo de Caixa</option>
         <option value="comparativo">Comparativo Anual</option>
-        <option value="powerbi">Relatório Power BI</option>
-        <option value="indicadores">Indicadores</option>
         <option value="demonstrativo">Demonstrativo</option>
-        <option value="ia-estrategica">Marcos Juca</option>
+        <option value="ia-estrategica">Estudo com IA</option>
         <option value="diretoria">Parâmetros</option>
         <option value="comissao-financeiro">Comissão Financeiro</option>
         <option value="comissao-operacional">Comissão Operacional</option>
@@ -591,17 +586,6 @@
 
       <!-- Indicadores View -->
       <!-- PowerBI View -->
-      <div id="powerbiView" class="view-container">
-        <div class="geogrid-container" style="margin:2rem">
-          <div class="geogrid-header" style="background:linear-gradient(135deg,#f7ba2c,#ea5353);color:white;">
-            <span class="geogrid-icon">📊</span>
-            <div><h2 style="margin:0">Relatório Power BI</h2><p style="margin:0;font-size:0.875rem;opacity:0.9">Dashboard de análise de dados</p></div>
-          </div>
-          <div class="iframe-loading active" id="pbiLoading"><div class="loading-spinner"></div><p>Carregando...</p></div>
-          <iframe class="geogrid-iframe" src="https://app.powerbi.com/reportEmbed?reportId=86ca9864-53b0-454d-86f0-53e3037fc9ed&autoAuth=true&ctid=b6f5c3aa-17cb-4bce-8eb6-8b30b93166e8&actionBarEnabled=true" onload="document.getElementById('pbiLoading').classList.remove('active')" loading="lazy"></iframe>
-        </div>
-      </div>
-
       <!-- IA View -->
       <div id="iaEstrategicaView" class="view-container">
         <div style="max-width:1400px;margin:0 auto;padding:2rem">
@@ -611,7 +595,7 @@
             <div style="display:flex;align-items:center;gap:1.25rem">
               <div style="width:64px;height:64px;border-radius:50%;overflow:hidden;border:3px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.15);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:2rem">🤖</div>
               <div>
-                <h1 style="margin:0;font-size:2rem">Marcos Juca</h1>
+                <h1 style="margin:0;font-size:2rem">Estudo com IA</h1>
                 <p style="margin:0.3rem 0 0;opacity:0.85;font-size:0.9rem">Análises inteligentes com dados reais da TEXNET • <span style="background:rgba(255,255,255,0.15);padding:0.15rem 0.6rem;border-radius:20px;font-size:0.8rem">GPT-4o</span></p>
               </div>
             </div>
@@ -707,569 +691,6 @@
 
       </div>
       <!-- Indicadores View -->
-      <div id="indicadoresView" class="view-container" style="display:none">
-        <style>
-          .ind-page { background:#f0f4f8; min-height:100vh; padding:2rem; }
-          .ind-hero {
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #1d4ed8 100%);
-            border-radius:20px; padding:2rem 2.5rem; margin-bottom:2rem;
-            display:flex; align-items:center; justify-content:space-between;
-            box-shadow:0 8px 32px rgba(30,58,138,0.25); position:relative; overflow:hidden;
-          }
-          .ind-hero::before {
-            content:''; position:absolute; right:-60px; top:-60px;
-            width:260px; height:260px; border-radius:50%;
-            background:rgba(255,255,255,0.04); pointer-events:none;
-          }
-          .ind-hero::after {
-            content:''; position:absolute; right:60px; bottom:-80px;
-            width:180px; height:180px; border-radius:50%;
-            background:rgba(255,255,255,0.03); pointer-events:none;
-          }
-          .ind-hero-text h1 { margin:0; font-size:1.75rem; font-weight:800; color:#fff; letter-spacing:-0.02em; }
-          .ind-hero-text p { margin:0.4rem 0 0; font-size:0.9rem; color:rgba(255,255,255,0.65); }
-          .ind-hero-badge {
-            background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18);
-            border-radius:12px; padding:0.6rem 1.1rem;
-            font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.85); white-space:nowrap;
-          }
-
-          /* Section header */
-          .ind-section-label {
-            display:flex; align-items:center; gap:0.6rem;
-            margin:0 0 1rem; padding:0;
-          }
-          .ind-section-label .ind-section-icon {
-            width:32px; height:32px; border-radius:8px;
-            display:flex; align-items:center; justify-content:center; font-size:1rem;
-            flex-shrink:0;
-          }
-          .ind-section-label span {
-            font-size:0.72rem; font-weight:700; text-transform:uppercase;
-            letter-spacing:0.08em; color:#475569;
-          }
-          .ind-section-label::after {
-            content:''; flex:1; height:1px; background:#e2e8f0; margin-left:0.5rem;
-          }
-
-          /* KPI card */
-          .ind-card {
-            background:#fff; border-radius:16px;
-            padding:1.35rem 1.4rem 1.25rem;
-            box-shadow:0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
-            position:relative; overflow:visible; cursor:default;
-            transition:transform 0.18s, box-shadow 0.18s;
-            border:1px solid rgba(0,0,0,0.04);
-            z-index:1;
-          }
-          .ind-card:hover { transform:translateY(-3px); box-shadow:0 8px 28px rgba(0,0,0,0.12); z-index:999; }
-          .ind-card-stripe {
-            position:absolute; left:0; top:0; bottom:0; width:4px;
-            border-radius:16px 0 0 16px;
-          }
-          .ind-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:0.85rem; }
-          .ind-card-label { font-size:0.78rem; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.04em; }
-          .ind-card-icon {
-            width:36px; height:36px; border-radius:10px;
-            display:flex; align-items:center; justify-content:center; font-size:1.05rem;
-            flex-shrink:0;
-          }
-          .ind-card-value { font-size:2.1rem; font-weight:800; color:#0f172a; line-height:1; margin-bottom:0.35rem; letter-spacing:-0.03em; }
-          .ind-card-sub { font-size:0.75rem; color:#94a3b8; font-weight:500; }
-
-          /* Tooltip */
-          .ind-card .dash-tooltip {
-            display:none; position:absolute; z-index:200; top:calc(100% + 10px); left:0;
-            min-width:270px; max-width:340px;
-            background:#1e293b; border-radius:12px;
-            box-shadow:0 12px 40px rgba(0,0,0,0.25);
-            padding:1rem; border:1px solid rgba(255,255,255,0.08);
-            font-size:0.82rem;
-          }
-          .ind-card:hover .dash-tooltip { display:block; }
-          .ind-card .dash-tooltip-title {
-            font-size:0.7rem; font-weight:700; color:rgba(255,255,255,0.45);
-            text-transform:uppercase; letter-spacing:0.06em;
-            margin-bottom:0.6rem; padding-bottom:0.5rem;
-            border-bottom:1px solid rgba(255,255,255,0.1);
-          }
-          .ind-card .dash-tooltip-row {
-            display:flex; justify-content:space-between; align-items:center;
-            padding:0.3rem 0; border-bottom:1px solid rgba(255,255,255,0.06);
-            gap:1rem; color:rgba(255,255,255,0.75);
-          }
-          .ind-card .dash-tooltip-row:last-child {
-            border-bottom:none; color:#fff; font-weight:700; margin-top:0.15rem;
-          }
-
-          /* No-data state */
-          .ind-empty {
-            background:white; border-radius:16px; padding:3.5rem 2rem;
-            text-align:center; box-shadow:0 2px 12px rgba(0,0,0,0.06);
-            border:1px solid #e2e8f0;
-          }
-          .ind-empty-icon { font-size:3.5rem; margin-bottom:1rem; opacity:0.6; }
-          .ind-empty h3 { margin:0 0 0.4rem; color:#1e3a8a; font-size:1.1rem; }
-          .ind-empty p { margin:0; color:#64748b; font-size:0.88rem; line-height:1.6; }
-
-          .ind-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:1rem; margin-bottom:2rem; }
-        </style>
-
-        <div class="ind-page">
-
-          <!-- Hero Header -->
-          <div class="ind-hero">
-            <div class="ind-hero-text">
-              <h1>📊 Indicadores Operacionais</h1>
-              <p>Painel extraído do PDF da Diretoria — dados em tempo real</p>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.6rem;flex-shrink:0">
-              <div style="display:flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:0.45rem 0.85rem">
-                <span style="font-size:0.75rem;color:rgba(255,255,255,0.65);font-weight:600">📅 MÊS</span>
-                <div id="ms_wrap_indMesFiltro" class="ms-wrap"></div>
-              </div>
-              <div style="display:flex;align-items:center;gap:0.5rem;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:10px;padding:0.45rem 0.85rem">
-                <span style="font-size:0.75rem;color:rgba(255,255,255,0.65);font-weight:600">🗓 ANO</span>
-                <div id="ms_wrap_indAnoFiltro" class="ms-wrap"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Aviso sem dados -->
-          <div id="indicadoresSemDados" class="ind-empty">
-            <div class="ind-empty-icon">📄</div>
-            <h3>Nenhum dado carregado</h3>
-            <p>Acesse <strong>⚙️ Parâmetros → Carregar PDF da Diretoria</strong><br>para extrair os dados operacionais.</p>
-          </div>
-
-          <!-- Cards Grid -->
-          <div id="indicadoresGrid" style="display:none">
-
-            <!-- BASE DE CLIENTES -->
-            <div class="ind-section-label" style="margin-top:0.5rem">
-              <div class="ind-section-icon" style="background:#dbeafe">👥</div>
-              <span>Base de Clientes</span>
-            </div>
-            <div class="ind-grid">
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#2563eb"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Base Total</div>
-                  <div class="ind-card-icon" style="background:#dbeafe;color:#2563eb">👥</div>
-                </div>
-                <div id="ind-base-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">Clientes PF + PJ</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Clientes PF</span><span id="ind-tt-base-pf">—</span></div>
-                  <div class="dash-tooltip-row"><span>Clientes PJ + PME</span><span id="ind-tt-base-pj">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-base-total">—</span></div>
-                </div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#0891b2"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Contratos Ativos</div>
-                  <div class="ind-card-icon" style="background:#cffafe;color:#0891b2">📄</div>
-                </div>
-                <div id="ind-contratos" class="ind-card-value">—</div>
-                <div class="ind-card-sub">Contratos vigentes</div>
-              </div>
-
-            </div>
-
-            <!-- MOVIMENTO DE CLIENTES -->
-            <div class="ind-section-label">
-              <div class="ind-section-icon" style="background:#dcfce7">🔄</div>
-              <span>Movimento de Clientes</span>
-            </div>
-            <div class="ind-grid">
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#10b981"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Novos Clientes</div>
-                  <div class="ind-card-icon" style="background:#dcfce7;color:#10b981">➕</div>
-                </div>
-                <div id="ind-nc-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">PF + PJ</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Novos Clientes PF</span><span id="ind-tt-nc-pf">—</span></div>
-                  <div class="dash-tooltip-row"><span>Novos Clientes PJ</span><span id="ind-tt-nc-pj">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-nc-total">—</span></div>
-                </div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#ef4444"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Cancelamentos</div>
-                  <div class="ind-card-icon" style="background:#fee2e2;color:#ef4444">✂️</div>
-                </div>
-                <div id="ind-canc-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">PF + PJ</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Cancelamento PF</span><span id="ind-tt-canc-pf">—</span></div>
-                  <div class="dash-tooltip-row"><span>Cancelam. PME + PJ</span><span id="ind-tt-canc-pj">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-canc-total">—</span></div>
-                </div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#f59e0b"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Retiradas</div>
-                  <div class="ind-card-icon" style="background:#fef3c7;color:#f59e0b">📤</div>
-                </div>
-                <div id="ind-retiradas" class="ind-card-value">—</div>
-                <div class="ind-card-sub">Clientes retirados</div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#8b5cf6"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Reativações</div>
-                  <div class="ind-card-icon" style="background:#ede9fe;color:#8b5cf6">🔁</div>
-                </div>
-                <div id="ind-reat-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">Reativações + Retirada</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Reativações</span><span id="ind-tt-reat">—</span></div>
-                  <div class="dash-tooltip-row"><span>Reativações Retirada</span><span id="ind-tt-reat-ret">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-reat-total">—</span></div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- NOVOS NEGÓCIOS & UPGRADE -->
-            <div class="ind-section-label">
-              <div class="ind-section-icon" style="background:#e0f2fe">🚀</div>
-              <span>Novos Negócios &amp; Upgrade</span>
-            </div>
-            <div class="ind-grid">
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#06b6d4"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Novos Negócios</div>
-                  <div class="ind-card-icon" style="background:#e0f2fe;color:#06b6d4">💼</div>
-                </div>
-                <div id="ind-nn-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">PF + PJ</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Novos Negócios PF</span><span id="ind-tt-nn-pf">—</span></div>
-                  <div class="dash-tooltip-row"><span>Novos Negócios PJ</span><span id="ind-tt-nn-pj">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-nn-total">—</span></div>
-                </div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#10b981"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Upgrades</div>
-                  <div class="ind-card-icon" style="background:#dcfce7;color:#10b981">⬆️</div>
-                </div>
-                <div id="ind-upgrade" class="ind-card-value">—</div>
-                <div class="ind-card-sub">Upgrades realizados</div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#2563eb"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Resultado Líquido</div>
-                  <div class="ind-card-icon" style="background:#dbeafe;color:#2563eb">📈</div>
-                </div>
-                <div id="ind-resultado" class="ind-card-value">—</div>
-                <div class="ind-card-sub">Resultado do período</div>
-              </div>
-
-            </div>
-
-            <!-- OS SUPORTE -->
-            <div class="ind-section-label">
-              <div class="ind-section-icon" style="background:#fef3c7">🛠️</div>
-              <span>OS Suporte</span>
-            </div>
-            <div class="ind-grid">
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#f59e0b"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">OS Suporte Total</div>
-                  <div class="ind-card-icon" style="background:#fef3c7;color:#f59e0b">🔧</div>
-                </div>
-                <div id="ind-os-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">PF + PJ</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>OS Suporte PF</span><span id="ind-tt-os-pf">—</span></div>
-                  <div class="dash-tooltip-row"><span>OS Suporte PJ</span><span id="ind-tt-os-pj">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-os-total">—</span></div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- FINANCEIRO -->
-            <div class="ind-section-label">
-              <div class="ind-section-icon" style="background:#fce7f3">💰</div>
-              <span>Financeiro</span>
-            </div>
-            <div class="ind-grid">
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#ef4444"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Valor de Cancelamento</div>
-                  <div class="ind-card-icon" style="background:#fee2e2;color:#ef4444">💸</div>
-                </div>
-                <div id="ind-val-canc-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">PF + PJ</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Valor Cancelam. PF</span><span id="ind-tt-val-canc-pf">—</span></div>
-                  <div class="dash-tooltip-row"><span>Valor Cancelam. PJ</span><span id="ind-tt-val-canc-pj">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-val-canc-total">—</span></div>
-                </div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#f59e0b"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Juros</div>
-                  <div class="ind-card-icon" style="background:#fef3c7;color:#f59e0b">⏱️</div>
-                </div>
-                <div id="ind-juros-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">&lt;45 + &gt;45 dias</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Juros &lt; 45 dias</span><span id="ind-tt-juros45">—</span></div>
-                  <div class="dash-tooltip-row"><span>Juros &gt; 45 dias</span><span id="ind-tt-juros45m">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-juros-total">—</span></div>
-                </div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#8b5cf6"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Reajuste de Contratos</div>
-                  <div class="ind-card-icon" style="background:#ede9fe;color:#8b5cf6">📋</div>
-                </div>
-                <div id="ind-reajuste-total" class="ind-card-value">—</div>
-                <div class="ind-card-sub">PF + PJ</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Reajuste PF</span><span id="ind-tt-reajuste-pf">—</span></div>
-                  <div class="dash-tooltip-row"><span>Reajuste PJ</span><span id="ind-tt-reajuste-pj">—</span></div>
-                  <div class="dash-tooltip-row"><span>Total</span><span id="ind-tt-reajuste-total">—</span></div>
-                </div>
-              </div>
-
-              <div class="ind-card">
-                <div class="ind-card-stripe" style="background:#ef4444"></div>
-                <div class="ind-card-header">
-                  <div class="ind-card-label">Canc. 1º Mês</div>
-                  <div class="ind-card-icon" style="background:#fee2e2;color:#ef4444">⚠️</div>
-                </div>
-                <div id="ind-canc-1a" class="ind-card-value">—</div>
-                <div class="ind-card-sub">Cancelamento no 1º mês</div>
-                <div class="dash-tooltip">
-                  <div class="dash-tooltip-title">Detalhamento</div>
-                  <div class="dash-tooltip-row"><span>Qtd. Canc. 1 Mês</span><span id="ind-tt-canc-1a-qtd">—</span></div>
-                  <div class="dash-tooltip-row"><span>Valor Canc. 1 Mês</span><span id="ind-tt-canc-1a-val">—</span></div>
-                </div>
-              </div>
-
-            </div>
-
-          </div><!-- /indicadoresGrid -->
-
-        <script>
-          // ======= INDICADORES: CARREGAR DO SUPABASE =======
-          function indChaveFiltro() {
-            const mes = msGetFirst('indMesFiltro') ?? '0';
-            const ano = msGetFirst('indAnoFiltro') ?? '2026';
-            const m = String(parseInt(mes)+1).padStart(2,'0');
-            return `ind_dados:${ano}:${m}`;
-          }
-
-          function renderizarIndicadores(d) {
-            if (!d) { 
-              document.getElementById('indicadoresSemDados').style.display='block';
-              document.getElementById('indicadoresGrid').style.display='none';
-              return;
-            }
-            document.getElementById('indicadoresSemDados').style.display='none';
-            document.getElementById('indicadoresGrid').style.display='block';
-            const fmt = v => v != null ? Number(v).toLocaleString('pt-BR') : '—';
-            const brl = v => v != null ? 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
-            const set = (id, val, isCurrency) => {
-              const el = document.getElementById(id);
-              if (el) el.textContent = isCurrency ? brl(val) : fmt(val);
-            };
-            // Base de Clientes
-            const baseTotal = (d.base_pf||0) + (d.base_pj||0);
-            set('ind-base-total', baseTotal);
-            set('ind-tt-base-pf', d.base_pf);
-            set('ind-tt-base-pj', d.base_pj);
-            set('ind-tt-base-total', baseTotal);
-            set('ind-contratos', d.contratos);
-            // Movimento
-            const ncTotal = (d.nc_pf||0) + (d.nc_pj||0);
-            set('ind-nc-total', ncTotal);
-            set('ind-tt-nc-pf', d.nc_pf);
-            set('ind-tt-nc-pj', d.nc_pj);
-            set('ind-tt-nc-total', ncTotal);
-            const cancTotal = (d.canc_pf||0) + (d.canc_pj||0);
-            set('ind-canc-total', cancTotal);
-            set('ind-tt-canc-pf', d.canc_pf);
-            set('ind-tt-canc-pj', d.canc_pj);
-            set('ind-tt-canc-total', cancTotal);
-            set('ind-retiradas', d.retiradas);
-            const reatTotal = (d.reat||0) + (d.reat_ret||0);
-            set('ind-reat-total', reatTotal);
-            set('ind-tt-reat', d.reat);
-            set('ind-tt-reat-ret', d.reat_ret);
-            set('ind-tt-reat-total', reatTotal);
-            // Novos Negócios
-            const nnTotal = (d.nn_pf||0) + (d.nn_pj||0);
-            set('ind-nn-total', nnTotal);
-            set('ind-tt-nn-pf', d.nn_pf);
-            set('ind-tt-nn-pj', d.nn_pj);
-            set('ind-tt-nn-total', nnTotal);
-            set('ind-upgrade', d.upgrade);
-            set('ind-resultado', d.resultado);
-            // OS
-            const osTotal = (d.os_pf||0) + (d.os_pj||0);
-            set('ind-os-total', osTotal);
-            set('ind-tt-os-pf', d.os_pf);
-            set('ind-tt-os-pj', d.os_pj);
-            set('ind-tt-os-total', osTotal);
-            // Financeiro
-            const valCancTotal = (d.val_canc_pf||0) + (d.val_canc_pj||0);
-            set('ind-val-canc-total', valCancTotal, true);
-            set('ind-tt-val-canc-pf', d.val_canc_pf, true);
-            set('ind-tt-val-canc-pj', d.val_canc_pj, true);
-            set('ind-tt-val-canc-total', valCancTotal, true);
-            const jurosTotal = (d.juros45||0) + (d.juros45m||0);
-            set('ind-juros-total', jurosTotal);
-            set('ind-tt-juros45', d.juros45);
-            set('ind-tt-juros45m', d.juros45m);
-            set('ind-tt-juros-total', jurosTotal);
-            const reajTotal = (d.reajuste_pf||0) + (d.reajuste_pj||0);
-            set('ind-reajuste-total', reajTotal, true);
-            set('ind-tt-reajuste-pf', d.reajuste_pf, true);
-            set('ind-tt-reajuste-pj', d.reajuste_pj, true);
-            set('ind-tt-reajuste-total', reajTotal, true);
-            set('ind-canc-1a', d.canc_1a);
-            set('ind-tt-canc-1a-qtd', d.canc_1a);
-            set('ind-tt-canc-1a-val', d.val_canc_1a, true);
-          }
-
-          async function carregarIndicadoresMes() {
-            const chave = indChaveFiltro();
-            const empty = document.getElementById('indicadoresSemDados');
-            const grid = document.getElementById('indicadoresGrid');
-            if (empty) empty.style.display = 'block';
-            if (grid) grid.style.display = 'none';
-            try {
-              const raw = await sbStorage.get(chave);
-              if (raw) {
-                renderizarIndicadores(JSON.parse(raw));
-              } else {
-                const mes = msGetFirst('indMesFiltro') ?? '0';
-                const ano = msGetFirst('indAnoFiltro') ?? '2026';
-                const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-                const emptyEl = document.getElementById('indicadoresSemDados');
-                if (emptyEl) emptyEl.querySelector('p').innerHTML =
-                  `Nenhum dado salvo para <strong>${meses[mes]}/${ano}</strong>.<br>Acesse <strong>⚙️ Parâmetros → Carregar PDF</strong> e salve os dados.`;
-              }
-            } catch(e) {
-              console.error('Erro ao carregar indicadores:', e);
-            }
-
-            // ── Complemento IXC: injetar dados reais do sync ──────────────
-            try {
-              const mes = msGetFirst('indMesFiltro') ?? '0';
-              const ano = msGetFirst('indAnoFiltro') ?? '2026';
-              const anoMes = `${ano}-${String(parseInt(mes)+1).padStart(2,'0')}`;
-
-              if (typeof IXCDados !== 'undefined') {
-                const [resumo, op] = await Promise.all([
-                  IXCDados.getResumoMes(anoMes),
-                  IXCDados.getOperacional(),
-                ]);
-
-                // Painel IXC no indicadores
-                let ixcPainel = document.getElementById('ixc-painel-indicadores');
-                if (!ixcPainel) {
-                  ixcPainel = document.createElement('div');
-                  ixcPainel.id = 'ixc-painel-indicadores';
-                  const gridEl = document.getElementById('indicadoresGrid');
-                  if (gridEl) gridEl.insertAdjacentElement('afterbegin', ixcPainel);
-                }
-
-                const fc = v => v != null
-                  ? 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2})
-                  : '—';
-                const fmt = v => v != null ? Number(v).toLocaleString('pt-BR') : '—';
-
-                const totalAtivos = op ? op.clientesAtivos : null;
-                const recebido = resumo?.receitas?.totalRecebido;
-                const pago = resumo?.despesas?.totalPago;
-                const saldo = recebido != null && pago != null ? recebido - pago : null;
-                const saldoCor = saldo >= 0 ? '#065f46' : '#991b1b';
-
-                ixcPainel.innerHTML = `
-                  <div style="background:linear-gradient(135deg,#1e40af,#2563eb);border-radius:16px;padding:1.25rem 1.5rem;color:white;margin-bottom:1.25rem">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
-                      <span style="font-weight:700;font-size:0.85rem;opacity:0.9">🔄 DADOS IXC SOFT — ${anoMes}</span>
-                      <span style="font-size:0.7rem;opacity:0.65">Atualização automática</span>
-                    </div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem">
-                      <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:0.75rem">
-                        <div style="font-size:0.7rem;opacity:0.8;margin-bottom:0.2rem">👥 Clientes Ativos</div>
-                        <div style="font-size:1.25rem;font-weight:800">${fmt(totalAtivos)}</div>
-                      </div>
-                      <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:0.75rem">
-                        <div style="font-size:0.7rem;opacity:0.8;margin-bottom:0.2rem">💰 Recebido no Mês</div>
-                        <div style="font-size:1.1rem;font-weight:800">${fc(recebido)}</div>
-                      </div>
-                      <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:0.75rem">
-                        <div style="font-size:0.7rem;opacity:0.8;margin-bottom:0.2rem">💸 Despesas Pagas</div>
-                        <div style="font-size:1.1rem;font-weight:800">${fc(pago)}</div>
-                      </div>
-                      <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:0.75rem;${saldo != null ? 'background:rgba(255,255,255,0.15)' : ''}">
-                        <div style="font-size:0.7rem;opacity:0.8;margin-bottom:0.2rem">📊 Saldo do Mês</div>
-                        <div style="font-size:1.1rem;font-weight:800;color:${saldo >= 0 ? '#bbf7d0' : '#fca5a5'}">${fc(saldo)}</div>
-                      </div>
-                    </div>
-                    ${resumo?.fluxo ? `<div style="margin-top:0.75rem;font-size:0.75rem;opacity:0.75">✓ Fluxo de caixa diário disponível (${resumo.fluxo.length} dias)</div>` : ''}
-                  </div>`;
-
-                // Mostrar o grid mesmo sem dados do PDF
-                if (grid) grid.style.display = 'block';
-                if (empty) empty.style.display = 'none';
-              }
-            } catch(e) {
-              console.warn('[IXC] Erro ao carregar painel:', e.message);
-            }
-            // ─────────────────────────────────────────────────────────────
-          }
-
-          // Inicialização do filtro de indicadores é feita via init-operacional.js (msCreate)
-        </script>
-        </div>
-      </div>
-
-
       <!-- Demonstrativo View -->
       <div id="demonstrativoView" class="view-container" style="display:none">
         <div style="padding:1.5rem;width:100%;box-sizing:border-box">
@@ -2231,6 +1652,67 @@
         <div id="paramSalvoMsg" style="display:none;margin-top:0.75rem;text-align:right;color:#059669;font-weight:600;font-size:0.88rem">✓ Parâmetros salvos!</div>
       </div>
 
+      <!-- ============================================= -->
+      <!-- GERENCIAR USUÁRIOS (admin only)             -->
+      <!-- ============================================= -->
+      <div style="background:white;border-radius:16px;padding:2rem;margin-top:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+          <div>
+            <h2 style="margin:0;font-size:1.25rem;color:#0f172a">👥 Gerenciar Usuários</h2>
+            <p style="margin:0.3rem 0 0;font-size:0.85rem;color:#64748b">Usuários cadastrados que podem acessar o sistema. Só admins (perfil "edição") veem esta seção.</p>
+          </div>
+          <button onclick="usrAbrirNovo()" style="padding:0.6rem 1.25rem;background:#0f766e;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem">+ Novo usuário</button>
+        </div>
+
+        <div id="usr_lista" style="display:flex;flex-direction:column;gap:0.5rem">
+          <div style="padding:1rem;color:#94a3b8;text-align:center">Carregando...</div>
+        </div>
+
+        <!-- Modal Novo/Editar usuário -->
+        <div id="usr_modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;padding:1rem">
+          <div style="background:white;border-radius:16px;padding:2rem;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
+            <h3 id="usr_modal_titulo" style="margin:0 0 1.25rem;color:#0f172a;font-size:1.2rem">Novo usuário</h3>
+
+            <div style="margin-bottom:0.85rem">
+              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem">NOME</label>
+              <input id="usr_nome" type="text" placeholder="Bruno Silva" style="width:100%;padding:0.6rem 0.85rem;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:0.9rem">
+            </div>
+
+            <div style="margin-bottom:0.85rem">
+              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem">USUÁRIO (login)</label>
+              <input id="usr_login" type="text" placeholder="bruno" autocomplete="off" style="width:100%;padding:0.6rem 0.85rem;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:0.9rem">
+            </div>
+
+            <div style="margin-bottom:0.85rem">
+              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem">SENHA <span id="usr_senha_hint" style="font-weight:400;color:#94a3b8">(deixe em branco pra manter a atual)</span></label>
+              <input id="usr_senha" type="password" placeholder="••••••••" autocomplete="new-password" style="width:100%;padding:0.6rem 0.85rem;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:0.9rem">
+            </div>
+
+            <div style="margin-bottom:1.25rem">
+              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem">PERFIL</label>
+              <select id="usr_perfil" style="width:100%;padding:0.6rem 0.85rem;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:0.9rem;background:white">
+                <option value="visualizacao">👁️ Visualização (sem Parâmetros nem PRB)</option>
+                <option value="edicao">✏️ Edição (admin — acesso total)</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:1.25rem">
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;color:#374151;cursor:pointer">
+                <input id="usr_ativo" type="checkbox" checked style="width:16px;height:16px;accent-color:#0f766e;cursor:pointer">
+                Usuário ativo (pode fazer login)
+              </label>
+            </div>
+
+            <div id="usr_modal_erro" style="display:none;margin-bottom:1rem;padding:0.6rem 0.85rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.82rem"></div>
+
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+              <button onclick="usrFecharModal()" style="padding:0.6rem 1.25rem;background:white;color:#475569;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem">Cancelar</button>
+              <button onclick="usrSalvar()" id="usr_btn_salvar" style="padding:0.6rem 1.25rem;background:#0f766e;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem">Salvar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
       </div>
 
@@ -2629,273 +2111,6 @@
   <!-- ================================================================ -->
   <!-- IXC VIEW — Dados ao vivo IXC Soft                                -->
   <!-- ================================================================ -->
-  <div id="ixcView" class="view-container" style="display:none">
-    <div style="padding:1.5rem 2rem 0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
-      <div>
-        <h2 style="font-size:1.35rem;font-weight:800;color:#0f172a;margin:0">📡 IXC Soft — Dados ao Vivo</h2>
-        <p style="font-size:0.8rem;color:#64748b;margin:0.2rem 0 0">Informações sincronizadas automaticamente 4x ao dia</p>
-      </div>
-      <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
-        <div id="ms_wrap_ixcMesFiltro" class="ms-wrap"></div>
-        <div id="ms_wrap_ixcAnoFiltro" class="ms-wrap"></div>
-        <span id="ixcTabSyncHora" style="font-size:0.72rem;color:#64748b"></span>
-        <button id="ixcBtnAtualizar" onclick="ixcAtualizarAgora()" style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;background:#2563eb;color:white;border:none;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
-          <span id="ixcBtnIcon">🔄</span> Atualizar agora
-        </button>
-        <button onclick="window.open('sync.html','_blank')" style="display:flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;background:#059669;color:white;border:none;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'" title="Abre página de sincronização — use do escritório">
-          ⚡ Sincronizar IXC
-        </button>
-      </div>
-    </div>
-
-    <!-- Loading -->
-    <div id="ixcTab_loading" style="display:none;padding:4rem;justify-content:center;align-items:center;flex-direction:column;gap:1rem">
-      <div style="width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin 0.8s linear infinite"></div>
-      <span style="color:#64748b;font-size:0.875rem">Carregando dados do IXC...</span>
-    </div>
-
-    <!-- Sem dados -->
-    <div id="ixcTab_semDados" style="display:none;padding:3rem 2rem;text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:0.5rem">📡</div>
-      <h3 style="color:#1e293b;font-weight:700">Sem dados para <span id="ixcTab_semDadosMes">YYYY-MM</span></h3>
-      <p style="color:#64748b;font-size:0.875rem">
-        Os dados estão ausentes ou foram sincronizados antes de haver transações no mês.
-      </p>
-      <div style="margin-top:1.25rem;display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">
-        <button onclick="window.open('sync.html','_blank')" style="background:#059669;color:white;border:none;border-radius:8px;padding:0.6rem 1.25rem;font-size:0.85rem;font-weight:600;cursor:pointer">⚡ Sincronizar agora (do escritório)</button>
-        <button onclick="window.open('fix-ixc.html','_blank')" style="background:white;color:#dc2626;border:1px solid #dc2626;border-radius:8px;padding:0.6rem 1.25rem;font-size:0.85rem;font-weight:600;cursor:pointer">🧹 Limpar zerados</button>
-      </div>
-      <p style="color:#94a3b8;font-size:0.75rem;margin-top:1rem">
-        <span id="ixcTab_semDadosMes2" style="display:none"></span>
-        A sincronização abre em nova aba. Use do escritório (IP liberado no IXC).
-      </p>
-    </div>
-
-    <!-- Erro -->
-    <div id="ixcTab_erro" style="display:none;padding:3rem 2rem;text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:0.5rem">⚠️</div>
-      <h3 style="color:#dc2626;font-weight:700">Erro ao carregar dados</h3>
-      <p id="ixcTab_erroMsg" style="color:#64748b;font-size:0.875rem;font-family:monospace"></p>
-    </div>
-
-    <!-- Conteúdo principal (começa oculto, JS revela após carregar) -->
-    <div id="ixcTab_conteudo" style="display:none;padding:0 2rem 2rem">
-
-      <!-- ── SEÇÃO: CLIENTES ─────────────────────────── -->
-      <div style="margin-bottom:1.5rem">
-        <h3 style="font-size:0.9rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:1.25rem 0 0.75rem">👥 Base de Clientes</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem">
-
-          <!-- PF -->
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">👤 Pessoa Física</div>
-            <div id="ixcTab_pfTotal" style="font-size:1.6rem;font-weight:800;color:#1e293b">—</div>
-            <div style="margin-top:0.6rem;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
-              <div id="ixcTab_pfBar" style="height:100%;width:0%;background:#2563eb;border-radius:3px;transition:width 0.6s"></div>
-            </div>
-            <div id="ixcTab_pfPct" style="font-size:0.72rem;color:#64748b;margin-top:0.25rem">—</div>
-          </div>
-
-          <!-- PJ -->
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">🏢 Pessoa Jurídica</div>
-            <div id="ixcTab_pjTotal" style="font-size:1.6rem;font-weight:800;color:#1e293b">—</div>
-            <div style="margin-top:0.6rem;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
-              <div id="ixcTab_pjBar" style="height:100%;width:0%;background:#8b5cf6;border-radius:3px;transition:width 0.6s"></div>
-            </div>
-            <div id="ixcTab_pjPct" style="font-size:0.72rem;color:#64748b;margin-top:0.25rem">—</div>
-          </div>
-
-          <!-- Ativos -->
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">✅ Clientes Ativos</div>
-            <div id="ixcTab_ativos" style="font-size:1.6rem;font-weight:800;color:#059669">—</div>
-            <div style="font-size:0.72rem;color:#64748b;margin-top:0.3rem">Total cadastrados: <span id="ixcTab_totalCad">—</span></div>
-          </div>
-
-          <!-- Radius -->
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">📡 Conexões Radius</div>
-            <div id="ixcTab_radius" style="font-size:1.6rem;font-weight:800;color:#0891b2">—</div>
-            <div style="font-size:0.72rem;color:#64748b;margin-top:0.3rem">Sessões autenticadas PPPoE/FTTH</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SEÇÃO: COMERCIAL (movida para cima) ───────── -->
-      <div id="ixcTab_secComercial" style="display:none;margin-bottom:1.5rem">
-        <h3 style="font-size:0.9rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 0.75rem">📊 Comercial — <span id="ixcTabComercialPeriodo">—</span></h3>
-
-        <!-- Novos × Cancelamentos -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
-
-          <!-- Novos Contratos -->
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem">✅ Novos Contratos</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;text-align:center">
-              <div>
-                <div id="ixcTab_novosTotal" style="font-size:1.5rem;font-weight:800;color:#059669">—</div>
-                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">Total</div>
-              </div>
-              <div>
-                <div id="ixcTab_novosPF" style="font-size:1.5rem;font-weight:800;color:#2563eb">—</div>
-                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">PF</div>
-              </div>
-              <div>
-                <div id="ixcTab_novosPJ" style="font-size:1.5rem;font-weight:800;color:#7c3aed">—</div>
-                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">PJ/PME</div>
-              </div>
-            </div>
-            <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f1f5f9">
-              <div style="font-size:0.72rem;color:#64748b;margin-bottom:0.2rem">💰 Novos Negócios</div>
-              <div id="ixcTab_novosValor" style="font-size:1rem;font-weight:700;color:#059669">—</div>
-              <div id="ixcTab_novosQtdBoletos" style="font-size:0.7rem;color:#94a3b8;margin-top:0.1rem">— boletos</div>
-            </div>
-          </div>
-
-          <!-- Cancelamentos -->
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem">❌ Cancelamentos</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;text-align:center">
-              <div>
-                <div id="ixcTab_cancelTotal" style="font-size:1.5rem;font-weight:800;color:#dc2626">—</div>
-                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">Total</div>
-              </div>
-              <div>
-                <div id="ixcTab_cancelPF" style="font-size:1.5rem;font-weight:800;color:#2563eb">—</div>
-                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">PF</div>
-              </div>
-              <div>
-                <div id="ixcTab_cancelPJ" style="font-size:1.5rem;font-weight:800;color:#7c3aed">—</div>
-                <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.15rem">PJ/PME</div>
-              </div>
-            </div>
-            <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f1f5f9">
-              <div style="font-size:0.72rem;color:#64748b;margin-bottom:0.2rem">📈 Churn Líquido</div>
-              <div id="ixcTab_churnLiquido" style="font-size:1rem;font-weight:700">—</div>
-              <div id="ixcTab_churnDesc" style="font-size:0.7rem;color:#94a3b8;margin-top:0.1rem">novos − cancelamentos</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- OS por Tipo -->
-        <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-          <div style="font-size:0.72rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1rem">🔧 Ordens de Serviço — <span id="ixcTab_osTotal">—</span> no mês</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem" id="ixcTab_osGrid">
-            <div style="text-align:center;padding:0.75rem;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0">
-              <div id="ixcTab_osSupPF" style="font-size:1.4rem;font-weight:800;color:#059669">—</div>
-              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.2rem">Suporte PF</div>
-            </div>
-            <div style="text-align:center;padding:0.75rem;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe">
-              <div id="ixcTab_osSupPJ" style="font-size:1.4rem;font-weight:800;color:#2563eb">—</div>
-              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.2rem">Suporte PJ</div>
-            </div>
-            <div style="text-align:center;padding:0.75rem;background:#fffbeb;border-radius:10px;border:1px solid #fde68a">
-              <div id="ixcTab_osComercial" style="font-size:1.4rem;font-weight:800;color:#d97706">—</div>
-              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.2rem">Comercial</div>
-            </div>
-            <div style="text-align:center;padding:0.75rem;background:#fef2f2;border-radius:10px;border:1px solid #fecaca">
-              <div id="ixcTab_osRetencao" style="font-size:1.4rem;font-weight:800;color:#dc2626">—</div>
-              <div style="font-size:0.65rem;color:#64748b;text-transform:uppercase;margin-top:0.2rem">Retenção</div>
-            </div>
-          </div>
-          <!-- Barra proporcional -->
-          <div style="margin-top:1rem" id="ixcTab_osBarras"></div>
-        </div>
-      </div>
-
-      <!-- ── SEÇÃO: RECEITAS ─────────────────────────── -->
-      <div style="margin-bottom:1.5rem">
-        <h3 style="font-size:0.9rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 0.75rem">💰 Receitas — <span id="ixcTabPeriodoLabel">—</span></h3>
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
-
-          <div style="background:linear-gradient(135deg,#065f46,#059669);border-radius:12px;padding:1.25rem;color:white">
-            <div style="font-size:0.72rem;font-weight:600;opacity:0.8;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">💵 Total Recebido</div>
-            <div id="ixcTab_recRecebido" style="font-size:1.4rem;font-weight:800">—</div>
-            <div style="margin-top:0.6rem;height:5px;background:rgba(255,255,255,0.3);border-radius:3px;overflow:hidden">
-              <div id="ixcTab_recBar" style="height:100%;width:0%;background:white;border-radius:3px;transition:width 0.6s"></div>
-            </div>
-            <div id="ixcTab_recBarPct" style="font-size:0.7rem;opacity:0.75;margin-top:0.25rem">—</div>
-          </div>
-
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">📋 Faturado</div>
-            <div id="ixcTab_recEmitido" style="font-size:0.95rem;font-weight:700;color:#1e293b">—</div>
-            <div style="font-size:0.7rem;color:#64748b;margin-top:0.2rem">Total emitido</div>
-          </div>
-
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">📑 Boletos Pagos</div>
-            <div id="ixcTab_recBoletos" style="font-size:0.95rem;font-weight:700;color:#1e293b">—</div>
-            <div style="font-size:0.7rem;color:#64748b;margin-top:0.2rem">Títulos quitados</div>
-          </div>
-
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">🎯 Ticket Médio</div>
-            <div id="ixcTab_recTicket" style="font-size:0.95rem;font-weight:700;color:#1e293b">—</div>
-            <div style="font-size:0.7rem;color:#64748b;margin-top:0.2rem">Por boleto pago</div>
-          </div>
-
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">⚠️ Juros/Multas</div>
-            <div id="ixcTab_recJuros" style="font-size:0.95rem;font-weight:700;color:#dc2626">—</div>
-            <div style="font-size:0.7rem;color:#64748b;margin-top:0.2rem">Recebido em juros</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SEÇÃO: DESPESAS ─────────────────────────── -->
-      <div style="margin-bottom:1.5rem">
-        <h3 style="font-size:0.9rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 0.75rem">💸 Despesas Pagas — Detalhado</h3>
-        <div style="display:grid;grid-template-columns:1fr 2fr;gap:1rem">
-
-          <!-- Resumo -->
-          <div>
-            <div style="background:linear-gradient(135deg,#7c2d12,#dc2626);border-radius:12px;padding:1.25rem;color:white;margin-bottom:1rem">
-              <div style="font-size:0.72rem;font-weight:600;opacity:0.8;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.35rem">💸 Total Pago</div>
-              <div id="ixcTab_despTotal" style="font-size:1.4rem;font-weight:800">—</div>
-              <div id="ixcTab_despCount" style="font-size:0.72rem;opacity:0.75;margin-top:0.25rem">—</div>
-            </div>
-            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:1rem;font-size:0.8rem;color:#92400e">
-              <strong>ℹ️ Sobre as categorias:</strong><br>
-              As categorias são baseadas no <strong>Plano de Contas</strong> do IXC. Para personalizar os nomes, edite o arquivo <code>js/ixc-tab.js</code> e atualize o mapa <code>IXC_NOMES_CONTA</code>.
-            </div>
-          </div>
-
-          <!-- Lista itemizada -->
-          <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0;max-height:400px;overflow-y:auto">
-            <div id="ixcTab_despLista">
-              <div style="color:#94a3b8;text-align:center;padding:2rem">Carregando...</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── SEÇÃO: FLUXO DE CAIXA ───────────────────── -->
-      <div>
-        <h3 style="font-size:0.9rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:0 0 0.75rem">📈 Fluxo de Caixa Diário</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
-          <div style="background:white;border-radius:12px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0;text-align:center">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;margin-bottom:0.25rem">⬇️ Total Entradas</div>
-            <div id="ixcTab_fluxoEntradas" style="font-size:1rem;font-weight:700;color:#059669">—</div>
-          </div>
-          <div style="background:white;border-radius:12px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0;text-align:center">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;margin-bottom:0.25rem">⬆️ Total Saídas</div>
-            <div id="ixcTab_fluxoSaidas" style="font-size:1rem;font-weight:700;color:#dc2626">—</div>
-          </div>
-          <div style="background:white;border-radius:12px;padding:1rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0;text-align:center">
-            <div style="font-size:0.72rem;font-weight:600;color:#64748b;text-transform:uppercase;margin-bottom:0.25rem">💹 Saldo Final</div>
-            <div id="ixcTab_fluxoSaldo" style="font-size:1rem;font-weight:700">—</div>
-          </div>
-        </div>
-        <div style="background:white;border-radius:12px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1px solid #e2e8f0;height:300px">
-          <canvas id="ixcTabFluxoChart"></canvas>
-        </div>
-      </div>
-
-    </div><!-- /ixcTab_conteudo -->
-  </div><!-- /ixcView -->
-
   <!-- ================================================================ -->
   <!-- DIRETORIA POWER BI — 36 indicadores sincronizados do Power BI    -->
   <!-- ================================================================ -->
@@ -3064,7 +2279,6 @@ document.addEventListener('click', function() {
   <script src="js/config.js?v=4"></script>
   <!-- IXC Dados — deve carregar ANTES do init-operacional (que chama renderizarGraficos) -->
   <script src="js/ixc-dados.js?v=4"></script>
-  <script src="js/ixc-tab.js?v=4"></script>
   <script src="js/dados-financeiros.js?v=4"></script>
   <script src="js/charts.js?v=4"></script>
   <script src="js/diretoria.js"></script>
@@ -3073,40 +2287,6 @@ document.addEventListener('click', function() {
   <script src="js/consolidado.js"></script>
   <script src="js/init-operacional.js?v=4"></script>
   <script>
-// ================================================================
-// IXC — ABRE A ABA IXC DIRETAMENTE (sem depender de changeView)
-// ================================================================
-
-function abrirIXCView(navEl) {
-  // Highlight nav
-  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-  if (navEl) navEl.classList.add('active');
-  // Esconde header principal
-  const hdr = document.getElementById('mainHeader');
-  if (hdr) hdr.style.display = 'none';
-  // Esconde todas as views
-  document.querySelectorAll('.view-container').forEach(c => {
-    c.classList.remove('active');
-    c.style.display = 'none';
-  });
-  // Atualiza viewType
-  const vt = document.getElementById('viewType');
-  if (vt) vt.value = 'ixc';
-  // Mostra ixcView
-  const view = document.getElementById('ixcView');
-  if (view) { view.style.display = 'block'; view.classList.add('active'); }
-  // Chama render
-  if (typeof renderIXCTab === 'function') {
-    renderIXCTab();
-  } else {
-    // Fallback: mostra erro inline se o script não carregou
-    const errDiv = document.getElementById('ixcTab_erro');
-    const errMsg = document.getElementById('ixcTab_erroMsg');
-    if (errDiv) errDiv.style.display = 'block';
-    if (errMsg) errMsg.textContent = 'Script ixc-tab.js não carregou. Verifique o console (F12).';
-  }
-}
-
 // ================================================================
 // DIRETORIA POWER BI — 36 indicadores sincronizados
 // ================================================================

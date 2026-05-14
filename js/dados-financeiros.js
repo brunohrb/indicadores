@@ -141,16 +141,13 @@
       const v = document.getElementById('viewType').value;
       document.querySelectorAll('.view-container').forEach(c=>{c.classList.remove('active');c.style.display='none';});
       
-      const hideHeader = ['consolidado','comparativo','powerbi','ia-estrategica','diretoria','comissao-financeiro','comissao-operacional','indicadores','demonstrativo','ixc'];
+      const hideHeader = ['consolidado','comparativo','ia-estrategica','diretoria','comissao-financeiro','comissao-operacional','demonstrativo'];
       document.getElementById('mainHeader').style.display = hideHeader.includes(v) ? 'none' : 'block';
       const show = id => { const el=document.getElementById(id); el.style.display='block'; el.classList.add('active'); };
       if (v==='dashboard') { show('dashboardView'); renderizarGraficos();  }
-      else if (v==='ixc') { show('ixcView'); if(typeof renderIXCTab==='function') renderIXCTab(); }
       else if (v==='consolidado') { show('consolidadoView'); showTab('receitas'); }
       else if (v==='comparativo') { show('comparativoView'); renderComparisonCards(); renderCompTab('receitas-comp'); }
-      else if (v==='powerbi') show('powerbiView');
       else if (v==='ia-estrategica') { show('iaEstrategicaView'); carregarApiKey(); }
-      else if (v==='indicadores') { show('indicadoresView'); renderIndicadores(); }
       else if (v==='demonstrativo') {
         show('demonstrativoView');
         setTimeout(function() { if (typeof carregarDemonstrativo === 'function') carregarDemonstrativo(); }, 100);
@@ -925,111 +922,6 @@
     }
 
     // ===== INDICADORES =====
-    function renderIndicadores() {
-      const d = typeof diretoriaDadosExtraidos !== 'undefined' ? diretoriaDadosExtraidos : null;
-      const grid = document.getElementById('indicadoresGrid');
-      const semDados = document.getElementById('indicadoresSemDados');
-
-      const hasData = d && Object.values(d).some(v => v !== null && v !== undefined);
-      if (!hasData) {
-        grid.style.display = 'none';
-        semDados.style.display = 'block';
-        return;
-      }
-      semDados.style.display = 'none';
-      grid.style.display = 'block';
-
-      // Helper: format integer
-      const fN = v => (v === null || v === undefined) ? '—' : Number(v).toLocaleString('pt-BR');
-      // Helper: format currency
-      const fR = v => (v === null || v === undefined) ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-      // Helper: sum two values
-      const sum = (a, b) => {
-        if (a === null && b === null) return null;
-        return (a || 0) + (b || 0);
-      };
-      const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-
-      // Base de Clientes
-      const baseTotal = sum(d.base_pf, d.base_pj);
-      set('ind-base-total', fN(baseTotal));
-      set('ind-tt-base-pf', fN(d.base_pf));
-      set('ind-tt-base-pj', fN(d.base_pj));
-      set('ind-tt-base-total', fN(baseTotal));
-
-      // Contratos
-      set('ind-contratos', fN(d.contratos));
-
-      // Novos Clientes
-      const ncTotal = sum(d.nc_pf, d.nc_pj);
-      set('ind-nc-total', fN(ncTotal));
-      set('ind-tt-nc-pf', fN(d.nc_pf));
-      set('ind-tt-nc-pj', fN(d.nc_pj));
-      set('ind-tt-nc-total', fN(ncTotal));
-
-      // Cancelamentos
-      const cancTotal = sum(d.canc_pf, d.canc_pj);
-      set('ind-canc-total', fN(cancTotal));
-      set('ind-tt-canc-pf', fN(d.canc_pf));
-      set('ind-tt-canc-pj', fN(d.canc_pj));
-      set('ind-tt-canc-total', fN(cancTotal));
-
-      // Retiradas
-      set('ind-retiradas', fN(d.retiradas));
-
-      // Reativações
-      const reatTotal = sum(d.reat, d.reat_ret);
-      set('ind-reat-total', fN(reatTotal));
-      set('ind-tt-reat', fN(d.reat));
-      set('ind-tt-reat-ret', fN(d.reat_ret));
-      set('ind-tt-reat-total', fN(reatTotal));
-
-      // Novos Negócios
-      const nnTotal = sum(d.nn_pf, d.nn_pj);
-      set('ind-nn-total', fN(nnTotal));
-      set('ind-tt-nn-pf', fN(d.nn_pf));
-      set('ind-tt-nn-pj', fN(d.nn_pj));
-      set('ind-tt-nn-total', fN(nnTotal));
-
-      // Upgrade
-      set('ind-upgrade', fN(d.upgrade));
-
-      // Resultado
-      set('ind-resultado', fN(d.resultado));
-
-      // OS Suporte
-      const osTotal = sum(d.os_pf, d.os_pj);
-      set('ind-os-total', fN(osTotal));
-      set('ind-tt-os-pf', fN(d.os_pf));
-      set('ind-tt-os-pj', fN(d.os_pj));
-      set('ind-tt-os-total', fN(osTotal));
-
-      // Valor Cancelamento
-      const valCancTotal = d.val_canc !== null && d.val_canc !== undefined ? d.val_canc : sum(d.val_canc_pf, d.val_canc_pj);
-      set('ind-val-canc-total', fR(valCancTotal));
-      set('ind-tt-val-canc-pf', fR(d.val_canc_pf));
-      set('ind-tt-val-canc-pj', fR(d.val_canc_pj));
-      set('ind-tt-val-canc-total', fR(valCancTotal));
-
-      // Juros
-      const jurosTotal = sum(d.juros45, d.juros45m);
-      set('ind-juros-total', fN(jurosTotal));
-      set('ind-tt-juros45', fN(d.juros45));
-      set('ind-tt-juros45m', fN(d.juros45m));
-      set('ind-tt-juros-total', fN(jurosTotal));
-
-      // Reajuste
-      const reajusteTotal = sum(d.reajuste_pf, d.reajuste_pj);
-      set('ind-reajuste-total', fN(reajusteTotal));
-      set('ind-tt-reajuste-pf', fN(d.reajuste_pf));
-      set('ind-tt-reajuste-pj', fN(d.reajuste_pj));
-      set('ind-tt-reajuste-total', fN(reajusteTotal));
-
-      // Canc. 1º Mês
-      set('ind-canc-1a', fN(d.canc_1a));
-      set('ind-tt-canc-1a-qtd', fN(d.canc_1a));
-      set('ind-tt-canc-1a-val', fR(d.val_canc_1a));
-    }
     // ========== IMPORTAR HISTÓRICO 2025 → SUPABASE ==========
     async function importarHistorico2025(btn) {
       const statusEl = document.getElementById('importar2025Status');
@@ -1493,7 +1385,7 @@
       const load  = document.getElementById('loginLoading');
       erro.style.display = 'none';
 
-      if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; erro.style.display = 'block'; return; }
+      if (!email || !senha) { erro.textContent = 'Preencha usuário e senha.'; erro.style.display = 'block'; return; }
 
       load.style.display = 'block';
       try {
@@ -1507,7 +1399,7 @@
 
         load.style.display = 'none';
         if (error || !data) {
-          erro.textContent = 'E-mail ou senha incorretos.';
+          erro.textContent = 'Usuário ou senha incorretos.';
           erro.style.display = 'block';
           return;
         }
@@ -1544,7 +1436,7 @@
       document.getElementById('userPerfil').textContent = user.perfil === 'edicao' ? '✏️ Editor' : '👁️ Visualização';
 
       // Controla abas restritas para perfil visualizacao
-      const abasRestritas = ['diretoria', 'powerbi', 'prb']; // ⚙️Parâmetros e 📊Power BI
+      const abasRestritas = ['diretoria', 'prb']; // ⚙️Parâmetros e 🤝PRB — só admin
       document.querySelectorAll('.nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
         const match = onclick.match(/'([^']+)'/);
@@ -1552,6 +1444,140 @@
           item.style.display = user.perfil === 'visualizacao' ? 'none' : 'flex';
         }
       });
+
+      // Se admin, carrega lista de usuários ao entrar
+      if (user.perfil === 'edicao' && typeof usrCarregarLista === 'function') {
+        usrCarregarLista();
+      }
+    }
+
+    // ===== GERENCIAR USUÁRIOS (admin) =====
+    let usr_editandoId = null;
+
+    async function usrCarregarLista() {
+      const el = document.getElementById('usr_lista');
+      if (!el) return;
+      try {
+        const { data, error } = await sb.from('indicadores_usuarios')
+          .select('id, nome, email, perfil, ativo, ultimo_acesso')
+          .order('nome', { ascending: true });
+        if (error) throw error;
+        if (!data || !data.length) {
+          el.innerHTML = '<div style="padding:1rem;color:#94a3b8;text-align:center">Nenhum usuário cadastrado. Clique em "+ Novo usuário".</div>';
+          return;
+        }
+        el.innerHTML = data.map(u => {
+          const perfilTxt = u.perfil === 'edicao' ? '✏️ Edição (admin)' : '👁️ Visualização';
+          const perfilCor = u.perfil === 'edicao' ? '#0f766e' : '#64748b';
+          const ativoBadge = u.ativo
+            ? '<span style="background:#dcfce7;color:#166534;padding:0.15rem 0.55rem;border-radius:999px;font-size:0.7rem;font-weight:600">Ativo</span>'
+            : '<span style="background:#fee2e2;color:#991b1b;padding:0.15rem 0.55rem;border-radius:999px;font-size:0.7rem;font-weight:600">Desativado</span>';
+          const ult = u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleDateString('pt-BR') : '—';
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.85rem 1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;flex-wrap:wrap;gap:0.5rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;color:#0f172a">${u.nome}</div>
+              <div style="font-size:0.78rem;color:#64748b;margin-top:0.1rem">${u.email} · <span style="color:${perfilCor};font-weight:600">${perfilTxt}</span> · Último acesso: ${ult}</div>
+            </div>
+            <div style="display:flex;gap:0.4rem;align-items:center">
+              ${ativoBadge}
+              <button onclick="usrEditar('${u.id}')" style="padding:0.4rem 0.75rem;background:white;color:#475569;border:1px solid #cbd5e1;border-radius:6px;font-size:0.78rem;cursor:pointer;font-weight:600">Editar</button>
+              <button onclick="usrExcluir('${u.id}','${u.nome.replace(/'/g, "&#39;")}')" style="padding:0.4rem 0.75rem;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;font-size:0.78rem;cursor:pointer;font-weight:600">Excluir</button>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        el.innerHTML = '<div style="padding:1rem;color:#dc2626;text-align:center">Erro ao carregar: ' + (e.message || e) + '</div>';
+      }
+    }
+
+    function usrAbrirNovo() {
+      usr_editandoId = null;
+      document.getElementById('usr_modal_titulo').textContent = 'Novo usuário';
+      document.getElementById('usr_nome').value = '';
+      document.getElementById('usr_login').value = '';
+      document.getElementById('usr_senha').value = '';
+      document.getElementById('usr_senha_hint').textContent = '(obrigatória)';
+      document.getElementById('usr_perfil').value = 'visualizacao';
+      document.getElementById('usr_ativo').checked = true;
+      document.getElementById('usr_modal_erro').style.display = 'none';
+      document.getElementById('usr_modal').style.display = 'flex';
+    }
+
+    async function usrEditar(id) {
+      try {
+        const { data, error } = await sb.from('indicadores_usuarios')
+          .select('id, nome, email, perfil, ativo')
+          .eq('id', id).single();
+        if (error || !data) { alert('Erro ao buscar usuário.'); return; }
+        usr_editandoId = id;
+        document.getElementById('usr_modal_titulo').textContent = 'Editar: ' + data.nome;
+        document.getElementById('usr_nome').value = data.nome;
+        document.getElementById('usr_login').value = data.email;
+        document.getElementById('usr_senha').value = '';
+        document.getElementById('usr_senha_hint').textContent = '(deixe em branco pra manter a atual)';
+        document.getElementById('usr_perfil').value = data.perfil;
+        document.getElementById('usr_ativo').checked = !!data.ativo;
+        document.getElementById('usr_modal_erro').style.display = 'none';
+        document.getElementById('usr_modal').style.display = 'flex';
+      } catch (e) {
+        alert('Erro: ' + e.message);
+      }
+    }
+
+    function usrFecharModal() {
+      document.getElementById('usr_modal').style.display = 'none';
+      usr_editandoId = null;
+    }
+
+    async function usrSalvar() {
+      const nome   = document.getElementById('usr_nome').value.trim();
+      const login  = document.getElementById('usr_login').value.trim().toLowerCase();
+      const senha  = document.getElementById('usr_senha').value;
+      const perfil = document.getElementById('usr_perfil').value;
+      const ativo  = document.getElementById('usr_ativo').checked;
+      const erroEl = document.getElementById('usr_modal_erro');
+      const btnEl  = document.getElementById('usr_btn_salvar');
+
+      const mostrarErro = msg => { erroEl.textContent = msg; erroEl.style.display = 'block'; btnEl.disabled = false; btnEl.textContent = 'Salvar'; };
+      erroEl.style.display = 'none';
+
+      if (!nome || !login) return mostrarErro('Preencha nome e usuário.');
+      if (!usr_editandoId && !senha) return mostrarErro('Senha obrigatória pra novo usuário.');
+      if (senha && senha.length < 4) return mostrarErro('Senha precisa de pelo menos 4 caracteres.');
+
+      btnEl.disabled = true;
+      btnEl.textContent = 'Salvando...';
+
+      try {
+        const update = { nome, email: login, perfil, ativo };
+        if (senha) update.senha_hash = await sha256hex(senha);
+
+        let resp;
+        if (usr_editandoId) {
+          resp = await sb.from('indicadores_usuarios').update(update).eq('id', usr_editandoId);
+        } else {
+          resp = await sb.from('indicadores_usuarios').insert(update);
+        }
+        if (resp.error) throw resp.error;
+
+        usrFecharModal();
+        usrCarregarLista();
+      } catch (e) {
+        // Erros típicos: 23505 (unique violation no email)
+        const msg = e.message && e.message.includes('duplicate') ? 'Já existe usuário com esse login.' : (e.message || 'Erro ao salvar.');
+        mostrarErro(msg);
+      }
+    }
+
+    async function usrExcluir(id, nome) {
+      if (!confirm(`Excluir o usuário "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+      try {
+        const { error } = await sb.from('indicadores_usuarios').delete().eq('id', id);
+        if (error) throw error;
+        usrCarregarLista();
+      } catch (e) {
+        alert('Erro ao excluir: ' + (e.message || e));
+      }
     }
 
     function fazerLogout() {

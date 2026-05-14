@@ -23,14 +23,6 @@
       msCreate('dashMesFiltro',  MS_MESES,  renderizarGraficos,  [_mesV], 'ms-btn-light');
       msCreate('dashAnoFiltro',  MS_ANOS_4, renderizarGraficos,  [_anoV], 'ms-btn-light');
 
-      // IXC Tab (light theme)
-      msCreate('ixcMesFiltro',   MS_MESES,  () => { if(typeof renderIXCTab==='function') renderIXCTab(); }, [_mesV], 'ms-btn-light');
-      msCreate('ixcAnoFiltro',   MS_ANOS_4, () => { if(typeof renderIXCTab==='function') renderIXCTab(); }, [_anoV], 'ms-btn-light');
-
-      // Indicadores (dark theme)
-      msCreate('indMesFiltro',   MS_MESES,  carregarIndicadoresMes, [_mesV], 'ms-btn-dark');
-      msCreate('indAnoFiltro',   MS_ANOS_4, carregarIndicadoresMes, [_anoV], 'ms-btn-dark');
-
       // Comissão Financeiro (dark theme)
       msCreate('comissaoMesFiltro', MS_MESES,  () => renderComissao(),    [_mesV], 'ms-btn-dark');
       msCreate('comissaoAnoFiltro', MS_ANOS_2, () => renderComissao(),    [_anoV], 'ms-btn-dark');
@@ -56,7 +48,6 @@
       await carregarParams();
       await consolidadoInicializar();
       renderizarGraficos();
-      carregarIndicadoresMes();
       initParamFormatting();
     });
     // ==================== COMISSÃO OPERACIONAL ====================

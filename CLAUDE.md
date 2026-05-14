@@ -135,9 +135,42 @@ NÃO existem: `fFinanceiro`, `dPlanos`.
 - Workflows novos só aparecem na aba Actions **depois do merge na main** — sempre lembrar.
 - Se o usuário disser "vc tinha resolvido isso antes" — provavelmente está certo, ler CLAUDE.md de novo antes de duvidar.
 
+## Autenticação e Usuários (mai/2026)
+
+Sistema usa tabela Supabase `indicadores_usuarios` com:
+- `id`, `nome`, `email` (usado como LOGIN, pode ser "bruno" não precisa ser email)
+- `senha_hash` (SHA-256 do password em hex)
+- `perfil`: `'edicao'` (admin total) ou `'visualizacao'` (sem Parâmetros/PRB)
+- `ativo` (bool), `ultimo_acesso`
+
+**Tela de login** (`index.html:250+`): campo "USUÁRIO" (type text, não mais email).
+**Autoload** se `texnet_lembrar` no localStorage. Funções principais em `js/dados-financeiros.js`:
+- `fazerLogin()`, `fazerLogout()`, `aplicarPerfil()`, `sha256hex()`
+- `abasRestritas = ['diretoria', 'prb']` — escondidas pra perfil 'visualizacao'
+
+**Gerenciar usuários** (admin): aba **Parâmetros** tem seção 👥 "Gerenciar Usuários" que aparece só pra perfil 'edicao'. Permite criar/editar/excluir usuários, mudar senha, desativar. Funções: `usrCarregarLista`, `usrAbrirNovo`, `usrEditar`, `usrSalvar`, `usrExcluir`.
+
+**Pra criar primeiro admin** se a tabela estiver vazia: inserir direto via Supabase SQL Editor:
+```sql
+INSERT INTO indicadores_usuarios (nome, email, senha_hash, perfil, ativo)
+VALUES ('Bruno', 'bruno', '<sha256 da senha em hex>', 'edicao', true);
+```
+Pra gerar hash: `echo -n "minhasenha" | sha256sum`.
+
+## Abas removidas em mai/2026
+
+- ❌ "📊 Relatório Power BI" (iframe externo) — usuário não usava mais
+- ❌ "📊 Indicadores" — substituído por Diretoria (Power BI)
+- ❌ "📡 IXC — Dados Reais" — incluindo `js/ixc-tab.js` e `abrirIXCView`
+- 🔄 "🤖 Marcos Juca" → renomeado pra "🤖 Estudo com IA"
+
 ## Histórico (referência)
 
 - **abr/2026**: criação do sync Power BI (Diretoria) + aba inicial. 36 cards. Schema descoberto via workflows de debug.
 - **abr/2026**: sync Comercial PF criado em aba separada.
 - **mai/2026**: ferramenta de seleção multi-mês + agregação + fechamento de mês imutável. Sync passa a gravar per-mês. Schedule roda `last:3`. Node bumpado pra 22 (WebSocket). 22 workflows de debug removidos.
 - **mai/2026**: aba Comercial PF removida — cards mesclados dentro da aba Diretoria. Botão "Fechar mês" fecha ambos datasets simultaneamente.
+- **mai/2026**: 3º sync (Reajustes) criado pro dataset "Dashboard de Reajustes" (e97a6d33). Frontend lê os 3 datasets e mescla. Reajuste PF/PJ usa filtro `fReajustes[filial_id]` com offset de -1 mês (PB Diretoria mostra reajuste do mês anterior). Retry 429 + delay entre meses.
+- **mai/2026**: support `since:YYYY-MM` nos syncs pra backfill histórico. Seletor de mês trocado de `<input type=month>` (UX ruim) pra 2 dropdowns Ano + Mês.
+- **mai/2026**: Comissão Financeira — EBITDA% padronizado com Operacional (usa Faturamento TOTAL). Status dos trims considera mês atual (não atingido/aguardando). Reativação no card de Cancelamentos (− sinal) no Operacional.
+- **mai/2026**: removidas abas Power BI/Indicadores/IXC, Marcos Juca → Estudo com IA, login passa a usar usuário (não email), nova UI de gerenciar usuários em Parâmetros.
