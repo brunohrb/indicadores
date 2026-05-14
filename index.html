@@ -494,22 +494,9 @@
               <button class="year-btn active" onclick="mudarAnoFluxo(2026,this)">2026</button>
             </div>
           </div>
-          <a href="https://onedrive.live.com/?id=BAF9B60FA66D2B29!s31443c64c5b15a40b66793f9e4bc0c03&cid=BAF9B60FA66D2B29"
-             target="_blank"
-             style="padding:0.35rem 0.85rem;background:#0078d4;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;text-decoration:none;">
-            ☁️ OneDrive
-          </a>
           <button id="btnAutoFetch" onclick="consolidadoAutoFetch()"
              style="padding:0.35rem 0.85rem;background:#0ea5e9;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;border:none;">
             🔄 Sync OneDrive
-          </button>
-          <label style="padding:0.35rem 0.85rem;background:#059669;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;">
-            📂 Upload XLSX
-            <input type="file" id="consolidadoCsvInput" accept=".xlsx,.xls" style="display:none" onchange="consolidadoParseXlsx(this)">
-          </label>
-          <button onclick="document.getElementById('xlsxBase64Panel').style.display=document.getElementById('xlsxBase64Panel').style.display==='none'?'flex':'none'"
-            style="padding:0.35rem 0.85rem;background:#7c3aed;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;border:none;">
-            🔑 Base64
           </button>
           <span id="syncStatusMsg" style="font-size:0.75rem;color:#64748b"></span>
           <div id="syncProgressBar" style="display:none;flex:1;min-width:120px;">
@@ -520,20 +507,6 @@
           </div>
         </div>
         <div id="syncDebugPanel" style="display:none;margin:0.5rem 2rem 0;padding:0.75rem 1rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;max-height:300px;overflow:auto"></div>
-        <!-- PAINEL BASE64 -->
-        <div id="xlsxBase64Panel" style="display:none;flex-direction:column;gap:0.5rem;margin:0.5rem 2rem 0;padding:1rem;background:#f5f3ff;border:2px solid #7c3aed;border-radius:8px;">
-          <div style="font-size:0.78rem;font-weight:700;color:#5b21b6;">🔑 Cole o arquivo XLSX em Base64</div>
-          <div style="font-size:0.72rem;color:#6d28d9;background:#ede9fe;padding:0.5rem 0.75rem;border-radius:6px;font-family:monospace;">
-            PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\Users\...\arquivo.xlsx')) | clip
-          </div>
-          <textarea id="xlsxBase64Input" rows="3" placeholder="Cole aqui o Base64 do arquivo .xlsx (Ctrl+V)..."
-            style="width:100%;padding:0.5rem;border:1px solid #c4b5fd;border-radius:6px;font-size:0.72rem;font-family:monospace;resize:vertical;box-sizing:border-box;"
-            onpaste="setTimeout(function(){xlsxProcessarBase64();},100)"></textarea>
-          <button onclick="xlsxProcessarBase64()"
-            style="align-self:flex-start;padding:0.35rem 1rem;background:#7c3aed;color:white;border-radius:6px;border:none;font-size:0.78rem;font-weight:600;cursor:pointer;">
-            ▶ Processar
-          </button>
-        </div>
 
         <div style="padding:0 2rem;">
 
@@ -3752,25 +3725,5 @@ window.prbExportarCSV=function(){
   });
   </script>
 
-  <script>
-  function xlsxProcessarBase64() {
-    var raw = (document.getElementById('xlsxBase64Input').value || '').trim();
-    if (!raw) return;
-    try {
-      var bin = atob(raw);
-      var bytes = new Uint8Array(bin.length);
-      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      var file = new File([bytes], 'upload.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      var status = document.getElementById('syncStatusMsg');
-      if (status) status.textContent = '⏳ Processando...';
-      consolidadoParseXlsx({ files: [file] });
-      document.getElementById('xlsxBase64Input').value = '';
-      document.getElementById('xlsxBase64Panel').style.display = 'none';
-    } catch(e) {
-      var status = document.getElementById('syncStatusMsg');
-      if (status) status.textContent = '❌ Base64 invalido: ' + e.message;
-    }
-  }
-  </script>
 </body>
 </html>
