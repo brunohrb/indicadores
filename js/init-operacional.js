@@ -366,18 +366,21 @@
             <strong style="color:#991b1b">${fc(canc_total)}</strong>
           </div>`;
 
-        // ── Resultado ──
+        // ── Resultado ── (estilo discreto pra não competir com o card de comissão)
         const resOk = resultado > 0;
+        const corRes = resOk ? '#065f46' : '#991b1b';
+        const bgRes  = resOk ? '#f0fdf4' : '#fef2f2';
+        const bordaRes = resOk ? '#86efac' : '#fca5a5';
         document.getElementById('opResultadoCard').innerHTML =
-          `<div style="background:${resOk?'linear-gradient(135deg,#065f46,#059669)':'linear-gradient(135deg,#991b1b,#dc2626)'};border-radius:16px;padding:1.25rem 1.75rem;color:white;display:flex;justify-content:space-between;align-items:center">
+          `<div style="background:${bgRes};border:1px solid ${bordaRes};border-radius:12px;padding:0.85rem 1.25rem;display:flex;justify-content:space-between;align-items:center">
             <div>
-              <div style="font-size:0.85rem;opacity:0.85;font-weight:600">${resOk?'📈':'📉'} RESULTADO LÍQUIDO (Novos − Cancelamentos)</div>
-              <div style="font-size:1.75rem;font-weight:800;margin-top:0.25rem">${fc(resultado)}</div>
+              <div style="font-size:0.78rem;color:#64748b;font-weight:600">${resOk?'📈':'📉'} Resultado Líquido (Novos − Cancelamentos)</div>
+              <div style="font-size:1.15rem;font-weight:700;color:${corRes};margin-top:0.15rem">${fc(resultado)}</div>
             </div>
-            <div style="text-align:right;font-size:0.82rem;opacity:0.85">
-              <div>Novos: ${fc(nn_total)}</div>
-              <div>Canc.: ${fc(canc_total)}</div>
-              <div style="margin-top:0.35rem">Churn Fin.: <strong>${fp(churnFin)}</strong></div>
+            <div style="text-align:right;font-size:0.74rem;color:#64748b">
+              <div>Novos: <span style="color:#1e293b;font-weight:600">${fc(nn_total)}</span></div>
+              <div>Canc.: <span style="color:#1e293b;font-weight:600">${fc(canc_total)}</span></div>
+              <div style="margin-top:0.2rem">Churn Fin.: <strong style="color:#1e293b">${fp(churnFin)}</strong></div>
             </div>
           </div>`;
 
