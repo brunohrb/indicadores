@@ -139,8 +139,10 @@
         const resp = await fetch(ONEDRIVE_XLSX_URL, { mode:'cors' });
         if (!resp.ok) {
           let detail = '';
+          let fullJson = null;
           try {
             const j = await resp.json();
+            fullJson = j;
             detail = j.error || '';
             if (j.attempts) {
               const parts = j.attempts.map(a => `${a.label}: HTTP ${a.status} (${a.ct||'?'})`).join(' | ');
@@ -149,6 +151,15 @@
             if (j.hint) detail += ' — ' + j.hint;
             console.error('OneDrive sync detail:', j);
           } catch(_) {}
+          // Mostra JSON detalhado num painel pra facilitar diagnóstico
+          const debugEl = document.getElementById('syncDebugPanel');
+          if (debugEl && fullJson) {
+            debugEl.style.display = 'block';
+            debugEl.innerHTML = '<div style="font-size:0.72rem;font-weight:700;color:#7c2d12;margin-bottom:0.35rem">🔍 Detalhe técnico do erro (copia/cola se for me passar):</div>' +
+              '<pre style="margin:0;font-size:0.7rem;color:#1e293b;white-space:pre-wrap;word-break:break-all">' +
+              JSON.stringify(fullJson, null, 2).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) +
+              '</pre>';
+          }
           throw new Error('HTTP ' + resp.status + (detail ? ' — ' + detail : ''));
         }
         syncSetProgress(40, 'Download concluído, lendo XLSX...');
