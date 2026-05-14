@@ -192,6 +192,7 @@
         { nome:'Q3 (Jul-Set)', meses:['jul','ago','set'], meta: metaTrimQ3 },
         { nome:'Q4 (Out-Dez)', meses:['out','nov','dez'], meta: metaTrimQ4 },
       ];
+      const trimAtualIdx = Math.floor(mesIdx / 3);
       const bonusEl = document.getElementById('comissaoBonusTrim');
       if (bonusEl) {
         bonusEl.innerHTML = trim.map((q, qi) => {
@@ -201,12 +202,23 @@
           const progresso  = q.meta > 0 ? Math.min(100, (ebitdaAcum / q.meta) * 100) : 0;
           const corProg    = trimOk ? '#059669' : progresso > 60 ? '#f59e0b' : '#e2e8f0';
           const temDados   = ebitdaAcum > 0;
+          // Status: atingido / sem meta / em andamento (trim atual) / não atingido (trim já passou) / aguardando (trim futuro)
+          let statusBadge;
+          if (trimOk) {
+            statusBadge = '<span style="background:#dcfce7;color:#166534;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:700">✓ Atingido</span>';
+          } else if (q.meta === 0) {
+            statusBadge = '<span style="background:#f1f5f9;color:#94a3b8;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem">Sem meta</span>';
+          } else if (qi < trimAtualIdx) {
+            statusBadge = '<span style="background:#fee2e2;color:#991b1b;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:700">❌ Não atingido</span>';
+          } else if (qi > trimAtualIdx) {
+            statusBadge = '<span style="background:#f1f5f9;color:#94a3b8;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem">Aguardando</span>';
+          } else {
+            statusBadge = '<span style="background:#fef3c7;color:#92400e;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:700">Em andamento</span>';
+          }
           return `<div style="border:1px solid #e2e8f0;border-radius:14px;padding:1.25rem;${trimOk?'border-color:#86efac;background:#f0fdf4;':''}">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
               <div style="font-weight:700;color:#1e293b;font-size:0.9rem">${q.nome}</div>
-              ${trimOk ? '<span style="background:#dcfce7;color:#166534;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:700">✓ Atingido</span>'
-                        : q.meta===0 ? '<span style="background:#f1f5f9;color:#94a3b8;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem">Sem meta</span>'
-                        : '<span style="background:#fef3c7;color:#92400e;padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:700">Em andamento</span>'}
+              ${statusBadge}
             </div>
             <div style="margin-bottom:0.6rem">
               <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#64748b;margin-bottom:0.3rem"><span>EBITDA Acumulado</span><span style="font-weight:700;color:#1e293b">${temDados ? formatCurrency(ebitdaAcum) : '—'}</span></div>
