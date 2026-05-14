@@ -139,7 +139,16 @@
         const resp = await fetch(ONEDRIVE_XLSX_URL, { mode:'cors' });
         if (!resp.ok) {
           let detail = '';
-          try { detail = (await resp.json()).error || ''; } catch(_) {}
+          try {
+            const j = await resp.json();
+            detail = j.error || '';
+            if (j.attempts) {
+              const parts = j.attempts.map(a => `${a.label}: HTTP ${a.status} (${a.ct||'?'})`).join(' | ');
+              detail += ' [' + parts + ']';
+            }
+            if (j.hint) detail += ' — ' + j.hint;
+            console.error('OneDrive sync detail:', j);
+          } catch(_) {}
           throw new Error('HTTP ' + resp.status + (detail ? ' — ' + detail : ''));
         }
         syncSetProgress(40, 'Download concluído, lendo XLSX...');
