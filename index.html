@@ -499,6 +499,10 @@
              style="padding:0.35rem 0.85rem;background:#0078d4;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;text-decoration:none;">
             ☁️ OneDrive
           </a>
+          <button id="btnAutoFetch" onclick="consolidadoAutoFetch()"
+             style="padding:0.35rem 0.85rem;background:#0ea5e9;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;border:none;">
+            🔄 Sync OneDrive
+          </button>
           <label style="padding:0.35rem 0.85rem;background:#059669;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;">
             📂 Upload XLSX
             <input type="file" id="consolidadoCsvInput" accept=".xlsx,.xls" style="display:none" onchange="consolidadoParseXlsx(this)">
