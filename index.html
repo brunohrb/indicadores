@@ -1652,6 +1652,67 @@
         <div id="paramSalvoMsg" style="display:none;margin-top:0.75rem;text-align:right;color:#059669;font-weight:600;font-size:0.88rem">✓ Parâmetros salvos!</div>
       </div>
 
+      <!-- ============================================= -->
+      <!-- GERENCIAR USUÁRIOS (admin only)             -->
+      <!-- ============================================= -->
+      <div style="background:white;border-radius:16px;padding:2rem;margin-top:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.06)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+          <div>
+            <h2 style="margin:0;font-size:1.25rem;color:#0f172a">👥 Gerenciar Usuários</h2>
+            <p style="margin:0.3rem 0 0;font-size:0.85rem;color:#64748b">Usuários cadastrados que podem acessar o sistema. Só admins (perfil "edição") veem esta seção.</p>
+          </div>
+          <button onclick="usrAbrirNovo()" style="padding:0.6rem 1.25rem;background:#0f766e;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem">+ Novo usuário</button>
+        </div>
+
+        <div id="usr_lista" style="display:flex;flex-direction:column;gap:0.5rem">
+          <div style="padding:1rem;color:#94a3b8;text-align:center">Carregando...</div>
+        </div>
+
+        <!-- Modal Novo/Editar usuário -->
+        <div id="usr_modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99999;align-items:center;justify-content:center;padding:1rem">
+          <div style="background:white;border-radius:16px;padding:2rem;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.4)">
+            <h3 id="usr_modal_titulo" style="margin:0 0 1.25rem;color:#0f172a;font-size:1.2rem">Novo usuário</h3>
+
+            <div style="margin-bottom:0.85rem">
+              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem">NOME</label>
+              <input id="usr_nome" type="text" placeholder="Bruno Silva" style="width:100%;padding:0.6rem 0.85rem;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:0.9rem">
+            </div>
+
+            <div style="margin-bottom:0.85rem">
+              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem">USUÁRIO (login)</label>
+              <input id="usr_login" type="text" placeholder="bruno" autocomplete="off" style="width:100%;padding:0.6rem 0.85rem;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:0.9rem">
+            </div>
+
+            <div style="margin-bottom:0.85rem">
+              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem">SENHA <span id="usr_senha_hint" style="font-weight:400;color:#94a3b8">(deixe em branco pra manter a atual)</span></label>
+              <input id="usr_senha" type="password" placeholder="••••••••" autocomplete="new-password" style="width:100%;padding:0.6rem 0.85rem;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:0.9rem">
+            </div>
+
+            <div style="margin-bottom:1.25rem">
+              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:0.3rem">PERFIL</label>
+              <select id="usr_perfil" style="width:100%;padding:0.6rem 0.85rem;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:0.9rem;background:white">
+                <option value="visualizacao">👁️ Visualização (sem Parâmetros nem PRB)</option>
+                <option value="edicao">✏️ Edição (admin — acesso total)</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:1.25rem">
+              <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.88rem;color:#374151;cursor:pointer">
+                <input id="usr_ativo" type="checkbox" checked style="width:16px;height:16px;accent-color:#0f766e;cursor:pointer">
+                Usuário ativo (pode fazer login)
+              </label>
+            </div>
+
+            <div id="usr_modal_erro" style="display:none;margin-bottom:1rem;padding:0.6rem 0.85rem;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;color:#dc2626;font-size:0.82rem"></div>
+
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end">
+              <button onclick="usrFecharModal()" style="padding:0.6rem 1.25rem;background:white;color:#475569;border:1px solid #cbd5e1;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem">Cancelar</button>
+              <button onclick="usrSalvar()" id="usr_btn_salvar" style="padding:0.6rem 1.25rem;background:#0f766e;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:0.85rem">Salvar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
       </div>
 

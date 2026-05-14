@@ -1444,6 +1444,140 @@
           item.style.display = user.perfil === 'visualizacao' ? 'none' : 'flex';
         }
       });
+
+      // Se admin, carrega lista de usuários ao entrar
+      if (user.perfil === 'edicao' && typeof usrCarregarLista === 'function') {
+        usrCarregarLista();
+      }
+    }
+
+    // ===== GERENCIAR USUÁRIOS (admin) =====
+    let usr_editandoId = null;
+
+    async function usrCarregarLista() {
+      const el = document.getElementById('usr_lista');
+      if (!el) return;
+      try {
+        const { data, error } = await sb.from('indicadores_usuarios')
+          .select('id, nome, email, perfil, ativo, ultimo_acesso')
+          .order('nome', { ascending: true });
+        if (error) throw error;
+        if (!data || !data.length) {
+          el.innerHTML = '<div style="padding:1rem;color:#94a3b8;text-align:center">Nenhum usuário cadastrado. Clique em "+ Novo usuário".</div>';
+          return;
+        }
+        el.innerHTML = data.map(u => {
+          const perfilTxt = u.perfil === 'edicao' ? '✏️ Edição (admin)' : '👁️ Visualização';
+          const perfilCor = u.perfil === 'edicao' ? '#0f766e' : '#64748b';
+          const ativoBadge = u.ativo
+            ? '<span style="background:#dcfce7;color:#166534;padding:0.15rem 0.55rem;border-radius:999px;font-size:0.7rem;font-weight:600">Ativo</span>'
+            : '<span style="background:#fee2e2;color:#991b1b;padding:0.15rem 0.55rem;border-radius:999px;font-size:0.7rem;font-weight:600">Desativado</span>';
+          const ult = u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleDateString('pt-BR') : '—';
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.85rem 1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;flex-wrap:wrap;gap:0.5rem">
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;color:#0f172a">${u.nome}</div>
+              <div style="font-size:0.78rem;color:#64748b;margin-top:0.1rem">${u.email} · <span style="color:${perfilCor};font-weight:600">${perfilTxt}</span> · Último acesso: ${ult}</div>
+            </div>
+            <div style="display:flex;gap:0.4rem;align-items:center">
+              ${ativoBadge}
+              <button onclick="usrEditar('${u.id}')" style="padding:0.4rem 0.75rem;background:white;color:#475569;border:1px solid #cbd5e1;border-radius:6px;font-size:0.78rem;cursor:pointer;font-weight:600">Editar</button>
+              <button onclick="usrExcluir('${u.id}','${u.nome.replace(/'/g, "&#39;")}')" style="padding:0.4rem 0.75rem;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;border-radius:6px;font-size:0.78rem;cursor:pointer;font-weight:600">Excluir</button>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        el.innerHTML = '<div style="padding:1rem;color:#dc2626;text-align:center">Erro ao carregar: ' + (e.message || e) + '</div>';
+      }
+    }
+
+    function usrAbrirNovo() {
+      usr_editandoId = null;
+      document.getElementById('usr_modal_titulo').textContent = 'Novo usuário';
+      document.getElementById('usr_nome').value = '';
+      document.getElementById('usr_login').value = '';
+      document.getElementById('usr_senha').value = '';
+      document.getElementById('usr_senha_hint').textContent = '(obrigatória)';
+      document.getElementById('usr_perfil').value = 'visualizacao';
+      document.getElementById('usr_ativo').checked = true;
+      document.getElementById('usr_modal_erro').style.display = 'none';
+      document.getElementById('usr_modal').style.display = 'flex';
+    }
+
+    async function usrEditar(id) {
+      try {
+        const { data, error } = await sb.from('indicadores_usuarios')
+          .select('id, nome, email, perfil, ativo')
+          .eq('id', id).single();
+        if (error || !data) { alert('Erro ao buscar usuário.'); return; }
+        usr_editandoId = id;
+        document.getElementById('usr_modal_titulo').textContent = 'Editar: ' + data.nome;
+        document.getElementById('usr_nome').value = data.nome;
+        document.getElementById('usr_login').value = data.email;
+        document.getElementById('usr_senha').value = '';
+        document.getElementById('usr_senha_hint').textContent = '(deixe em branco pra manter a atual)';
+        document.getElementById('usr_perfil').value = data.perfil;
+        document.getElementById('usr_ativo').checked = !!data.ativo;
+        document.getElementById('usr_modal_erro').style.display = 'none';
+        document.getElementById('usr_modal').style.display = 'flex';
+      } catch (e) {
+        alert('Erro: ' + e.message);
+      }
+    }
+
+    function usrFecharModal() {
+      document.getElementById('usr_modal').style.display = 'none';
+      usr_editandoId = null;
+    }
+
+    async function usrSalvar() {
+      const nome   = document.getElementById('usr_nome').value.trim();
+      const login  = document.getElementById('usr_login').value.trim().toLowerCase();
+      const senha  = document.getElementById('usr_senha').value;
+      const perfil = document.getElementById('usr_perfil').value;
+      const ativo  = document.getElementById('usr_ativo').checked;
+      const erroEl = document.getElementById('usr_modal_erro');
+      const btnEl  = document.getElementById('usr_btn_salvar');
+
+      const mostrarErro = msg => { erroEl.textContent = msg; erroEl.style.display = 'block'; btnEl.disabled = false; btnEl.textContent = 'Salvar'; };
+      erroEl.style.display = 'none';
+
+      if (!nome || !login) return mostrarErro('Preencha nome e usuário.');
+      if (!usr_editandoId && !senha) return mostrarErro('Senha obrigatória pra novo usuário.');
+      if (senha && senha.length < 4) return mostrarErro('Senha precisa de pelo menos 4 caracteres.');
+
+      btnEl.disabled = true;
+      btnEl.textContent = 'Salvando...';
+
+      try {
+        const update = { nome, email: login, perfil, ativo };
+        if (senha) update.senha_hash = await sha256hex(senha);
+
+        let resp;
+        if (usr_editandoId) {
+          resp = await sb.from('indicadores_usuarios').update(update).eq('id', usr_editandoId);
+        } else {
+          resp = await sb.from('indicadores_usuarios').insert(update);
+        }
+        if (resp.error) throw resp.error;
+
+        usrFecharModal();
+        usrCarregarLista();
+      } catch (e) {
+        // Erros típicos: 23505 (unique violation no email)
+        const msg = e.message && e.message.includes('duplicate') ? 'Já existe usuário com esse login.' : (e.message || 'Erro ao salvar.');
+        mostrarErro(msg);
+      }
+    }
+
+    async function usrExcluir(id, nome) {
+      if (!confirm(`Excluir o usuário "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+      try {
+        const { error } = await sb.from('indicadores_usuarios').delete().eq('id', id);
+        if (error) throw error;
+        usrCarregarLista();
+      } catch (e) {
+        alert('Erro ao excluir: ' + (e.message || e));
+      }
     }
 
     function fazerLogout() {
