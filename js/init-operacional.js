@@ -200,8 +200,25 @@
           {n:'4º Trim',meses:['out','nov','dez'],idx:[9,10,11],qi:3},
         ];
         const trim = TRIMS.find(t => t.idx.includes(mesIdx));
-        const isTrimFim = trim && trim.idx[2] === mesIdx;
-        const mesesAte  = trim ? trim.meses.slice(0, trim.idx.indexOf(mesIdx)+1) : [];
+        // Status do trimestre baseado na data REAL (não no mês selecionado).
+        // Padrão da aba Comissão Financeiro: ended / current / future
+        const _hoje = new Date();
+        const _hojeAno = _hoje.getFullYear();
+        const _hojeTrimIdx = Math.floor(_hoje.getMonth() / 3);
+        const trimQi = trim ? trim.qi : -1;
+        let trimStatus = 'future';
+        if (trim) {
+          if (ano < _hojeAno || (ano === _hojeAno && trimQi < _hojeTrimIdx)) trimStatus = 'ended';
+          else if (ano === _hojeAno && trimQi === _hojeTrimIdx)              trimStatus = 'current';
+          else                                                                trimStatus = 'future';
+        }
+        const trimEndedReal = trimStatus === 'ended';
+        // Avalia bônus se: trim já acabou OU usuário está no último mês do trim atual
+        const isTrimFim = trimEndedReal || (trim && trimStatus === 'current' && trim.idx[2] === mesIdx);
+        // Se trim acabou, acumula os 3 meses inteiros; senão, só até o mês selecionado
+        const mesesAte  = trim
+          ? (trimEndedReal ? trim.meses : trim.meses.slice(0, trim.idx.indexOf(mesIdx)+1))
+          : [];
 
         const soma = (cat, nome, ms) => ms.reduce((s,m) => {
           const item = dadosFinanceiros?.[cat]?.find(r=>r.nome===nome);
@@ -217,10 +234,11 @@
         const folhaAcum     = soma('custos','Folha - Direta', mesesAte);
 
         // Acumula resultado real de cada mês do trimestre (Novos − Cancelamentos)
+        // e cancelamentos brutos (PF+PJ) pra churn fin. acumulado.
         // O mês atual já está calculado em `resultado`; os anteriores são buscados do storage
-        const nMeses = mesesAte.length;
         const MESES_IDX = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
         let resultadoAcum = resultado; // já inclui o mês atual
+        let cancAcumTrim  = val_canc_pf + val_canc_pj; // mês atual
         const mesesAnteriores = mesesAte.filter(mK => mK !== mesKey);
         for (const mK of mesesAnteriores) {
           const mI = MESES_IDX.indexOf(mK);
@@ -243,6 +261,7 @@
           const nn_tot_m = nn_pf_m + nn_pj_m + upg_m + raj_m;
           const cc_tot_m = vcpf_m + vcpj_m + dng_m - reat_m;
           resultadoAcum += nn_tot_m - cc_tot_m;
+          cancAcumTrim  += vcpf_m + vcpj_m;
         }
 
         const qi = trim ? trim.qi : 0;
@@ -251,25 +270,27 @@
         const matEquipPct   = fatAcum > 0 ? matEquipAcum / fatAcum : 0;
         const folhaPct      = fatAcum > 0 ? folhaAcum    / fatAcum : 0;
 
-        // Churn Fin acumulado trimestre
-        // Simplificado: média dos meses disponíveis
-        const churnFinAcum  = churnFin;  // usa o do mês atual
+        // Churn Fin acumulado trimestre = total cancelado no trim / total faturamento no trim
+        const churnFinAcum = fatAcum > 0 ? cancAcumTrim / fatAcum : 0;
 
-        const bonResOk    = isTrimFim && resultadoAcum >= META_RESULT_TRIM;
-        const bonChurnOk  = isTrimFim && churnFinAcum  <= META_CHURN_FIN_TRIM;
-        const bonMatOk    = isTrimFim && metaMatEquip > 0 && matEquipPct <= metaMatEquip;
-        const bonFolhaOk  = isTrimFim && metaFolha    > 0 && folhaPct    <= metaFolha;
         // Lê metaTrim_q diretamente do DOM com parse BRL (ex: "2.401.769,91" → 2401769.91)
         const _metaTrimEl  = document.getElementById('metaTrim_q' + (qi + 1));
         const _metaTrimRaw = _metaTrimEl ? _metaTrimEl.value.replace(/\./g,'').replace(',','.') : '0';
         const metaEbitdaTrim = parseFloat(_metaTrimRaw) || 0;
-        const bonEbitdaOk = isTrimFim && metaEbitdaTrim > 0 && ebitdaAcum >= metaEbitdaTrim;  // Ebitda sempre pago se positivo no fim do trim
 
-        const bonRes    = bonResOk    ? ebitdaAcum * PREMIO_RESULT_TRIM   : 0;
-        const bonChurn  = bonChurnOk  ? ebitdaAcum * PREMIO_CHURN_FIN_TRIM: 0;
-        const bonMat    = bonMatOk    ? ebitdaAcum * PREMIO_MAT_TRIM      : 0;
-        const bonFolha  = bonFolhaOk  ? ebitdaAcum * PREMIO_FOLHA_TRIM    : 0;
-        const bonEbitda = bonEbitdaOk ? ebitdaAcum * PREMIO_EBITDA_TRIM   : 0;
+        // Avalia meta independente de "trim acabou" — usado no badge (Atingido / Não atingido)
+        const bonResMetaOk    = META_RESULT_TRIM     > 0 && resultadoAcum >= META_RESULT_TRIM;
+        const bonChurnMetaOk  = META_CHURN_FIN_TRIM  > 0 && churnFinAcum  <= META_CHURN_FIN_TRIM;
+        const bonMatMetaOk    = metaMatEquip         > 0 && matEquipPct   <= metaMatEquip;
+        const bonFolhaMetaOk  = metaFolha            > 0 && folhaPct      <= metaFolha;
+        const bonEbitdaMetaOk = metaEbitdaTrim       > 0 && ebitdaAcum    >= metaEbitdaTrim;
+
+        // Bônus só é pago se trim acabou (isTrimFim) E meta atingida
+        const bonRes    = isTrimFim && bonResMetaOk    ? ebitdaAcum * PREMIO_RESULT_TRIM   : 0;
+        const bonChurn  = isTrimFim && bonChurnMetaOk  ? ebitdaAcum * PREMIO_CHURN_FIN_TRIM: 0;
+        const bonMat    = isTrimFim && bonMatMetaOk    ? ebitdaAcum * PREMIO_MAT_TRIM      : 0;
+        const bonFolha  = isTrimFim && bonFolhaMetaOk  ? ebitdaAcum * PREMIO_FOLHA_TRIM    : 0;
+        const bonEbitda = isTrimFim && bonEbitdaMetaOk ? ebitdaAcum * PREMIO_EBITDA_TRIM   : 0;
         const totalTrim = bonRes + bonChurn + bonMat + bonFolha + bonEbitda;
 
         // ======== HELPERS DE RENDER ========
@@ -305,16 +326,35 @@
             <strong style="color:${cor}">${fc(valor)}</strong>
           </div>`;
 
-        const bonCard = (icon, titulo, metaStr, realStr, premio, ok) => {
-          const wait = !isTrimFim;
-          return `<div style="background:${ok?'#f0fdf4':wait?'#fefce8':'#fff7f7'};border:1px solid ${ok?'#bbf7d0':wait?'#fde68a':'#fecaca'};border-radius:14px;padding:1.25rem">
+        // Padrão de badges igual à aba Comissão Financeiro
+        const bonCard = (icon, titulo, metaStr, realStr, premio, metaOk, hasMeta) => {
+          let badgeHtml, bgColor, borderColor, valColor;
+          if (!hasMeta) {
+            badgeHtml   = '<span style="background:#f1f5f9;color:#94a3b8;padding:0.2rem 0.65rem;border-radius:12px;font-size:0.78rem">Sem meta</span>';
+            bgColor='#f8fafc'; borderColor='#e2e8f0'; valColor='#94a3b8';
+          } else if (isTrimFim) {
+            if (metaOk) {
+              badgeHtml = '<span style="background:#d1fae5;color:#065f46;padding:0.2rem 0.65rem;border-radius:12px;font-size:0.78rem;font-weight:700">✓ Atingido</span>';
+              bgColor='#f0fdf4'; borderColor='#bbf7d0'; valColor='#065f46';
+            } else {
+              badgeHtml = '<span style="background:#fee2e2;color:#991b1b;padding:0.2rem 0.65rem;border-radius:12px;font-size:0.78rem;font-weight:700">✗ Não atingido</span>';
+              bgColor='#fff7f7'; borderColor='#fecaca'; valColor='#94a3b8';
+            }
+          } else if (trimStatus === 'current') {
+            badgeHtml = '<span style="background:#fef3c7;color:#92400e;padding:0.2rem 0.65rem;border-radius:12px;font-size:0.78rem;font-weight:700">⏳ Em andamento</span>';
+            bgColor='#fefce8'; borderColor='#fde68a'; valColor='#94a3b8';
+          } else {
+            badgeHtml = '<span style="background:#f1f5f9;color:#94a3b8;padding:0.2rem 0.65rem;border-radius:12px;font-size:0.78rem">Aguardando trimestre</span>';
+            bgColor='#f8fafc'; borderColor='#e2e8f0'; valColor='#94a3b8';
+          }
+          return `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:14px;padding:1.25rem">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
               <span style="font-size:1.1rem">${icon}</span>
-              ${ok?badge(true,'Atingido',''):wait?'<span style="background:#fef3c7;color:#92400e;padding:0.2rem 0.6rem;border-radius:12px;font-size:0.75rem;font-weight:700">⏳ Aguardando fim do trimestre</span>':badge(false,'','Não atingido')}
+              ${badgeHtml}
             </div>
             <div style="font-weight:700;color:#1e293b;margin-bottom:0.35rem;font-size:0.92rem">${titulo}</div>
             <div style="font-size:0.8rem;color:#64748b">Meta: ${metaStr} &nbsp;|&nbsp; Real: ${realStr}</div>
-            <div style="margin-top:0.75rem;font-size:1.1rem;font-weight:800;color:${ok?'#065f46':'#94a3b8'}">${fc(premio)}</div>
+            <div style="margin-top:0.75rem;font-size:1.1rem;font-weight:800;color:${valColor}">${fc(premio)}</div>
           </div>`;
         };
 
@@ -416,15 +456,15 @@
         const trimNome = trim ? trim.n : '';
         document.getElementById('opBonusTrimestral').innerHTML =
           bonCard('📊','Resultado Acumulado ≥ '+fc(META_RESULT_TRIM),
-            fc(META_RESULT_TRIM), fc(resultadoAcum), bonRes, bonResOk) +
+            fc(META_RESULT_TRIM), fc(resultadoAcum), bonRes, bonResMetaOk,    META_RESULT_TRIM    > 0) +
           bonCard('📉','Churn Financeiro Acumulado ≤ '+fp(META_CHURN_FIN_TRIM),
-            fp(META_CHURN_FIN_TRIM), fp(churnFinAcum), bonChurn, bonChurnOk) +
+            fp(META_CHURN_FIN_TRIM), fp(churnFinAcum), bonChurn, bonChurnMetaOk,  META_CHURN_FIN_TRIM > 0) +
           bonCard('🔧', 'Mat-Equip % Fat. ≤ '+fp(metaMatEquip),
-            fp(metaMatEquip), fp(matEquipPct), bonMat, bonMatOk) +
+            fp(metaMatEquip), fp(matEquipPct), bonMat, bonMatMetaOk,    metaMatEquip        > 0) +
           bonCard('👥','Folha % Fat. ≤ '+fp(metaFolha),
-            fp(metaFolha), fp(folhaPct), bonFolha, bonFolhaOk) +
+            fp(metaFolha), fp(folhaPct), bonFolha, bonFolhaMetaOk,  metaFolha           > 0) +
           bonCard('💹','EBITDA Trim. ≥ Meta',
-            fc(metaEbitdaTrim), fc(ebitdaAcum), bonEbitda, bonEbitdaOk);
+            fc(metaEbitdaTrim), fc(ebitdaAcum), bonEbitda, bonEbitdaMetaOk, metaEbitdaTrim      > 0);
 
         if(isTrimFim) {
           document.getElementById('opBonusTrimestral').innerHTML +=
