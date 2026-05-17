@@ -1,0 +1,6 @@
+[build]
+# Usa a imagem oficial da Evolution API (Baileys por baixo)
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "always"
