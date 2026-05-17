@@ -26,3 +26,15 @@ jobs:
           SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
           SB_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc
         run: node sync.js
+
+      - name: Notificar WhatsApp (falha)
+        if: failure()
+        env:
+          SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
+          WHATSAPP_WEBHOOK_SECRET: ${{ secrets.WHATSAPP_WEBHOOK_SECRET }}
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE_ALERTA }}
+        run: |
+          curl -s -X POST "$SB_URL/functions/v1/whatsapp-send" \
+            -H "x-webhook-secret: $WHATSAPP_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "{\"phone\":\"$WHATSAPP_PHONE\",\"message\":\"❌ *Sync OneDrive (Fluxo de Caixa) falhou!*\n\nVerifique: https://github.com/brunohrb/indicadores/actions\"}" || true
