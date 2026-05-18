@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { enviarMensagem, extrairPhone } from "../_shared/evolution.ts";
 
-const PHONES_AUTORIZADOS = (Deno.env.get("WHATSAPP_PHONES_AUTORIZADOS") ?? "")
+const PHONES_AUTORIZADOS = (Deno.env.get("WHATSAPP_PHONES_AUTORIZADOS") ?? "5585991561915")
   .split(",").map((p) => p.trim()).filter(Boolean);
 
 // Usa fetch direto com AbortController — sem supabase-js que trava a edge function
