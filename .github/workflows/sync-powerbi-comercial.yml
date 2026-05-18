@@ -50,15 +50,3 @@ jobs:
           else
             node sync-comercial.js --meses=last:3
           fi
-
-      - name: Notificar WhatsApp (falha)
-        if: failure()
-        env:
-          SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
-          WHATSAPP_WEBHOOK_SECRET: ${{ secrets.WHATSAPP_WEBHOOK_SECRET }}
-          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE_ALERTA }}
-        run: |
-          curl -s -X POST "$SB_URL/functions/v1/whatsapp-send" \
-            -H "x-webhook-secret: $WHATSAPP_WEBHOOK_SECRET" \
-            -H "Content-Type: application/json" \
-            -d "{\"phone\":\"$WHATSAPP_PHONE\",\"message\":\"❌ *Sync Power BI (Comercial PF) falhou!*\n\nVerifique: https://github.com/brunohrb/indicadores/actions\"}" || true
