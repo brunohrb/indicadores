@@ -164,6 +164,37 @@ Pra gerar hash: `echo -n "minhasenha" | sha256sum`.
 - ❌ "📡 IXC — Dados Reais" — incluindo `js/ixc-tab.js` e `abrirIXCView`
 - 🔄 "🤖 Marcos Juca" → renomeado pra "🤖 Estudo com IA"
 
+## WhatsApp Bot (mai/2026) — EM PAUSA
+
+Bot de consulta de indicadores via WhatsApp usando Evolution API v2.1.1 (Baileys) em `https://texnet-whatsapp.onrender.com`.
+
+### Estado atual
+- Branch: `claude/baileys-integration-UrpD4` — **NÃO mergeada na main ainda**
+- Edge Function deployada: `whatsapp-webhook` v16 no Supabase
+- **PAUSADO**: número pessoal do Bruno (5585991561915) foi desconectado do Evolution API. Aguardando chip/número dedicado pra reconectar.
+
+### Como retomar (próxima sessão)
+1. Conectar novo número no Evolution API (painel em `texnet-whatsapp.onrender.com`)
+2. Configurar webhook no Evolution API apontando pra `https://xuwwgprchhfshrqdhuqn.supabase.co/functions/v1/whatsapp-webhook` com evento `messages.upsert`
+3. Mergear PR do branch `claude/baileys-integration-UrpD4` na main
+4. Testar mandando "ajuda" do número pessoal 5585991561915 pro número novo
+
+### Arquitetura
+- Evolution API recebe mensagem → chama webhook (Edge Function Supabase)
+- Edge Function filtra: só processa mensagens de `5585991561915` (PHONES_AUTORIZADOS hardcoded)
+- Comandos: `ajuda`, `relatorio [YYYY-MM]`, `ixc [YYYY-MM]`, `status`
+- Dados lidos do `app_storage` via fetch com AbortController 10s
+- **Número autorizado hardcoded**: `5585991561915` (pode sobrescrever via secret `WHATSAPP_PHONES_AUTORIZADOS`)
+
+### Problema resolvido
+- supabase-js `createClient` travava a edge function por 120s → substituído por `fetch` nativo com AbortController
+- DB leitura OK: fetch funciona, dados chegam do `app_storage`
+
+### Credenciais Evolution API
+- URL: `https://texnet-whatsapp.onrender.com`
+- Instância: `texnet`
+- Secrets no Supabase: `EVOLUTION_URL`, `EVOLUTION_API_KEY`, `EVOLUTION_INSTANCE`
+
 ## Histórico (referência)
 
 - **abr/2026**: criação do sync Power BI (Diretoria) + aba inicial. 36 cards. Schema descoberto via workflows de debug.
