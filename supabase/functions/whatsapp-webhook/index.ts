@@ -83,7 +83,15 @@ serve(async (req) => {
   const remoteJid = String(key?.remoteJid ?? "");
   const fromMe = Boolean(key?.fromMe);
 
-  if (fromMe || !remoteJid) return new Response("ok", { status: 200 });
+  if (!remoteJid) return new Response("ok", { status: 200 });
+
+  const phone = extrairPhone(remoteJid);
+
+  // Só processa mensagens cujo remoteJid seja o número autorizado
+  // Para uso com número pessoal: envie comandos pelo chat "Mensagem pra você mesmo"
+  if (PHONES_AUTORIZADOS.length > 0 && !PHONES_AUTORIZADOS.includes(phone)) {
+    return new Response("ok", { status: 200 });
+  }
 
   const msg = data?.message as Record<string, unknown>;
   const texto = String(
@@ -91,12 +99,6 @@ serve(async (req) => {
   ).trim().toLowerCase();
 
   if (!texto) return new Response("ok", { status: 200 });
-
-  const phone = extrairPhone(remoteJid);
-
-  if (PHONES_AUTORIZADOS.length > 0 && !PHONES_AUTORIZADOS.includes(phone)) {
-    return new Response("ok", { status: 200 });
-  }
 
   try {
     await processarComando(texto, phone);
