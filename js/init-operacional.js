@@ -167,8 +167,13 @@
         const churnFin = fat > 0 ? (val_canc_pf + val_canc_pj) / fat : 0;
 
         // Resultado R$
-        const nn_total   = nn_pf + nn_pj + upgrade + reajuste_op;
-        const canc_total = val_canc_pf + val_canc_pj + downgrade - reat;
+        // Layout da Reativação: Maio/2026+ entra como subtração no Cancelamento.
+        // Até Abril/2026 fica somando em Novos Negócios (comportamento ANTIGO).
+        const _usaNovoLayout = (typeof _comissaoUsaPBI === 'function') ? _comissaoUsaPBI(mesIdx, ano) : true;
+        const nn_total   = _usaNovoLayout ? (nn_pf + nn_pj + upgrade + reajuste_op)
+                                          : (nn_pf + nn_pj + upgrade + reat + reajuste_op);
+        const canc_total = _usaNovoLayout ? (val_canc_pf + val_canc_pj + downgrade - reat)
+                                          : (val_canc_pf + val_canc_pj + downgrade);
         const resultado  = nn_total - canc_total;
 
         // === COMISSÕES MENSAIS ===
@@ -387,23 +392,24 @@
             </div>
           </div>`;
 
-        // ── Novos Negócios ──
+        // ── Novos Negócios ── (Reativação aqui só no layout antigo ≤ Abril/2026)
         document.getElementById('opNovosNegocios').innerHTML =
           rowLine('Novos PF', nn_pf, '#065f46') +
           rowLine('Novos PJ', nn_pj, '#065f46') +
           rowLine('UpGrade', upgrade, '#065f46') +
+          (!_usaNovoLayout ? rowLine('Reativação', reat, '#065f46') : '') +
           (reajuste_op > 0 ? rowLine('Reajuste Contratos', reajuste_op, '#065f46') : '') +
           `<div style="display:flex;justify-content:space-between;padding:0.75rem 0;font-size:0.95rem">
             <strong style="color:#065f46">TOTAL NOVOS</strong>
             <strong style="color:#065f46">${fc(nn_total)}</strong>
           </div>`;
 
-        // ── Cancelamentos (Reativação entra como subtração) ──
+        // ── Cancelamentos ── (Reativação como subtração só no layout novo Maio/2026+)
         document.getElementById('opCancelamentos').innerHTML =
           rowLine('Cancelamentos PF', val_canc_pf, '#991b1b') +
           rowLine('Cancelamentos PJ', val_canc_pj, '#991b1b') +
           rowLine('DownGrade', downgrade, '#991b1b') +  /* downgrade já é positivo via Math.abs */
-          rowLine('Reativação (−)', -reat, '#065f46', 'reduz cancelamento') +
+          (_usaNovoLayout ? rowLine('Reativação (−)', -reat, '#065f46', 'reduz cancelamento') : '') +
           `<div style="display:flex;justify-content:space-between;padding:0.75rem 0;font-size:0.95rem">
             <strong style="color:#991b1b">TOTAL CANC.</strong>
             <strong style="color:#991b1b">${fc(canc_total)}</strong>
