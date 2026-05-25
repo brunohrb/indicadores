@@ -2544,6 +2544,34 @@ function diretoriaPBI_ehAdmin() {
   return typeof usuarioLogado !== 'undefined' && usuarioLogado && usuarioLogado.perfil === 'edicao';
 }
 
+// Congela os 3 datasets de um mês (sem confirm/alert/atualizar lista). Retorna bool (achou dado).
+async function diretoriaPBI_congelarDatasets(mes) {
+  const agora = new Date().toISOString();
+  const congelar = async (prefixo, mesLiveVar) => {
+    let fonte = await diretoriaPBI_lerKey(prefixo + '_' + mes);
+    if (!fonte && mes === mesLiveVar) fonte = await diretoriaPBI_lerKey(prefixo);
+    if (!fonte) return false;
+    const snap = { ...fonte, mes_referencia: mes, fechado_em: agora };
+    const { error } = await sb.from('app_storage').upsert({
+      key: prefixo + '_fechado_' + mes, value: JSON.stringify(snap),
+    }, { onConflict: 'key' });
+    if (error) throw error;
+    return true;
+  };
+  const okDir = await congelar('powerbi_diretoria', diretoriaPBI_mesLive);
+  const okCpf = await congelar('powerbi_comercial_pf', diretoriaPBI_cpfMesLive);
+  const okRej = await congelar('powerbi_reajustes', diretoriaPBI_rejMesLive);
+  return okDir || okCpf || okRej;
+}
+
+async function diretoriaPBI_salvarListaFechados() {
+  await Promise.all([
+    sb.from('app_storage').upsert({ key: 'powerbi_diretoria_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
+    sb.from('app_storage').upsert({ key: 'powerbi_comercial_pf_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
+    sb.from('app_storage').upsert({ key: 'powerbi_reajustes_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
+  ]);
+}
+
 async function diretoriaPBI_fecharMes(mes) {
   const ok = confirm(
     `Fechar o mês ${mes}?\n\n` +
@@ -2554,46 +2582,47 @@ async function diretoriaPBI_fecharMes(mes) {
   );
   if (!ok) return;
   try {
-    const agora = new Date().toISOString();
-
-    // ── Congela os 3 datasets (lê snapshot per-mês; fallback no atalho live) ──
-    const congelarDataset = async (prefixo, mesLiveVar) => {
-      let fonte = await diretoriaPBI_lerKey(prefixo + '_' + mes);
-      if (!fonte && mes === mesLiveVar) fonte = await diretoriaPBI_lerKey(prefixo);
-      if (!fonte) return false;
-      const snap = { ...fonte, mes_referencia: mes, fechado_em: agora };
-      const { error } = await sb.from('app_storage').upsert({
-        key: prefixo + '_fechado_' + mes, value: JSON.stringify(snap),
-      }, { onConflict: 'key' });
-      if (error) throw error;
-      return true;
-    };
-
-    const okDir = await congelarDataset('powerbi_diretoria', diretoriaPBI_mesLive);
-    const okCpf = await congelarDataset('powerbi_comercial_pf', diretoriaPBI_cpfMesLive);
-    const okRej = await congelarDataset('powerbi_reajustes', diretoriaPBI_rejMesLive);
-
-    if (!okDir && !okCpf && !okRej) {
+    const achou = await diretoriaPBI_congelarDatasets(mes);
+    if (!achou) {
       alert(`Sem dados de ${mes} para fechar.\n\nRode o sync com meses=${mes} primeiro.`);
       return;
     }
-
     if (!diretoriaPBI_mesesFechados.includes(mes)) {
       diretoriaPBI_mesesFechados = [...diretoriaPBI_mesesFechados, mes].sort();
     }
-    // Marca fechado nas 3 listas (cada sync respeita a sua)
-    await Promise.all([
-      sb.from('app_storage').upsert({ key: 'powerbi_diretoria_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
-      sb.from('app_storage').upsert({ key: 'powerbi_comercial_pf_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
-      sb.from('app_storage').upsert({ key: 'powerbi_reajustes_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
-    ]);
-
+    await diretoriaPBI_salvarListaFechados();
     delete diretoriaPBI_dadosCache[mes];
     alert(`🔒 Mês ${mes} fechado com sucesso ✓\n(Congela só os dados do painel Power BI. As comissões fecham nas próprias abas.)`);
     renderDiretoriaPBI();
   } catch (e) {
     alert('Erro ao fechar mês: ' + (e.message || e));
   }
+}
+
+// Bulk: fecha todos os meses com dados ANTES de 2026-05 (ou seja ≤ Abril/2026). Admin.
+async function diretoriaPBI_fecharMesesAnteriores() {
+  if (!diretoriaPBI_ehAdmin()) { alert('Só um administrador (perfil "edição") pode fazer isso.'); return; }
+  const LIMITE = '2026-05'; // congela tudo < 2026-05
+  const candidatos = [...new Set([
+    ...diretoriaPBI_mesesDisponiveis, ...diretoriaPBI_cpfMesesDisponiveis, ...diretoriaPBI_rejMesesDisponiveis,
+  ])].filter(m => /^\d{4}-\d{2}$/.test(m) && m < LIMITE && !diretoriaPBI_mesesFechados.includes(m)).sort();
+  if (!candidatos.length) { alert('Nenhum mês anterior pendente de fechar (até Abril/2026).'); return; }
+  if (!confirm(`Fechar (congelar) ${candidatos.length} mês(es) até Abril/2026?\n\n${candidatos.join(', ')}\n\nSnapshot imutável dos dados do painel. Só admin reabre.`)) return;
+  let ok = 0;
+  for (const mes of candidatos) {
+    try {
+      const achou = await diretoriaPBI_congelarDatasets(mes);
+      if (achou) {
+        if (!diretoriaPBI_mesesFechados.includes(mes)) diretoriaPBI_mesesFechados.push(mes);
+        delete diretoriaPBI_dadosCache[mes];
+        ok++;
+      }
+    } catch (e) { console.error('fechar bulk', mes, e); }
+  }
+  diretoriaPBI_mesesFechados.sort();
+  await diretoriaPBI_salvarListaFechados();
+  alert(`🔒 ${ok} mês(es) fechado(s) até Abril/2026 ✓`);
+  renderDiretoriaPBI();
 }
 
 async function diretoriaPBI_reabrirMes(mes) {
@@ -2676,15 +2705,22 @@ function diretoriaPBI_renderFiltroFechados() {
   const el = document.getElementById('diretoriaPBI_filtroFechados');
   if (!el) return;
   const fechados = [...diretoriaPBI_mesesFechados].sort().reverse();
-  if (!fechados.length) {
-    el.innerHTML = '';
-    return;
+  // Botão bulk (admin): se há meses com dados ≤ Abril/2026 ainda não fechados
+  let bulkBtn = '';
+  if (diretoriaPBI_ehAdmin()) {
+    const pendentes = [...new Set([...diretoriaPBI_mesesDisponiveis, ...diretoriaPBI_cpfMesesDisponiveis, ...diretoriaPBI_rejMesesDisponiveis])]
+      .filter(m => /^\d{4}-\d{2}$/.test(m) && m < '2026-05' && !diretoriaPBI_mesesFechados.includes(m));
+    if (pendentes.length) {
+      bulkBtn = `<button onclick="diretoriaPBI_fecharMesesAnteriores()" style="padding:0.3rem 0.7rem;font-size:0.74rem;border-radius:8px;cursor:pointer;font-weight:600;border:none;background:#0f766e;color:white;margin-left:0.5rem" title="Congela todos os meses até Abril/2026 de uma vez">🔒 Fechar ${pendentes.length} meses anteriores (até Abr/2026)</button>`;
+    }
   }
+  if (!fechados.length && !bulkBtn) { el.innerHTML = ''; return; }
   const botoes = fechados.map(m => {
     const ativo = diretoriaPBI_mesesSelecionados.includes(m);
     return `<button onclick="diretoriaPBI_verMes('${m}')" style="padding:0.3rem 0.7rem;font-size:0.74rem;border-radius:999px;cursor:pointer;font-weight:600;border:1px solid ${ativo?'#0f766e':'#cbd5e1'};background:${ativo?'#ccfbf1':'white'};color:${ativo?'#0f766e':'#475569'}">🔒 ${m}</button>`;
   }).join('');
-  el.innerHTML = `<span style="font-size:0.74rem;color:#94a3b8;font-weight:600;margin-right:0.3rem">Meses fechados:</span>${botoes}`;
+  const label = fechados.length ? `<span style="font-size:0.74rem;color:#94a3b8;font-weight:600;margin-right:0.3rem">Meses fechados:</span>` : '';
+  el.innerHTML = `${label}${botoes}${bulkBtn}`;
 }
 
 function diretoriaPBI_verMes(mes) {

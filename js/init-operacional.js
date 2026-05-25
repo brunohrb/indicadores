@@ -51,9 +51,9 @@
       initParamFormatting();
     });
     // ==================== COMISSÃO OPERACIONAL ====================
-    function renderComissaoOp() {
-      const mesIdx  = parseInt(msGetFirst('opMesFiltro') || '0');
-      const ano     = parseInt(msGetFirst('opAnoFiltro') || '2026');
+    function renderComissaoOp(mesIdxArg, anoArg) {
+      const mesIdx  = (mesIdxArg !== undefined && mesIdxArg !== null) ? parseInt(mesIdxArg) : parseInt(msGetFirst('opMesFiltro') || '0');
+      const ano     = (anoArg !== undefined && anoArg !== null) ? parseInt(anoArg) : parseInt(msGetFirst('opAnoFiltro') || '2026');
       const MESES   = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
       const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
       const mesKey  = MESES[mesIdx];
@@ -112,7 +112,7 @@
       const folhaItem = dadosFinanceiros?.custos?.find(c=>c.nome==='Folha - Direta');
       const folha = folhaItem ? (folhaItem[mesKey]||0) : 0;
 
-      (async () => {
+      return (async () => {
         try {
         // GUARD: se o mês está FECHADO, restaura o snapshot (HTML congelado) e sai.
         const _opFechado = await getComissaoOpFechado(mesIdx, ano);
@@ -528,7 +528,10 @@
           : '';
         wrap.innerHTML = `<span style="background:#fef3c7;color:#92400e;padding:0.25rem 0.7rem;border-radius:20px;font-size:0.76rem;font-weight:700">🔒 Fechado${dt}</span>${btnReabrir}`;
       } else {
-        wrap.innerHTML = `<button onclick="fecharMesOperacional(${mesIdx},${ano})" style="padding:0.4rem 0.9rem;font-size:0.78rem;background:#dc2626;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700" title="Congela o cálculo deste mês — não muda mais">🔒 Fechar Mês</button>`;
+        const bulk = _opEhAdmin()
+          ? `<button onclick="fecharMesesAnterioresOperacional()" style="margin-left:0.5rem;padding:0.4rem 0.9rem;font-size:0.78rem;background:white;color:#0f766e;border:1px solid #0f766e;border-radius:8px;cursor:pointer;font-weight:600" title="Congela Jan–Abr/2026 de uma vez">🔒 Fechar anteriores (Jan–Abr/2026)</button>`
+          : '';
+        wrap.innerHTML = `<button onclick="fecharMesOperacional(${mesIdx},${ano})" style="padding:0.4rem 0.9rem;font-size:0.78rem;background:#dc2626;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700" title="Congela o cálculo deste mês — não muda mais">🔒 Fechar Mês</button>${bulk}`;
       }
     }
 
@@ -583,9 +586,42 @@
       }
     }
 
+    // Bulk: fecha Comissão Operacional de Jan–Abr/2026. Renderiza cada mês,
+    // captura o HTML e salva. Admin only.
+    async function fecharMesesAnterioresOperacional() {
+      if (!_opEhAdmin()) { alert('Só um administrador (perfil "edição") pode fazer isso.'); return; }
+      const ano = 2026;
+      const MESES_K = ['jan','fev','mar','abr'];
+      const MESES_N = ['Janeiro','Fevereiro','Março','Abril'];
+      // Detecta candidatos com dado e não fechados
+      const pend = [];
+      for (let m = 0; m <= 3; m++) {
+        if (await getComissaoOpFechado(m, ano)) continue;
+        const dir = await getDiretoriaDados(m, ano);
+        const temDir = dir && dir.dados && Object.values(dir.dados).some(v => typeof v === 'number' && v !== 0);
+        const temFat = (typeof getFaturamentoTotal === 'function') && getFaturamentoTotal(MESES_K[m]) > 0;
+        if (temDir || temFat) pend.push(m);
+      }
+      if (!pend.length) { alert('Nenhum mês (Jan–Abr/2026) pendente de fechar na Comissão Operacional.'); return; }
+      if (!confirm(`Fechar a Comissão Operacional de ${pend.length} mês(es) (${pend.map(m=>MESES_N[m]).join(', ')}/2026)?\n\nVou renderizar e congelar cada um — aguarde alguns segundos.`)) return;
+      let ok = 0;
+      for (const m of pend) {
+        try {
+          await renderComissaoOp(m, ano);      // renderiza ao vivo no DOM
+          const snap = { fechadoEm: new Date().toISOString(), mesIdx: m, ano, html: {} };
+          OP_SECOES_SNAP.forEach(id => { const el = document.getElementById(id); if (el) snap.html[id] = el.innerHTML; });
+          await sbStorage.set(_opFechadoKey(m, ano), JSON.stringify(snap));
+          ok++;
+        } catch (e) { console.error('bulk op', m, e); }
+      }
+      alert(`🔒 ${ok} mês(es) da Comissão Operacional fechado(s).`);
+      renderComissaoOp(); // restaura a view do mês atual
+    }
+
     // Expõe globalmente pros onclick inline (estamos dentro do DOMContentLoaded)
     window.fecharMesOperacional = fecharMesOperacional;
     window.reabrirMesOperacional = reabrirMesOperacional;
+    window.fecharMesesAnterioresOperacional = fecharMesesAnterioresOperacional;
 
 
     // ═══════════════════════════════════════════════════════
