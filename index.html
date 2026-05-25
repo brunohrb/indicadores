@@ -2129,7 +2129,8 @@
       </div>
     </div>
 
-    <div id="diretoriaPBI_chips" style="padding:0 2rem;margin:0.25rem 0 0.75rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem"></div>
+    <div id="diretoriaPBI_chips" style="padding:0 2rem;margin:0.25rem 0 0.5rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem"></div>
+    <div id="diretoriaPBI_filtroFechados" style="padding:0 2rem;margin:0 0 0.75rem;display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem"></div>
 
     <div id="diretoriaPBI_loading" style="padding:3rem;text-align:center;color:#64748b">⏳ Carregando indicadores...</div>
 
@@ -2560,63 +2561,113 @@ function diretoriaPBI_removerMes(mes) {
   renderDiretoriaPBI();
 }
 
+function diretoriaPBI_ehAdmin() {
+  return typeof usuarioLogado !== 'undefined' && usuarioLogado && usuarioLogado.perfil === 'edicao';
+}
+
 async function diretoriaPBI_fecharMes(mes) {
   const ok = confirm(
     `Fechar o mês ${mes}?\n\n` +
-    `Os valores ficam CONGELADOS — nem mesmo a próxima sincronização vai alterá-los. ` +
-    `Use isso quando os números do mês já estiverem consolidados (~dia 5–6 do mês seguinte), ` +
-    `para que comissões não mudem mais.\n\n` +
-    `Fecha tanto Diretoria quanto Comercial PF do mesmo mês.`
+    `CONGELA um snapshot imutável (tipo "print"):\n` +
+    `• Dados Diretoria + Comercial PF + Reajustes\n` +
+    `• Comissão Financeira do mês\n\n` +
+    `Nem o sync nem mudanças de parâmetro alteram isso depois. ` +
+    `Só um admin pode reabrir.`
   );
   if (!ok) return;
   try {
-    // ── Fonte Diretoria ──
-    let fonteDir = await diretoriaPBI_lerKey('powerbi_diretoria_' + mes);
-    if (!fonteDir && mes === diretoriaPBI_mesLive) fonteDir = await diretoriaPBI_lerKey('powerbi_diretoria');
+    const agora = new Date().toISOString();
 
-    // ── Fonte Comercial PF ──
-    let fonteCpf = await diretoriaPBI_lerKey('powerbi_comercial_pf_' + mes);
-    if (!fonteCpf && mes === diretoriaPBI_cpfMesLive) fonteCpf = await diretoriaPBI_lerKey('powerbi_comercial_pf');
+    // ── Congela os 3 datasets (lê snapshot per-mês; fallback no atalho live) ──
+    const congelarDataset = async (prefixo, mesLiveVar) => {
+      let fonte = await diretoriaPBI_lerKey(prefixo + '_' + mes);
+      if (!fonte && mes === mesLiveVar) fonte = await diretoriaPBI_lerKey(prefixo);
+      if (!fonte) return false;
+      const snap = { ...fonte, mes_referencia: mes, fechado_em: agora };
+      const { error } = await sb.from('app_storage').upsert({
+        key: prefixo + '_fechado_' + mes, value: JSON.stringify(snap),
+      }, { onConflict: 'key' });
+      if (error) throw error;
+      return true;
+    };
 
-    if (!fonteDir && !fonteCpf) {
-      alert(`Sem dados de ${mes} para fechar.\n\nRode o sync (Diretoria e/ou Comercial PF) com mes=${mes} primeiro.`);
+    const okDir = await congelarDataset('powerbi_diretoria', diretoriaPBI_mesLive);
+    const okCpf = await congelarDataset('powerbi_comercial_pf', diretoriaPBI_cpfMesLive);
+    const okRej = await congelarDataset('powerbi_reajustes', diretoriaPBI_rejMesLive);
+
+    if (!okDir && !okCpf && !okRej) {
+      alert(`Sem dados de ${mes} para fechar.\n\nRode o sync com meses=${mes} primeiro.`);
       return;
     }
 
-    const agora = new Date().toISOString();
-    if (fonteDir) {
-      const snap = { ...fonteDir, mes_referencia: mes, fechado_em: agora };
-      const { error } = await sb.from('app_storage').upsert({
-        key: 'powerbi_diretoria_fechado_' + mes, value: JSON.stringify(snap),
-      }, { onConflict: 'key' });
-      if (error) throw error;
-    }
-    if (fonteCpf) {
-      const snap = { ...fonteCpf, mes_referencia: mes, fechado_em: agora };
-      const { error } = await sb.from('app_storage').upsert({
-        key: 'powerbi_comercial_pf_fechado_' + mes, value: JSON.stringify(snap),
-      }, { onConflict: 'key' });
-      if (error) throw error;
+    // ── Congela a Comissão Financeira do mês ──
+    let comissaoMsg = '';
+    if (typeof fecharMesFinanceiroCore === 'function') {
+      const [ano, mesNum] = mes.split('-').map(Number);
+      try {
+        const r = await fecharMesFinanceiroCore(mesNum - 1, ano);
+        if (r && r.ok) comissaoMsg = `\n• Comissão Financeira: ${r.totalMensal.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}`;
+      } catch (e) {
+        comissaoMsg = '\n⚠️ Comissão Financeira não pôde ser congelada: ' + (e.message || e);
+      }
     }
 
     if (!diretoriaPBI_mesesFechados.includes(mes)) {
       diretoriaPBI_mesesFechados = [...diretoriaPBI_mesesFechados, mes].sort();
     }
-    // Marca fechado em ambas as listas (cada sync respeita a sua)
+    // Marca fechado nas 3 listas (cada sync respeita a sua)
     await Promise.all([
-      sb.from('app_storage').upsert({
-        key: 'powerbi_diretoria_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados),
-      }, { onConflict: 'key' }),
-      sb.from('app_storage').upsert({
-        key: 'powerbi_comercial_pf_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados),
-      }, { onConflict: 'key' }),
+      sb.from('app_storage').upsert({ key: 'powerbi_diretoria_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
+      sb.from('app_storage').upsert({ key: 'powerbi_comercial_pf_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
+      sb.from('app_storage').upsert({ key: 'powerbi_reajustes_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
     ]);
 
     delete diretoriaPBI_dadosCache[mes];
-    alert(`Mês ${mes} fechado com sucesso ✓`);
+    alert(`🔒 Mês ${mes} fechado com sucesso ✓${comissaoMsg}`);
     renderDiretoriaPBI();
   } catch (e) {
     alert('Erro ao fechar mês: ' + (e.message || e));
+  }
+}
+
+async function diretoriaPBI_reabrirMes(mes) {
+  if (!diretoriaPBI_ehAdmin()) {
+    alert('Só um administrador (perfil "edição") pode reabrir um mês fechado.');
+    return;
+  }
+  const ok = confirm(
+    `Reabrir o mês ${mes}?\n\n` +
+    `Remove o congelamento — os dados e a comissão voltam a refletir os valores ao vivo / parâmetros atuais. ` +
+    `Use só se fechou por engano ou precisa recalcular.`
+  );
+  if (!ok) return;
+  try {
+    // Remove os 3 snapshots de dados
+    await sb.from('app_storage').delete().in('key', [
+      'powerbi_diretoria_fechado_' + mes,
+      'powerbi_comercial_pf_fechado_' + mes,
+      'powerbi_reajustes_fechado_' + mes,
+    ]);
+
+    // Remove o snapshot da Comissão Financeira
+    if (typeof reabrirMesFinanceiroCore === 'function') {
+      const [ano, mesNum] = mes.split('-').map(Number);
+      try { await reabrirMesFinanceiroCore(mesNum - 1, ano); } catch (e) { /* ignore */ }
+    }
+
+    // Remove da lista de fechados (nas 3 chaves)
+    diretoriaPBI_mesesFechados = diretoriaPBI_mesesFechados.filter(m => m !== mes);
+    await Promise.all([
+      sb.from('app_storage').upsert({ key: 'powerbi_diretoria_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
+      sb.from('app_storage').upsert({ key: 'powerbi_comercial_pf_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
+      sb.from('app_storage').upsert({ key: 'powerbi_reajustes_meses_fechados', value: JSON.stringify(diretoriaPBI_mesesFechados) }, { onConflict: 'key' }),
+    ]);
+
+    delete diretoriaPBI_dadosCache[mes];
+    alert(`🔓 Mês ${mes} reaberto. Voltou a usar dados ao vivo.`);
+    renderDiretoriaPBI();
+  } catch (e) {
+    alert('Erro ao reabrir mês: ' + (e.message || e));
   }
 }
 
@@ -2650,7 +2701,61 @@ function diretoriaPBI_renderChips() {
   if (podeFechar) {
     html += `<button onclick="diretoriaPBI_fecharMes('${podeFechar}')" style="margin-left:0.5rem;padding:0.4rem 0.85rem;font-size:0.78rem;background:#0f766e;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Congela os valores deste mês — não mudam mais">🔒 Fechar mês ${podeFechar}</button>`;
   }
+  // Reabrir (admin): se algum mês selecionado está fechado
+  const fechadoSelecionado = diretoriaPBI_mesesSelecionados.find(m => diretoriaPBI_mesesFechados.includes(m));
+  if (fechadoSelecionado && diretoriaPBI_ehAdmin()) {
+    html += `<button onclick="diretoriaPBI_reabrirMes('${fechadoSelecionado}')" style="margin-left:0.5rem;padding:0.4rem 0.85rem;font-size:0.78rem;background:white;color:#b45309;border:1px solid #fbbf24;border-radius:8px;cursor:pointer;font-weight:600" title="Remove o congelamento (só admin)">🔓 Reabrir ${fechadoSelecionado}</button>`;
+  }
   el.innerHTML = html;
+
+  // Filtro de meses fechados (atalhos pra carregar rápido)
+  diretoriaPBI_renderFiltroFechados();
+}
+
+function diretoriaPBI_renderFiltroFechados() {
+  const el = document.getElementById('diretoriaPBI_filtroFechados');
+  if (!el) return;
+  const fechados = [...diretoriaPBI_mesesFechados].sort().reverse();
+  if (!fechados.length) {
+    el.innerHTML = '';
+    return;
+  }
+  const botoes = fechados.map(m => {
+    const ativo = diretoriaPBI_mesesSelecionados.includes(m);
+    return `<button onclick="diretoriaPBI_verMes('${m}')" style="padding:0.3rem 0.7rem;font-size:0.74rem;border-radius:999px;cursor:pointer;font-weight:600;border:1px solid ${ativo?'#0f766e':'#cbd5e1'};background:${ativo?'#ccfbf1':'white'};color:${ativo?'#0f766e':'#475569'}">🔒 ${m}</button>`;
+  }).join('');
+  el.innerHTML = `<span style="font-size:0.74rem;color:#94a3b8;font-weight:600;margin-right:0.3rem">Meses fechados:</span>${botoes}`;
+}
+
+function diretoriaPBI_verMes(mes) {
+  diretoriaPBI_mesesSelecionados = [mes];
+  renderDiretoriaPBI();
+}
+
+// Compara o snapshot congelado com o dado ao vivo atual e avisa se mudou.
+// Async, não bloqueia o render — atualiza o elRef quando termina.
+async function diretoriaPBI_compararFechadoVivo(mes, payloadFechado, elRef) {
+  try {
+    const live = await diretoriaPBI_lerKey('powerbi_diretoria_' + mes);
+    if (!live || !live.valores) return;
+    const vf = payloadFechado.valores || {};
+    const vl = live.valores || {};
+    // Conta quantos cards mudaram (numéricos, diferença > 0,01)
+    let mudaram = 0;
+    const exemplos = [];
+    for (const card of Object.keys(vf)) {
+      const a = vf[card], b = vl[card];
+      if (typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) > 0.01) {
+        mudaram++;
+        if (exemplos.length < 3) exemplos.push(card);
+      }
+    }
+    if (mudaram > 0) {
+      elRef.innerHTML += ` · <span style="background:#fef3c7;color:#92400e;padding:0.1rem 0.5rem;border-radius:6px;font-weight:600" title="${exemplos.join(', ')}${mudaram>3?'...':''}">⚠️ ${mudaram} valor(es) mudaram ao vivo desde o fechamento (congelado mantido)</span>`;
+    } else {
+      elRef.innerHTML += ` · <span style="background:#dcfce7;color:#166534;padding:0.1rem 0.5rem;border-radius:6px;font-weight:600">✓ ao vivo igual ao congelado</span>`;
+    }
+  } catch (e) { /* silencioso */ }
 }
 
 function abrirDiretoriaPBIView(navEl) {
@@ -2752,6 +2857,11 @@ async function renderDiretoriaPBI() {
         const at = u.payload.atualizado_em ? new Date(u.payload.atualizado_em) : null;
         const atStr = at ? at.toLocaleDateString('pt-BR') + ' ' + at.toLocaleTimeString('pt-BR').slice(0, 5) : '—';
         elRef.innerHTML = `📅 Mês: <b>${u.mes}</b> · ${status} · sync ${atStr}`;
+        // Comparação fechado × vivo: se mês está fechado, busca o dado ao vivo
+        // e avisa se algum valor mudou desde o congelamento.
+        if (u.payload.__status === 'fechado') {
+          diretoriaPBI_compararFechadoVivo(u.mes, u.payload, elRef);
+        }
       }
     }
 

@@ -1,14 +1,11 @@
 // ==================== FECHAR MÊS ====================
-    async function fecharMes() {
-      const mesIdx = parseInt(msGetFirst('comissaoMesFiltro') ?? 0);
-      const ano    = msGetFirst('comissaoAnoFiltro') ?? '2026';
-      const mesNome = MESES_NOME[mesIdx];
+    // Núcleo: calcula e grava o snapshot da Comissão Financeira pra um mês
+    // específico (mesIdx 0-11, ano string/num). Não depende dos seletores —
+    // pode ser chamado pela aba Diretoria pra congelar tudo junto.
+    // Retorna { ok, totalMensal } ou { ok:false, motivo }.
+    async function fecharMesFinanceiroCore(mesIdx, ano) {
       const mesKey  = MESES_KEY[mesIdx];
 
-      const conf = confirm(`Fechar ${mesNome}/${ano}?\n\nIsso irá CONGELAR todos os dados e cálculos deste mês.\nMesmo que os parâmetros mudem no futuro, este mês não será afetado.\n\nEsta ação pode ser desfeita clicando em "Reabrir".`);
-      if (!conf) return;
-
-      // Coleta snapshot completo dos dados e cálculos atuais
       const params = {};
       ['param_metaJuros','param_txComissaoJuros','param_txRecorrencia','param_limTarifas',
        'param_txEficiencia','param_txEbitdaMensal','param_txBonusTrim',
@@ -26,7 +23,6 @@
       const reajuste = dirDados?.dados
         ? ((dirDados.dados.reajuste_pf || 0) + (dirDados.dados.reajuste_pj || 0)) || dirDados.dados.reajuste || 0
         : 0;
-      // Juros: prefere PDF (juros45 + juros45m); fallback para Excel se PDF não disponível
       const _j45  = dirDados?.dados?.juros45  ?? null;
       const _j45m = dirDados?.dados?.juros45m ?? null;
       const juros = (_j45 !== null || _j45m !== null)
@@ -39,7 +35,6 @@
       const limTarifas      = params['param_limTarifas'] / 100;
       const txBancaria      = params['param_txEficiencia'] / 100;
       const txEbitdaMensal  = params['param_txEbitdaMensal'] / 100;
-      const txBonusTrim     = params['param_txBonusTrim'] / 100;
       const metaEbitdaPerc  = params['metaEbitda_'+mesKey] / 100;
 
       const jurosPerc    = fat > 0 ? juros / fat : 0;
@@ -49,8 +44,6 @@
       const tarifasPerc  = fat > 0 ? tarifas / fat : 0;
       const tarifasOk    = tarifasPerc <= limTarifas;
       const comissaoTar  = tarifasOk ? fat * txBancaria : 0;
-      // EBITDA% padronizado com a Comissão Operacional: usa Faturamento TOTAL
-      // (não BASE), pra os 2 cards de EBITDA% baterem entre si.
       const ebitdaPerc   = fatTotal > 0 ? ebitda / fatTotal : 0;
       const ebitdaOk     = ebitdaPerc >= metaEbitdaPerc;
       const comissaoEbitda = ebitdaOk ? ebitda * txEbitdaMensal : 0;
@@ -72,9 +65,27 @@
 
       const key = `mes_fechado_${ano}_${String(mesIdx+1).padStart(2,'0')}`;
       await sbStorage.set(key, JSON.stringify(snapshot));
+      return { ok: true, totalMensal };
+    }
+
+    async function fecharMes() {
+      const mesIdx = parseInt(msGetFirst('comissaoMesFiltro') ?? 0);
+      const ano    = msGetFirst('comissaoAnoFiltro') ?? '2026';
+      const mesNome = MESES_NOME[mesIdx];
+
+      const conf = confirm(`Fechar ${mesNome}/${ano}?\n\nIsso irá CONGELAR todos os dados e cálculos deste mês.\nMesmo que os parâmetros mudem no futuro, este mês não será afetado.\n\nEsta ação pode ser desfeita clicando em "Reabrir".`);
+      if (!conf) return;
+
+      await fecharMesFinanceiroCore(mesIdx, ano);
 
       alert(`✅ ${mesNome}/${ano} fechado com sucesso!\nDados congelados em ${new Date().toLocaleString('pt-BR')}.`);
       renderComissao();
+    }
+
+    // Núcleo do reabrir financeiro — remove o snapshot. Chamável por mês.
+    async function reabrirMesFinanceiroCore(mesIdx, ano) {
+      const key = `mes_fechado_${ano}_${String(mesIdx+1).padStart(2,'0')}`;
+      await sbStorage.remove(key);
     }
 
     async function reabrirMes() {
@@ -83,8 +94,7 @@
       const mesNome = MESES_NOME[mesIdx];
       const conf = confirm(`Reabrir ${mesNome}/${ano}?\nOs cálculos voltarão a usar os parâmetros atuais.`);
       if (!conf) return;
-      const key = `mes_fechado_${ano}_${String(mesIdx+1).padStart(2,'0')}`;
-      await sbStorage.remove(key);
+      await reabrirMesFinanceiroCore(mesIdx, ano);
       renderComissao();
     }
 
