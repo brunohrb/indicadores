@@ -66,21 +66,15 @@ async function executarDAX(token, dax, tentativa = 1) {
 async function dormir(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function daxDeCard(mesNum, ano) {
-  // PB Diretoria mostra o reajuste com OFFSET de -1 mês:
-  // - Sync direto de março ([Reajuste - Valor Aplicado]) → PF 3.895,33 / PJ 351,86
-  // - PB Diretoria abril → PF 3.895,88 / PJ 354,02 (BATE!)
-  // Então quando o user pede X, consultamos a aplicação do mês X-1.
-  // (Tentamos [Reajuste Recebido no Mes] + dCalendario Pagamento — não bateu.)
-  let mesAplicacao = mesNum - 1;
-  let anoAplicacao = ano;
-  if (mesAplicacao < 1) { mesAplicacao = 12; anoAplicacao = ano - 1; }
-  const filtroMes = `'dCalendário'[Ano] = ${anoAplicacao}, 'dCalendário'[NumeroMes] = ${mesAplicacao}`;
+  // SEM offset: o painel/comissão mostram o reajuste APLICADO no próprio mês
+  // (= "Mês Reajuste = X" no Dashboard de Reajustes). Ex: Maio = reajuste de Maio.
+  const filtroMes = `'dCalendário'[Ano] = ${ano}, 'dCalendário'[NumeroMes] = ${mesNum}`;
   // Listas de filial_id confirmadas (mesmas usadas no sync Diretoria)
   const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
   const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39}';
 
   return [
-    // [Reajuste - Valor Aplicado] do mês ANTERIOR. Valor segmentado por filial_id.
+    // [Reajuste - Valor Aplicado] do próprio mês. Valor segmentado por filial_id.
     { card: 'Reajuste Contratos PF',
       dax: `CALCULATE([Reajuste - Valor Aplicado], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF}))` },
     { card: 'Reajuste Contratos PJ',
