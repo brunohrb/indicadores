@@ -44,6 +44,8 @@
       const tarifasPerc  = fat > 0 ? tarifas / fat : 0;
       const tarifasOk    = tarifasPerc <= limTarifas;
       const comissaoTar  = tarifasOk ? fat * txBancaria : 0;
+      // EBITDA% padronizado com a Comissão Operacional: usa Faturamento TOTAL
+      // (não BASE), pra os 2 cards de EBITDA% baterem entre si.
       const ebitdaPerc   = fatTotal > 0 ? ebitda / fatTotal : 0;
       const ebitdaOk     = ebitdaPerc >= metaEbitdaPerc;
       const comissaoEbitda = ebitdaOk ? ebitda * txEbitdaMensal : 0;

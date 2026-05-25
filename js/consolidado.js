@@ -1,5 +1,8 @@
 // ==================== CONSOLIDADO CSV SYNC ====================
-    const ONEDRIVE_CSV_URL = 'https://excel.officeapps.live.com/x/_layouts/XlFileHandler.aspx?sheetName=JAN%202026&downloadAsCsvEnabled=1&WacUserType=WOPI&usid=81107527-d1ec-8889-b800-a4c8b76fe6e5&NoAuth=1&waccluster=PBR1';
+    // Edge Function que faz proxy do download do XLSX no OneDrive (contorna CORS).
+    // O share URL fica hardcoded dentro da função; pra trocar o arquivo, editar
+    // SHARE_URL em supabase/functions/fluxo-caixa-download/index.ts e redeploy.
+    const ONEDRIVE_XLSX_URL = SB_URL + '/functions/v1/fluxo-caixa-download';
 
     // Mapeamento: nome no CSV → chave em dadosFinanceiros + categoria
     const CSV_MAP = {
@@ -126,19 +129,43 @@
       }
     }
 
-    // Tenta buscar CSV do OneDrive automaticamente
+    // Tenta buscar XLSX do OneDrive via Edge Function (proxy CORS).
     async function consolidadoAutoFetch() {
       const btn = document.getElementById('btnAutoFetch');
       if (btn) { btn.disabled=true; btn.textContent='⏳ Buscando...'; }
       syncSetProgress(10, 'Conectando ao OneDrive...');
-      syncSetStatus('Buscando dados do OneDrive...', 'info');
+      syncSetStatus('Buscando arquivo do OneDrive...', 'info');
       try {
-        const resp = await fetch(ONEDRIVE_CSV_URL, { mode:'cors' });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const text = await resp.text();
-        if (!text || text.trim().length < 10) throw new Error('Resposta vazia');
-        syncSetProgress(50, 'Dados recebidos, processando CSV...');
-        await consolidadoProcessarCsv(text, 'OneDrive');
+        const resp = await fetch(ONEDRIVE_XLSX_URL, { mode:'cors' });
+        if (!resp.ok) {
+          let detail = '';
+          let fullJson = null;
+          try {
+            const j = await resp.json();
+            fullJson = j;
+            detail = j.error || '';
+            if (j.attempts) {
+              const parts = j.attempts.map(a => `${a.label}: HTTP ${a.status} (${a.ct||'?'})`).join(' | ');
+              detail += ' [' + parts + ']';
+            }
+            if (j.hint) detail += ' — ' + j.hint;
+            console.error('OneDrive sync detail:', j);
+          } catch(_) {}
+          // Mostra JSON detalhado num painel pra facilitar diagnóstico
+          const debugEl = document.getElementById('syncDebugPanel');
+          if (debugEl && fullJson) {
+            debugEl.style.display = 'block';
+            debugEl.innerHTML = '<div style="font-size:0.72rem;font-weight:700;color:#7c2d12;margin-bottom:0.35rem">🔍 Detalhe técnico do erro (copia/cola se for me passar):</div>' +
+              '<pre style="margin:0;font-size:0.7rem;color:#1e293b;white-space:pre-wrap;word-break:break-all">' +
+              JSON.stringify(fullJson, null, 2).replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])) +
+              '</pre>';
+          }
+          throw new Error('HTTP ' + resp.status + (detail ? ' — ' + detail : ''));
+        }
+        syncSetProgress(40, 'Download concluído, lendo XLSX...');
+        const buf = await resp.arrayBuffer();
+        if (!buf || buf.byteLength < 100) throw new Error('Arquivo vazio');
+        await consolidadoProcessarXlsxBytes(new Uint8Array(buf), 'OneDrive');
       } catch(e) {
         syncSetProgress(null);
         syncSetStatus(`❌ Não foi possível buscar automaticamente (${e.message}). Use o upload manual.`, 'erro');
@@ -154,10 +181,20 @@
       if (!file) return;
       syncSetProgress(10, 'Lendo arquivo XLSX...');
       syncSetStatus('Lendo arquivo...', 'info');
-      const reader = new FileReader();
-      reader.onload = async e => {
-        try {
-          const data = new Uint8Array(e.target.result);
+      try {
+        const buf  = await file.arrayBuffer();
+        await consolidadoProcessarXlsxBytes(new Uint8Array(buf), 'upload');
+      } catch (err) {
+        syncSetProgress(null);
+        syncSetStatus(`❌ Erro ao ler XLSX: ${err.message}`, 'erro');
+        console.error(err);
+      }
+      input.value = '';
+    }
+
+    // Core do parser — aceita bytes XLSX (de qualquer fonte: upload, OneDrive, base64).
+    async function consolidadoProcessarXlsxBytes(data, fonte) {
+      try {
           const wb = XLSX.read(data, { type: 'array' });
 
           // Usa aba "Anual Real - XXXX"
@@ -284,10 +321,9 @@
           showTab(document.querySelector('.tab-btn.active')?.textContent?.toLowerCase().trim() || 'receitas');
           renderComissao();
           syncSetProgress(null);
-          input.value = '';
           syncSetStatus(
             atualizados > 0
-              ? `✅ ${atualizados} itens importados da aba "${sheetName}"`
+              ? `✅ ${atualizados} itens importados da aba "${sheetName}" (${fonte})`
               : `⚠️ Nenhum item reconhecido. Verifique o arquivo.`,
             atualizados > 0 ? 'ok' : 'warn'
           );
@@ -296,9 +332,6 @@
           syncSetStatus(`❌ Erro ao ler XLSX: ${err.message}`, 'erro');
           console.error(err);
         }
-      };
-      reader.readAsArrayBuffer(file);
-      input.value = '';
     }
 
     // Parser principal do CSV — versão simples e robusta
