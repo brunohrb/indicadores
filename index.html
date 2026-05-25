@@ -1791,6 +1791,7 @@
             <h3 style="margin:0 0 1.25rem;color:#1e293b;font-size:1.05rem;display:flex;align-items:center;gap:0.5rem">
               📊 Indicadores Operacionais
               <span id="opMesLabel" style="background:#dbeafe;color:#1e40af;font-size:0.8rem;padding:0.2rem 0.6rem;border-radius:20px;font-weight:600;margin-left:0.5rem"></span>
+              <span id="opFecharBtnWrap" style="margin-left:auto"></span>
             </h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem" id="opIndicadores"></div>
           </div>
@@ -2546,11 +2547,10 @@ function diretoriaPBI_ehAdmin() {
 async function diretoriaPBI_fecharMes(mes) {
   const ok = confirm(
     `Fechar o mês ${mes}?\n\n` +
-    `CONGELA um snapshot imutável (tipo "print"):\n` +
-    `• Dados Diretoria + Comercial PF + Reajustes\n` +
-    `• Comissão Financeira do mês\n\n` +
-    `Nem o sync nem mudanças de parâmetro alteram isso depois. ` +
-    `Só um admin pode reabrir.`
+    `CONGELA um snapshot imutável (tipo "print") dos DADOS do painel Power BI:\n` +
+    `• Diretoria + Comercial PF + Reajustes\n\n` +
+    `Nem o sync vai alterar isso depois. Só um admin pode reabrir.\n\n` +
+    `Obs: isso NÃO mexe nas comissões — elas fecham nas próprias abas (Comissão Financeira / Operacional).`
   );
   if (!ok) return;
   try {
@@ -2578,18 +2578,6 @@ async function diretoriaPBI_fecharMes(mes) {
       return;
     }
 
-    // ── Congela a Comissão Financeira do mês ──
-    let comissaoMsg = '';
-    if (typeof fecharMesFinanceiroCore === 'function') {
-      const [ano, mesNum] = mes.split('-').map(Number);
-      try {
-        const r = await fecharMesFinanceiroCore(mesNum - 1, ano);
-        if (r && r.ok) comissaoMsg = `\n• Comissão Financeira: ${r.totalMensal.toLocaleString('pt-BR', {style:'currency',currency:'BRL'})}`;
-      } catch (e) {
-        comissaoMsg = '\n⚠️ Comissão Financeira não pôde ser congelada: ' + (e.message || e);
-      }
-    }
-
     if (!diretoriaPBI_mesesFechados.includes(mes)) {
       diretoriaPBI_mesesFechados = [...diretoriaPBI_mesesFechados, mes].sort();
     }
@@ -2601,7 +2589,7 @@ async function diretoriaPBI_fecharMes(mes) {
     ]);
 
     delete diretoriaPBI_dadosCache[mes];
-    alert(`🔒 Mês ${mes} fechado com sucesso ✓${comissaoMsg}`);
+    alert(`🔒 Mês ${mes} fechado com sucesso ✓\n(Congela só os dados do painel Power BI. As comissões fecham nas próprias abas.)`);
     renderDiretoriaPBI();
   } catch (e) {
     alert('Erro ao fechar mês: ' + (e.message || e));
@@ -2615,23 +2603,17 @@ async function diretoriaPBI_reabrirMes(mes) {
   }
   const ok = confirm(
     `Reabrir o mês ${mes}?\n\n` +
-    `Remove o congelamento — os dados e a comissão voltam a refletir os valores ao vivo / parâmetros atuais. ` +
-    `Use só se fechou por engano ou precisa recalcular.`
+    `Remove o congelamento dos dados do painel Power BI — voltam a refletir os valores ao vivo. ` +
+    `Use só se fechou por engano. (Não mexe nas comissões.)`
   );
   if (!ok) return;
   try {
-    // Remove os 3 snapshots de dados
+    // Remove os 3 snapshots de dados do painel
     await sb.from('app_storage').delete().in('key', [
       'powerbi_diretoria_fechado_' + mes,
       'powerbi_comercial_pf_fechado_' + mes,
       'powerbi_reajustes_fechado_' + mes,
     ]);
-
-    // Remove o snapshot da Comissão Financeira
-    if (typeof reabrirMesFinanceiroCore === 'function') {
-      const [ano, mesNum] = mes.split('-').map(Number);
-      try { await reabrirMesFinanceiroCore(mesNum - 1, ano); } catch (e) { /* ignore */ }
-    }
 
     // Remove da lista de fechados (nas 3 chaves)
     diretoriaPBI_mesesFechados = diretoriaPBI_mesesFechados.filter(m => m !== mes);
