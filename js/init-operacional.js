@@ -114,6 +114,12 @@
 
       (async () => {
         try {
+        // GUARD: se o mês está FECHADO, restaura o snapshot (HTML congelado) e sai.
+        const _opFechado = await getComissaoOpFechado(mesIdx, ano);
+        if (_opFechado) {
+          _restaurarComissaoOpFechado(mesIdx, ano, _opFechado);
+          return;
+        }
         const dirEntry = await getDiretoriaDados(mesIdx, ano);
         const D = (dirEntry && dirEntry.dados) ? dirEntry.dados : {};
         const get = (k, fb=0) => (D[k] !== null && D[k] !== undefined && D[k] !== '') ? +D[k] : fb;
@@ -468,6 +474,9 @@
             </div>`;
         }
 
+        // Mês ao vivo (não fechado): mostra botão "Fechar mês"
+        _renderOpFecharBtn(mesIdx, ano, false);
+
         } catch(err) {
           console.error('renderComissaoOp erro:', err);
           ['opIndicadores','opNovosNegocios','opCancelamentos','opResultadoCard',
@@ -478,6 +487,99 @@
         }
       })(); // end async
     }
+
+    // ═══════════════════════════════════════════════════════
+    // FECHAR / REABRIR MÊS — COMISSÃO OPERACIONAL
+    // Snapshot do HTML renderizado (tipo "print"). Congela o cálculo —
+    // não muda mais nem se dados/params mudarem. Reabrir só admin.
+    // ═══════════════════════════════════════════════════════
+    const OP_SECOES_SNAP = ['opIndicadores','opNovosNegocios','opCancelamentos',
+      'opResultadoCard','opComissoesMensais','opTotalMensal','opBonusTrimestral'];
+
+    function _opFechadoKey(mesIdx, ano) {
+      return `comissao_op_fechado_${ano}_${String(mesIdx+1).padStart(2,'0')}`;
+    }
+
+    async function getComissaoOpFechado(mesIdx, ano) {
+      try {
+        const raw = await sbStorage.get(_opFechadoKey(mesIdx, ano));
+        return raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : null;
+      } catch(e) { return null; }
+    }
+
+    function _opEhAdmin() {
+      return typeof usuarioLogado !== 'undefined' && usuarioLogado && usuarioLogado.perfil === 'edicao';
+    }
+
+    // Renderiza o botão Fechar (ao vivo) ou Reabrir (fechado) no header da Operacional
+    function _renderOpFecharBtn(mesIdx, ano, fechado, fechadoEm) {
+      const wrap = document.getElementById('opFecharBtnWrap');
+      if (!wrap) return;
+      if (fechado) {
+        const dt = fechadoEm ? ' em ' + new Date(fechadoEm).toLocaleDateString('pt-BR') : '';
+        const btnReabrir = _opEhAdmin()
+          ? `<button onclick="reabrirMesOperacional(${mesIdx},${ano})" style="margin-left:0.5rem;padding:0.35rem 0.8rem;font-size:0.76rem;background:white;color:#b45309;border:1px solid #fbbf24;border-radius:8px;cursor:pointer;font-weight:600" title="Remove o congelamento (só admin)">🔓 Reabrir</button>`
+          : '';
+        wrap.innerHTML = `<span style="background:#fef3c7;color:#92400e;padding:0.25rem 0.7rem;border-radius:20px;font-size:0.76rem;font-weight:700">🔒 Fechado${dt}</span>${btnReabrir}`;
+      } else {
+        wrap.innerHTML = `<button onclick="fecharMesOperacional(${mesIdx},${ano})" style="padding:0.4rem 0.9rem;font-size:0.78rem;background:#dc2626;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700" title="Congela o cálculo deste mês — não muda mais">🔒 Fechar Mês</button>`;
+      }
+    }
+
+    // Restaura o HTML congelado nas seções da Operacional
+    function _restaurarComissaoOpFechado(mesIdx, ano, snap) {
+      const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const lbl = document.getElementById('opMesLabel');
+      if (lbl) {
+        lbl.innerHTML = `🔒 ${MESES_N[mesIdx]} ${ano} <span style="font-weight:500;opacity:0.8">congelado</span>`;
+        lbl.style.background = '#fef3c7'; lbl.style.color = '#92400e';
+      }
+      OP_SECOES_SNAP.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && snap.html && snap.html[id] != null) el.innerHTML = snap.html[id];
+      });
+      _renderOpFecharBtn(mesIdx, ano, true, snap.fechadoEm);
+    }
+
+    async function fecharMesOperacional(mesIdx, ano) {
+      const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const ok = confirm(
+        `Fechar a Comissão Operacional de ${MESES_N[mesIdx]}/${ano}?\n\n` +
+        `Congela um snapshot do cálculo atual — não muda mais, mesmo que dados ou parâmetros mudem depois.\n\n` +
+        `Só um admin pode reabrir.`
+      );
+      if (!ok) return;
+      try {
+        const snap = { fechadoEm: new Date().toISOString(), mesIdx, ano, html: {} };
+        OP_SECOES_SNAP.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) snap.html[id] = el.innerHTML;
+        });
+        await sbStorage.set(_opFechadoKey(mesIdx, ano), JSON.stringify(snap));
+        alert(`🔒 Comissão Operacional de ${MESES_N[mesIdx]}/${ano} fechada ✓`);
+        renderComissaoOp();
+      } catch (e) {
+        alert('Erro ao fechar: ' + (e.message || e));
+      }
+    }
+
+    async function reabrirMesOperacional(mesIdx, ano) {
+      if (!_opEhAdmin()) { alert('Só um administrador (perfil "edição") pode reabrir.'); return; }
+      const MESES_N = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const ok = confirm(`Reabrir a Comissão Operacional de ${MESES_N[mesIdx]}/${ano}?\n\nVolta a recalcular ao vivo com dados/parâmetros atuais.`);
+      if (!ok) return;
+      try {
+        await sbStorage.remove(_opFechadoKey(mesIdx, ano));
+        alert(`🔓 Reaberto. Voltou a recalcular ao vivo.`);
+        renderComissaoOp();
+      } catch (e) {
+        alert('Erro ao reabrir: ' + (e.message || e));
+      }
+    }
+
+    // Expõe globalmente pros onclick inline (estamos dentro do DOMContentLoaded)
+    window.fecharMesOperacional = fecharMesOperacional;
+    window.reabrirMesOperacional = reabrirMesOperacional;
 
 
     // ═══════════════════════════════════════════════════════
