@@ -44,9 +44,10 @@
       const tarifasPerc  = fat > 0 ? tarifas / fat : 0;
       const tarifasOk    = tarifasPerc <= limTarifas;
       const comissaoTar  = tarifasOk ? fat * txBancaria : 0;
-      // EBITDA% padronizado com a Comissão Operacional: usa Faturamento TOTAL
-      // (não BASE), pra os 2 cards de EBITDA% baterem entre si.
-      const ebitdaPerc   = fatTotal > 0 ? ebitda / fatTotal : 0;
+      // EBITDA%: de Maio/2026+ usa Faturamento TOTAL (padronizado c/ Operacional).
+      // Até Abril/2026 usa Faturamento BASE (comportamento ANTIGO — não mexe no histórico).
+      const _baseEbitda  = _comissaoUsaPBI(mesIdx, ano) ? fatTotal : fat;
+      const ebitdaPerc   = _baseEbitda > 0 ? ebitda / _baseEbitda : 0;
       const ebitdaOk     = ebitdaPerc >= metaEbitdaPerc;
       const comissaoEbitda = ebitdaOk ? ebitda * txEbitdaMensal : 0;
       const totalMensal  = comissaoJuros + comissaoRec + comissaoTar + comissaoEbitda;
@@ -363,9 +364,10 @@
       const tarifasPerc  = fat > 0 ? tarifas / fat : 0;
       const tarifasOk    = tarifasPerc <= limTarifas;
       const comissaoTar  = tarifasOk ? fat * txBancaria : 0;
-      // EBITDA% padronizado com a Comissão Operacional: usa Faturamento TOTAL
-      // (não BASE), pra os 2 cards de EBITDA% baterem entre si.
-      const ebitdaPerc   = fatTotal > 0 ? ebitda / fatTotal : 0;
+      // EBITDA%: de Maio/2026+ usa Faturamento TOTAL (padronizado c/ Operacional).
+      // Até Abril/2026 usa Faturamento BASE (comportamento ANTIGO — não mexe no histórico).
+      const _baseEbitda  = _comissaoUsaPBI(mesIdx, ano) ? fatTotal : fat;
+      const ebitdaPerc   = _baseEbitda > 0 ? ebitda / _baseEbitda : 0;
       const ebitdaOk     = ebitdaPerc >= metaEbitdaPerc;
       const comissaoEbitda = ebitdaOk ? ebitda * txEbitdaMensal : 0;
       const totalMensal  = comissaoJuros + comissaoRec + comissaoTar + comissaoEbitda;
