@@ -305,7 +305,78 @@
       } catch(e) { return 0; }
     }
 
+    // ════════════════════════════════════════════════════════════
+    // FONTE DE DADOS DAS COMISSÕES — a partir de Maio/2026 puxa do
+    // sync do Power BI (powerbi_diretoria/comercial_pf/reajustes).
+    // Antes disso (≤ Abril/2026): dados dos uploads (legado), pra não
+    // mexer no histórico. Fluxo de Caixa (fat, ebitda, tarifas, folha)
+    // NÃO passa por aqui — continua da planilha.
+    // ════════════════════════════════════════════════════════════
+    const COMISSAO_PBI_CORTE = { ano: 2026, mes: 4 }; // mes 0-indexed: 4 = Maio
+
+    function _comissaoUsaPBI(mes, ano) {
+      const a = parseInt(ano);
+      return a > COMISSAO_PBI_CORTE.ano || (a === COMISSAO_PBI_CORTE.ano && mes >= COMISSAO_PBI_CORTE.mes);
+    }
+
+    async function _lerPBIKey(key) {
+      try {
+        const raw = await sbStorage.get(key);
+        if (!raw) return null;
+        return typeof raw === 'string' ? JSON.parse(raw) : raw;
+      } catch(e) { return null; }
+    }
+
+    // Lê os 3 datasets do Power BI (prefere fechado), mescla e mapeia os nomes
+    // dos cards pros campos que as comissões esperam. null se não houver dado.
+    async function montarDadosComissaoDoPBI(mes, ano) {
+      const ym = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+      const dir = await _lerPBIKey('powerbi_diretoria_fechado_' + ym) || await _lerPBIKey('powerbi_diretoria_' + ym);
+      const cpf = await _lerPBIKey('powerbi_comercial_pf_fechado_' + ym) || await _lerPBIKey('powerbi_comercial_pf_' + ym);
+      const rej = await _lerPBIKey('powerbi_reajustes_fechado_' + ym) || await _lerPBIKey('powerbi_reajustes_' + ym);
+      if (!dir && !cpf && !rej) return null;
+
+      const V = {};
+      if (cpf && cpf.valores) Object.assign(V, cpf.valores);
+      if (dir && dir.valores) Object.assign(V, dir.valores);
+      if (rej && rej.valores) Object.assign(V, rej.valores);
+      const n = card => { const v = V[card]; return typeof v === 'number' ? v : 0; };
+
+      return {
+        base_pf:      n('Base de Cliente PF'),
+        base_pj:      n('Base Clientes PJ +PME'),
+        base_isentos: n('Base de Isentos'),
+        contratos:    n('Base de Contratos'),
+        os_pf:        n('OS Suporte PF'),
+        os_pj:        n('OS Suporte PJ'),
+        canc_pf:      n('Cancelamento PF'),
+        canc_pj:      n('Cancelam. PME + PJ'),
+        retiradas:    n('Retiradas'),
+        canc_sr:      n('Cancelamento s/ equip. retirado'),
+        reat_ret:     n('Reativações Retiradas'),
+        canc_1a:      n('QTD. Canc. 1 Men.'),
+        nn_pf:        n('Novos Negócios PF'),
+        nn_pj:        n('Novos Negócios PJ'),
+        upgrade:      n('Valor Upgrade'),
+        reat:         n('Valor Reativações'),
+        val_canc_pf:  n('Valor Cancelamento PF'),
+        val_canc_pj:  n('Valor Canc. PJ + PME'),
+        downgrade:    n('Valor Downgrade'),
+        reajuste_pf:  n('Reajuste Contratos PF'),
+        reajuste_pj:  n('Reajuste Contratos PJ'),
+        juros45:      n('Juros < 45'),
+        juros45m:     n('Juros > 45'),
+        __fonte:      'powerbi',
+      };
+    }
+
     async function getDiretoriaDados(mes, ano) {
+      // Maio/2026 em diante: fonte = sync do Power BI
+      if (_comissaoUsaPBI(mes, ano)) {
+        const pbi = await montarDadosComissaoDoPBI(mes, ano);
+        if (pbi) return { dados: pbi };
+        // sem dado PBI ainda → cai no upload (abaixo)
+      }
       const mm = String(mes + 1).padStart(2, '0');
       // Tenta as duas chaves possíveis (nova e legada do diretoria.js)
       const keys = [

@@ -145,7 +145,12 @@
         const val_canc_pf  = get('val_canc_pf', canc_pf * TICKET_PF);
         const val_canc_pj  = get('val_canc_pj', canc_pj * TICKET_PJ);
         const downgrade    = Math.abs(get('downgrade'));  // sempre positivo
-        const reajuste_op  = reajusteDedicado > 0 ? reajusteDedicado : ((+D['reajuste_pf']||0) + (+D['reajuste_pj']||0)) > 0 ? ((+D['reajuste_pf']||0) + (+D['reajuste_pj']||0)) : (D['reajuste'] != null ? +D['reajuste'] : 0);
+        // Reajuste: se a fonte é Power BI (Maio/2026+), usa reajuste_pf+pj do PBI.
+        // Senão (legado): campo dedicado (Parâmetros) → PDF.
+        const _reajPBI = (+D['reajuste_pf']||0) + (+D['reajuste_pj']||0);
+        const reajuste_op = D.__fonte === 'powerbi'
+          ? _reajPBI
+          : (reajusteDedicado > 0 ? reajusteDedicado : (_reajPBI > 0 ? _reajPBI : (D['reajuste'] != null ? +D['reajuste'] : 0)));
 
         // === INDICADORES ===
         const pct_os_pf     = contratos  > 0 ? os_pf   / contratos : 0;
@@ -247,9 +252,10 @@
           const nn_pj_m  = getM('nn_pj');
           const upg_m    = getM('upgrade');
           const reat_m   = getM('reat');
-          const raj_m    = reajM > 0 ? reajM : ((+DM['reajuste_pf']||0)+(+DM['reajuste_pj']||0)) > 0
-                           ? ((+DM['reajuste_pf']||0)+(+DM['reajuste_pj']||0))
-                           : (DM['reajuste'] != null ? +DM['reajuste'] : 0);
+          const _reajPBI_m = (+DM['reajuste_pf']||0)+(+DM['reajuste_pj']||0);
+          const raj_m    = DM.__fonte === 'powerbi'
+                           ? _reajPBI_m
+                           : (reajM > 0 ? reajM : (_reajPBI_m > 0 ? _reajPBI_m : (DM['reajuste'] != null ? +DM['reajuste'] : 0)));
           const cpf_m    = getM('canc_pf');
           const cpj_m    = getM('canc_pj');
           const vcpf_m   = getM('val_canc_pf', cpf_m * TICKET_PF);
