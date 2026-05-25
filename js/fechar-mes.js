@@ -107,6 +107,31 @@
         return raw ? JSON.parse(raw) : null;
       } catch(e) { return null; }
     }
+
+    // Bulk: fecha Comissão Financeira de Jan–Abr/2026 (meses com dado, ainda não fechados). Admin.
+    async function fecharMesesAnterioresFinanceiro() {
+      const ehAdmin = (typeof usuarioLogado !== 'undefined' && usuarioLogado && usuarioLogado.perfil === 'edicao');
+      if (!ehAdmin) { alert('Só um administrador (perfil "edição") pode fazer isso.'); return; }
+      const ano = 2026;
+      const candidatos = [];
+      for (let m = 0; m <= 3; m++) { // Jan..Abr
+        const jaKey = `mes_fechado_${ano}_${String(m+1).padStart(2,'0')}`;
+        if (await sbStorage.get(jaKey)) continue; // já fechado
+        const temFat = getFaturamentoTotal(MESES_KEY[m]) > 0;
+        const dir = await getDiretoriaDados(m, ano);
+        const temDir = dir && dir.dados && Object.values(dir.dados).some(v => typeof v === 'number' && v !== 0);
+        if (temFat || temDir) candidatos.push(m);
+      }
+      if (!candidatos.length) { alert('Nenhum mês (Jan–Abr/2026) pendente de fechar na Comissão Financeira.'); return; }
+      const nomes = candidatos.map(m => MESES_NOME[m]).join(', ');
+      if (!confirm(`Fechar a Comissão Financeira de ${candidatos.length} mês(es) (${nomes}/2026)?\n\nCongela o cálculo de cada um. Só admin reabre.`)) return;
+      let ok = 0;
+      for (const m of candidatos) {
+        try { await fecharMesFinanceiroCore(m, ano); ok++; } catch(e) { console.error('bulk fin', m, e); }
+      }
+      alert(`✅ ${ok} mês(es) da Comissão Financeira fechado(s).`);
+      renderComissao();
+    }
     // =====================================================
 
     // Renderiza a view de comissão a partir de um snapshot congelado
@@ -196,7 +221,10 @@
               ? `<button onclick="reabrirMes()" title="Reabrir mês para edição" style="padding:0.45rem 1rem;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.5);color:white;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.82rem;white-space:nowrap">🔓 Reabrir</button>`
               : `<button onclick="fecharMes()" title="Congelar dados deste mês" style="padding:0.45rem 1rem;background:#dc2626;border:none;color:white;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.82rem;white-space:nowrap">🔒 Fechar Mês</button>`
             }
-          </div>`;
+          </div>`
+        + ((typeof usuarioLogado !== 'undefined' && usuarioLogado && usuarioLogado.perfil === 'edicao')
+            ? `<div style="text-align:right;margin-top:0.5rem"><button onclick="fecharMesesAnterioresFinanceiro()" style="padding:0.4rem 0.9rem;background:white;color:#0f766e;border:1px solid #0f766e;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.78rem" title="Congela Jan–Abr/2026 de uma vez">🔒 Fechar meses anteriores (Jan–Abr/2026)</button></div>`
+            : '');
 
       const trim = [
         { nome:'Q1 (Jan-Mar)', meses:['jan','fev','mar'], meta: metaTrimQ1 },
