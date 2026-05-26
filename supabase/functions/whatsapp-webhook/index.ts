@@ -3,6 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enviarMensagem, extrairPhone } from "../_shared/evolution.ts";
+import { responderCoach } from "../_shared/coach-core.ts";
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -34,9 +35,10 @@ serve(async (req) => {
 
   // Extrai texto da mensagem
   const msg = data?.message as Record<string, unknown>;
-  const texto = String(
-    msg?.conversation ?? msg?.extendedTextMessage?.text ?? ""
-  ).trim().toLowerCase();
+  const textoOriginal = String(
+    msg?.conversation ?? (msg?.extendedTextMessage as Record<string, unknown>)?.text ?? ""
+  ).trim();
+  const texto = textoOriginal.toLowerCase();
 
   const phone = extrairPhone(remoteJid);
 
@@ -46,7 +48,7 @@ serve(async (req) => {
   }
 
   try {
-    await processarComando(texto, phone);
+    await processarComando(texto, textoOriginal, phone);
   } catch (e) {
     await enviarMensagem(phone, `❌ Erro interno: ${String(e)}`).catch(() => {});
   }
@@ -54,15 +56,18 @@ serve(async (req) => {
   return new Response("ok", { status: 200 });
 });
 
-async function processarComando(texto: string, phone: string) {
+async function processarComando(texto: string, textoOriginal: string, phone: string) {
+  if (!texto) return;
   if (texto === "ajuda" || texto === "help" || texto === "menu") {
     await enviarMensagem(phone, `📊 *TEXNET Indicadores Bot*
 
-Comandos disponíveis:
+💬 *Pode falar comigo naturalmente!* Pergunte qualquer coisa sobre os indicadores, faturamento, clientes, cancelamentos, etc. — eu busco os dados reais e respondo.
 
+Comandos rápidos:
 *relatorio* — KPIs do mês atual
 *relatorio YYYY-MM* — KPIs de um mês específico
 *status* — status dos últimos syncs
+*limpar* — reinicia a conversa
 *ajuda* — este menu`);
     return;
   }
@@ -79,7 +84,43 @@ Comandos disponíveis:
     return;
   }
 
-  await enviarMensagem(phone, `Comando não reconhecido. Digite *ajuda* para ver os comandos disponíveis.`);
+  if (texto === "limpar" || texto === "reset" || texto === "novo") {
+    await salvarHistorico(phone, []);
+    await enviarMensagem(phone, "🧹 Conversa reiniciada. Pode perguntar o que quiser sobre os indicadores!");
+    return;
+  }
+
+  // Qualquer outro texto vira conversa com o Coach IA
+  await responderComCoach(phone, textoOriginal);
+}
+
+// ── Coach IA via WhatsApp (mantém histórico curto por telefone) ──
+async function responderComCoach(phone: string, pergunta: string) {
+  const historico = await lerHistorico(phone);
+  historico.push({ role: "user", content: pergunta });
+
+  const resposta = await responderCoach(sb, historico.slice(-10));
+  historico.push({ role: "assistant", content: resposta });
+  await salvarHistorico(phone, historico.slice(-10));
+
+  await enviarMensagem(phone, resposta);
+}
+
+type Turno = { role: "user" | "assistant"; content: string };
+
+async function lerHistorico(phone: string): Promise<Turno[]> {
+  const { data } = await sb.from("app_storage").select("value").eq("key", `coach_wpp_${phone}`).maybeSingle();
+  if (!data || data.value == null) return [];
+  try {
+    const v = typeof data.value === "string" ? JSON.parse(data.value) : data.value;
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+async function salvarHistorico(phone: string, historico: Turno[]) {
+  await sb.from("app_storage").upsert({ key: `coach_wpp_${phone}`, value: JSON.stringify(historico) }, { onConflict: "key" });
 }
 
 async function enviarRelatorio(phone: string, mes: string) {
