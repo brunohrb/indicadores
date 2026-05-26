@@ -305,6 +305,7 @@
       <div class="nav-item active" onclick="selectMenu(this,'dashboard')"><span class="nav-icon">💰</span><span>Dashboard</span></div>
       <div class="nav-item" onclick="selectMenu(this,'consolidado')"><span class="nav-icon">📋</span><span>Fluxo de Caixa</span></div>
       <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📊</span><span>Diretoria (Power BI)</span></div>
+      <div class="nav-item" onclick="abrirCoachView(this)"><span class="nav-icon">🧠</span><span>Coach IA</span></div>
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Estudo com IA</span></div>
       <div class="nav-item" onclick="selectMenu(this,'demonstrativo');setTimeout(function(){if(typeof dreRender==='function')dreRender();},120)"><span class="nav-icon">📉</span><span>Demonstrativo</span></div>
       <div class="nav-item" onclick="selectMenu(this,'diretoria')"><span class="nav-icon">⚙️</span><span>Parâmetros</span></div>
@@ -328,6 +329,7 @@
         <option value="consolidado">Fluxo de Caixa</option>
         <option value="comparativo">Comparativo Anual</option>
         <option value="demonstrativo">Demonstrativo</option>
+        <option value="coach-ia">Coach IA</option>
         <option value="ia-estrategica">Estudo com IA</option>
         <option value="diretoria">Parâmetros</option>
         <option value="comissao-financeiro">Comissão Financeiro</option>
@@ -565,6 +567,37 @@
       <!-- Indicadores View -->
       <!-- PowerBI View -->
       <!-- IA View -->
+      <!-- Coach IA View (Claude conversacional) -->
+      <div id="coachView" class="view-container" style="display:none">
+        <div style="max-width:900px;margin:0 auto;padding:2rem;display:flex;flex-direction:column;height:calc(100vh - 4rem)">
+
+          <!-- Header -->
+          <div style="background:linear-gradient(135deg,#0f3460,#1a1a2e);padding:1.5rem 2rem;border-radius:18px 18px 0 0;color:white;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+            <div style="display:flex;align-items:center;gap:1rem">
+              <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.7rem">🧠</div>
+              <div>
+                <h1 style="margin:0;font-size:1.5rem">Coach IA</h1>
+                <p style="margin:0.2rem 0 0;opacity:0.85;font-size:0.82rem">Copiloto de negócios com dados reais • <span style="background:rgba(255,255,255,0.15);padding:0.1rem 0.55rem;border-radius:20px;font-size:0.75rem">Claude Sonnet</span></p>
+              </div>
+            </div>
+            <button onclick="coachLimpar()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;border-radius:8px;padding:0.4rem 0.9rem;cursor:pointer;font-size:0.8rem">🧹 Nova conversa</button>
+          </div>
+
+          <!-- Mensagens -->
+          <div id="coachMsgs" style="flex:1;overflow-y:auto;background:white;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,0.06)"></div>
+
+          <!-- Status + input -->
+          <div style="background:white;border-radius:0 0 18px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.06);padding:1rem 1.5rem;border-top:1px solid #eef2f7">
+            <div id="coachStatus" style="font-size:0.75rem;color:#0f3460;min-height:1.1rem;margin-bottom:0.4rem"></div>
+            <div style="display:flex;gap:0.75rem">
+              <input id="coachInput" type="text" placeholder="Pergunte sobre faturamento, clientes, cancelamentos, comissões..." style="flex:1;padding:0.75rem 1rem;border:1px solid #e2e8f0;border-radius:12px;font-size:0.9rem;outline:none" onfocus="this.style.borderColor='#0f3460'" onblur="this.style.borderColor='#e2e8f0'" onkeydown="if(event.key==='Enter')coachEnviar()">
+              <button id="coachSendBtn" onclick="coachEnviar()" style="padding:0.75rem 1.5rem;background:linear-gradient(135deg,#0f3460,#1a1a2e);color:white;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:0.9rem;white-space:nowrap">Enviar →</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
       <div id="iaEstrategicaView" class="view-container">
         <div style="max-width:1400px;margin:0 auto;padding:2rem">
 
@@ -2266,6 +2299,7 @@ document.addEventListener('click', function() {
   <script src="js/fechar-mes.js"></script>
   <script src="js/consolidado.js"></script>
   <script src="js/init-operacional.js?v=4"></script>
+  <script src="js/coach-ia.js?v=1"></script>
   <script>
 // ================================================================
 // DIRETORIA POWER BI — 36 indicadores sincronizados

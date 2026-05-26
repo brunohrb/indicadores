@@ -48,6 +48,29 @@ Em mai/2026 a aba antiga "Comercial PF (Power BI)" foi **removida** e seus cards
 - `powerbi_diretoria_meses_disponiveis` — array JSON dos meses com snapshot per-mês
 - Análogo para Comercial PF: `powerbi_comercial_pf_*` com mesmos sufixos
 
+## Coach IA (Claude conversacional) — mai/2026
+
+Assistente estilo WHOOP Coach: chat conversacional que busca dados REAIS de negócio via tools e responde com Claude (`claude-sonnet-4-6`). Convive com o "Estudo com IA" antigo (GPT-4o) — são features separadas.
+
+### Arquitetura
+- **`supabase/functions/_shared/coach-core.ts`** — núcleo compartilhado: define as `TOOLS` (formato Anthropic), o executor `executarTool(sb, nome, input)` (lê `app_storage`), `systemPrompt()` e `responderCoach(sb, messages)` (loop agêntico NÃO-streaming, usado pelo WhatsApp). Modelo em `MODELO`.
+- **`supabase/functions/coach-ia/index.ts`** — endpoint de STREAMING pro navegador. POST `{messages:[{role,content}]}` → SSE com eventos `{type:'text'|'tool'|'done'|'error'}`. Roda o loop de tool-use no servidor e faz proxy do stream do Claude (só o texto é transmitido). CORS liberado. Prompt caching (`cache_control: ephemeral`) no system.
+- **`supabase/functions/whatsapp-webhook/index.ts`** — qualquer texto que NÃO seja comando fixo (ajuda/status/relatorio/limpar) vai pro Coach via `responderCoach` (não-streaming). Histórico curto por telefone em `app_storage` key `coach_wpp_<phone>` (últimos 10 turnos). `limpar`/`reset`/`novo` zera.
+- **Frontend**: `js/coach-ia.js` (IIFE, expõe `abrirCoachView/coachEnviar/coachLimpar` em `window`) + view `#coachView` no index.html + nav "🧠 Coach IA". Lê o SSE via fetch ReadableStream. Usa `iaMarkdown` (global) pra render.
+
+### Tools (leem do app_storage)
+- `listar_dados_disponiveis` — meses disponíveis/fechados + timestamps de sync.
+- `get_indicadores_mes(mes)` — mescla `powerbi_diretoria/comercial_pf/reajustes` (prefere `_fechado_`).
+- `get_financeiro_mes(mes)` — soma `consolidado_dados` (receitas/impostos/custos/despesas) + EBITDA estimado + top linhas.
+- `get_ixc(tipo, mes)` — lê `ixc_<tipo>_<mes>` (ou `ixc_operacional`).
+- `get_pagamento_cliente(busca)` — consulta API IXC. **Precisa dos secrets `IXC_API_URL` + `IXC_API_TOKEN`** (ainda não setados → retorna "não configurada"). Endpoint usado: `/webservice/v1/cliente_contrato` (Basic auth base64 + header `ixcsoft: listar`). Conferir formato real quando for habilitar.
+
+### Secrets necessários no Supabase
+`ANTHROPIC_API_KEY` (obrigatório — usuário disse que já setou). Opcionais: `IXC_API_URL`, `IXC_API_TOKEN`. WhatsApp já usa `EVOLUTION_URL/EVOLUTION_API_KEY/EVOLUTION_INSTANCE` + `WHATSAPP_PHONES_AUTORIZADOS`.
+
+### Deploy
+Edge Functions precisam de `supabase functions deploy coach-ia` e `supabase functions deploy whatsapp-webhook` (usuário roda — não tenho acesso ao Supabase CLI). `coach-ia` é chamada do browser com anon key (JWT verify passa). `whatsapp-webhook` provavelmente está com `--no-verify-jwt`.
+
 ## Power BI sync (`powerbi-sync/`)
 
 ### Arquivos
