@@ -2,8 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>TEXNET - Dashboard Financeiro</title>
+  <meta name="description" content="Dashboard de indicadores e fluxo de caixa da TEXNET">
+  <meta name="theme-color" content="#0f3460">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TEXNET">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
@@ -237,6 +246,37 @@
 @supports (padding: max(0px)) {
   .sidebar { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
   .main-content { padding-bottom: env(safe-area-inset-bottom); }
+  /* Hamburguer e topo respeitam o notch */
+  #menuToggle { top: max(1rem, env(safe-area-inset-top)); left: max(1rem, env(safe-area-inset-left)); }
+  .sidebar-header { padding-top: max(1.5rem, calc(env(safe-area-inset-top) + 0.75rem)); }
+}
+
+/* Usa dynamic viewport height (corrige bug do 100vh no Safari iOS) */
+@supports (height: 100dvh) {
+  .sidebar { height: 100dvh; }
+  #coachShell { height: calc(100dvh - 4rem); }
+}
+
+/* ===== Coach IA — chat full-screen no celular ===== */
+@media (max-width: 768px) {
+  /* Header principal desce pra não ficar atrás do notch + botão de menu */
+  .header { padding-top: max(4rem, calc(env(safe-area-inset-top) + 3.25rem)); }
+
+  #coachShell { padding: 0 !important; max-width: 100% !important; height: 100vh; height: 100dvh; }
+  /* header do coach: cantos retos + espaço pro notch e pro hamburguer */
+  #coachShell > div:first-child {
+    border-radius: 0 !important;
+    padding-top: max(1rem, calc(env(safe-area-inset-top) + 0.75rem)) !important;
+    padding-left: max(1.25rem, calc(env(safe-area-inset-left) + 3.4rem)) !important;
+  }
+  /* barra de input: cantos retos + respeita home bar */
+  #coachShell > div:last-child {
+    border-radius: 0 !important;
+    padding-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.5rem)) !important;
+  }
+  #coachMsgs { padding: 1rem !important; }
+  /* 16px evita o zoom automático do iOS ao focar o input */
+  #coachInput { font-size: 16px !important; }
 }
 /* ===== FIM RESPONSIVO ===== */
 </style>
@@ -569,7 +609,7 @@
       <!-- IA View -->
       <!-- Coach IA View (Claude conversacional) -->
       <div id="coachView" class="view-container" style="display:none">
-        <div style="max-width:900px;margin:0 auto;padding:2rem;display:flex;flex-direction:column;height:calc(100vh - 4rem)">
+        <div id="coachShell" style="max-width:900px;margin:0 auto;padding:2rem;display:flex;flex-direction:column;height:calc(100vh - 4rem)">
 
           <!-- Header -->
           <div style="background:linear-gradient(135deg,#0f3460,#1a1a2e);padding:1.5rem 2rem;border-radius:18px 18px 0 0;color:white;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
@@ -2300,6 +2340,14 @@ document.addEventListener('click', function() {
   <script src="js/consolidado.js"></script>
   <script src="js/init-operacional.js?v=4"></script>
   <script src="js/coach-ia.js?v=1"></script>
+  <script>
+    // PWA — registra o service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
   <script>
 // ================================================================
 // DIRETORIA POWER BI — 36 indicadores sincronizados
