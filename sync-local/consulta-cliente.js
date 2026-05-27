@@ -29,7 +29,7 @@ function ixc(tabela, body) {
   });
 }
 
-const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 const brl = (v) => 'R$ ' + Number(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
 async function buscarClientes(termo) {
