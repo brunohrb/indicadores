@@ -76,22 +76,24 @@ async function buscarClientes(termo) {
 
 async function valorDoContrato(ct) {
   // 1) campo direto no próprio contrato
-  for (const k of ['valor', 'mensalidade', 'valor_mensal', 'valor_servico', 'valor_total']) {
-    if (Number(ct[k]) > 0) return { valor: Number(ct[k]), origem: 'contrato.' + k };
+  for (const k of Object.keys(ct)) {
+    if (/valor|mensal|preco|preç/i.test(k) && Number(ct[k]) > 0) return { valor: Number(ct[k]), origem: 'contrato.' + k, plano: null };
   }
-  // 2) plano de venda vinculado (vd_contrato)
-  const idPlano = ct.id_vd_contrato || ct.id_contrato || ct.id_plano;
-  if (idPlano) {
+  // 2) plano de venda vinculado (vd_contrato) — varre TODOS os campos do plano
+  const idPlano = ct.id_vd_contrato;
+  let plano = null;
+  if (idPlano && idPlano !== '0') {
     try {
       const p = await ixc('vd_contrato', { qtype: 'vd_contrato.id', query: String(idPlano), oper: '=', page: '1', rp: '1', sortname: 'vd_contrato.id', sortorder: 'asc' });
-      if (p[0]) {
-        for (const k of ['valor', 'valor_total', 'valor_servico', 'valor_plano']) {
-          if (Number(p[0][k]) > 0) return { valor: Number(p[0][k]), origem: 'plano.' + k };
+      plano = p[0] || null;
+      if (plano) {
+        for (const k of Object.keys(plano)) {
+          if (/valor|mensal|preco|preç/i.test(k) && Number(plano[k]) > 0) return { valor: Number(plano[k]), origem: 'plano.' + k, plano };
         }
       }
-    } catch { /* ignora */ }
+    } catch (e) { plano = { _erro: e.message }; }
   }
-  return { valor: 0, origem: null };
+  return { valor: 0, origem: null, plano };
 }
 
 async function consultar(termo) {
@@ -113,14 +115,14 @@ async function consultar(termo) {
     });
     if (!contratos.length) { console.log('   (sem contratos)'); continue; }
     for (const ct of contratos) {
-      const { valor, origem } = await valorDoContrato(ct);
+      const { valor, origem, plano } = await valorDoContrato(ct);
       const txtValor = valor > 0 ? `${brl(valor)} (${origem})` : 'valor não localizado';
-      console.log(`   • Contrato ${ct.id} | status ${ct.status} | ${txtValor}`);
-      // Diagnóstico (1x): se não achou valor, mostra todos os campos do contrato
+      console.log(`   • Contrato ${ct.id} | ${ct.contrato || ''} | status ${ct.status} | ${txtValor}`);
+      // Diagnóstico (1x): se não achou valor, mostra o PLANO (onde mora o valor)
       if (valor === 0 && !jaMostrouCampos) {
         jaMostrouCampos = true;
-        console.log('\n   [DIAGNÓSTICO] todos os campos deste contrato (pra achar o valor):');
-        console.log('   ' + JSON.stringify(ct));
+        console.log('\n   [DIAGNÓSTICO] plano (vd_contrato) deste contrato:');
+        console.log('   ' + JSON.stringify(plano));
         console.log('');
       }
     }
