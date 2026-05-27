@@ -26,9 +26,10 @@ jobs:
         with:
           version: latest
 
-      # coach-ia: chamada pelo navegador com a anon key → mantém verificação de JWT (padrão)
+      # coach-ia: chamada pelo navegador. Sem verify-jwt pra não bloquear o
+      # preflight CORS (o navegador manda OPTIONS sem token). A função trata CORS.
       - name: Deploy coach-ia
-        run: supabase functions deploy coach-ia --project-ref "$PROJECT_REF"
+        run: supabase functions deploy coach-ia --no-verify-jwt --project-ref "$PROJECT_REF"
 
       # whatsapp-webhook: chamada pela Evolution API sem token → sem verificação de JWT
       - name: Deploy whatsapp-webhook
