@@ -255,7 +255,30 @@ async function toolPagamentoCliente(busca: string) {
     }
 
     if (clientes.length === 0) {
-      return { encontrado: false, busca: termo, como_buscou: comoBuscou, mensagem: "Nenhum cliente encontrado (a busca inclui cancelados). Confira a grafia do nome." };
+      // Diagnóstico: confirma se a API/tabela/campo respondem e quais campos existem
+      let diag = "sem diagnóstico";
+      try {
+        const auth = "Basic " + btoa(token);
+        const res = await fetch(`${base}/webservice/v1/cliente`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: auth, ixcsoft: "listar" },
+          body: JSON.stringify({ qtype: "cliente.id", query: "0", oper: ">", page: "1", rp: "3", sortname: "cliente.id", sortorder: "asc" }),
+        });
+        const txt = await res.text();
+        let json: Record<string, unknown> | null = null;
+        try { json = JSON.parse(txt); } catch { /* resposta não-JSON */ }
+        const regs = (json && Array.isArray(json.registros)) ? json.registros as Array<Record<string, unknown>> : null;
+        const campos = regs && regs[0] ? Object.keys(regs[0]).join(", ") : "—";
+        const chaves = json ? Object.keys(json).join(", ") : "(não-JSON)";
+        diag = `HTTP ${res.status} | chaves_resposta: [${chaves}] | total: ${json?.total ?? "?"} | campos_cadastro: [${campos}]${json ? "" : " | crua: " + txt.slice(0, 150)}`;
+      } catch (e) { diag = "erro no diagnóstico: " + String((e as Error).message || e); }
+      return {
+        encontrado: false,
+        busca: termo,
+        como_buscou: comoBuscou,
+        diagnostico_tecnico: diag,
+        instrucao_para_ia: "Diga ao usuário que não encontrou e MOSTRE a linha 'diagnostico_tecnico' exatamente como está, pedindo pra ele encaminhar ao desenvolvedor.",
+      };
     }
 
     // Muitos resultados → devolve lista pra desambiguar (sem contratos)
