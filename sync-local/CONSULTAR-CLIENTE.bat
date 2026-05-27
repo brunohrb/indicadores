@@ -1,7 +1,7 @@
 @echo off
 REM ===============================================================
 REM  TEXNET - Consultar Cliente no IXC (roda local, IP autorizado)
-REM  Duplo clique neste arquivo, digite o nome e veja o valor.
+REM  Duplo clique, digite o nome e veja o valor. Nao precisa instalar nada.
 REM ===============================================================
 setlocal
 cd /d "%~dp0"
@@ -19,12 +19,6 @@ if errorlevel 1 (
   echo Depois feche esta janela e abra de novo.
   pause
   exit /b 1
-)
-
-if not exist "node_modules" (
-  echo Primeira execucao - instalando dependencias... ^(demora ~1 min^)
-  echo.
-  call npm install --no-fund --no-audit
 )
 
 node consulta-cliente.js %*

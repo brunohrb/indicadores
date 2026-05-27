@@ -1,29 +1,49 @@
 #!/usr/bin/env node
 // =====================================================
 // Consulta de cliente no IXC — roda LOCAL (PC do escritório, IP autorizado)
+// SEM dependências: usa só módulos nativos do Node (não precisa npm install).
 // Uso: dê dois cliques em CONSULTAR-CLIENTE.bat
-//   ou pela linha de comando: node consulta-cliente.js "Lucas Peixoto Cavalcante"
-// Reusa a MESMA conexão do sync.js (mesmo token/URL).
+//   ou: node consulta-cliente.js "Lucas Peixoto Cavalcante"
 // =====================================================
 
-const axios = require('axios');
+const https = require('https');
 const readline = require('readline');
 
-const cfg = {
-  IXC_URL:   process.env.IXC_URL   || 'https://ixcsoft.texnet.net.br',
-  IXC_TOKEN: process.env.IXC_TOKEN || '185:ef49bcecf6129a5b61690ac3da0ab99acdaca9171ea63d06cc403a73eef8c547',
-};
-const BASIC = `Basic ${Buffer.from(cfg.IXC_TOKEN).toString('base64')}`;
-const http = axios.create({
-  baseURL: `${cfg.IXC_URL}/webservice/v1`,
-  headers: { Authorization: BASIC, 'Content-Type': 'application/json' },
-  timeout: 60000,
-});
+const IXC_URL   = 'https://ixcsoft.texnet.net.br';
+const IXC_TOKEN = '185:ef49bcecf6129a5b61690ac3da0ab99acdaca9171ea63d06cc403a73eef8c547';
+const BASIC = 'Basic ' + Buffer.from(IXC_TOKEN).toString('base64');
 
-async function ixc(tabela, body) {
-  const { data } = await http.post(`/${tabela}`, body, { headers: { ixcsoft: 'listar' } });
-  if (data && data.type === 'error') throw new Error(`IXC: ${data.message}`);
-  return Array.isArray(data.registros) ? data.registros : [];
+function ixc(tabela, body) {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify(body);
+    const u = new URL(`${IXC_URL}/webservice/v1/${tabela}`);
+    const req = https.request({
+      hostname: u.hostname,
+      path: u.pathname,
+      method: 'POST',
+      headers: {
+        Authorization: BASIC,
+        'Content-Type': 'application/json',
+        ixcsoft: 'listar',
+        'Content-Length': Buffer.byteLength(payload),
+      },
+      timeout: 60000,
+    }, (res) => {
+      let data = '';
+      res.on('data', (c) => (data += c));
+      res.on('end', () => {
+        let json;
+        try { json = JSON.parse(data); }
+        catch { return reject(new Error(`HTTP ${res.statusCode}: ${data.slice(0, 200)}`)); }
+        if (json && json.type === 'error') return reject(new Error(`IXC: ${json.message}`));
+        resolve(Array.isArray(json.registros) ? json.registros : []);
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('tempo esgotado (IP pode estar bloqueado no IXC)')));
+    req.write(payload);
+    req.end();
+  });
 }
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -72,10 +92,9 @@ async function consultar(termo) {
     });
     if (!contratos.length) { console.log('   (sem contratos)'); continue; }
     for (const ct of contratos) {
-      // Descobre automaticamente os campos de valor preenchidos (valor, mensalidade, etc.)
       const camposValor = Object.keys(ct).filter((k) => /valor|mensal|preco|preç/i.test(k) && Number(ct[k]) > 0);
       const valores = camposValor.map((k) => `${k}=${brl(ct[k])}`).join('   ');
-      console.log(`   • Contrato ${ct.id} | status ${ct.status} | ${valores || '(sem valor preenchido — campos: ' + Object.keys(ct).filter(k => /valor|mensal/i.test(k)).join(', ') + ')'}`);
+      console.log(`   • Contrato ${ct.id} | status ${ct.status} | ${valores || '(sem valor preenchido — campos: ' + Object.keys(ct).filter((k) => /valor|mensal/i.test(k)).join(', ') + ')'}`);
     }
   }
 }
@@ -92,7 +111,7 @@ async function main() {
     await consultar(termo);
   } catch (e) {
     console.error('\n❌ ERRO:', e.message);
-    console.error('   Se for erro de IP/autorização, libere o IP deste PC no IXC e tente de novo.');
+    console.error('   Se for erro de IP / tempo esgotado, libere o IP deste PC no IXC e tente de novo.');
   }
 }
 
