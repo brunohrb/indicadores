@@ -81,7 +81,7 @@ export const TOOLS = [
   {
     name: "get_pagamento_cliente",
     description:
-      "Consulta quanto um cliente específico paga, direto na API do IXC, buscando por nome, CPF/CNPJ ou ID do contrato. Use somente quando o usuário pedir o valor/mensalidade de UM cliente identificável.",
+      "Consulta os dados e contratos de um cliente direto na API do IXC, buscando por nome, CPF/CNPJ ou ID. Retorna os contratos do cliente (com valor mensal e status) para responder quanto ele paga. Use quando o usuário pedir o valor/mensalidade ou os contratos de UM cliente.",
     input_schema: {
       type: "object",
       properties: {
@@ -190,35 +190,71 @@ async function toolIxc(sb: SupabaseClient, tipo: string, mes: string) {
   return d ?? { mes, tipo, erro: "Sem dados IXC para este tipo/mês." };
 }
 
+async function ixcConsultar(base: string, token: string, tabela: string, body: Record<string, string>): Promise<Array<Record<string, unknown>>> {
+  const auth = "Basic " + btoa(token);
+  const res = await fetch(`${base}/webservice/v1/${tabela}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: auth, ixcsoft: "listar" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`IXC ${tabela} HTTP ${res.status}`);
+  const data = await res.json();
+  return Array.isArray(data?.registros) ? data.registros : [];
+}
+
 async function toolPagamentoCliente(busca: string) {
-  const IXC_URL = Deno.env.get("IXC_API_URL");
-  const IXC_TOKEN = Deno.env.get("IXC_API_TOKEN");
-  if (!IXC_URL || !IXC_TOKEN) {
-    return {
-      erro: "Consulta por cliente na API do IXC ainda não está configurada. Defina os secrets IXC_API_URL e IXC_API_TOKEN no Supabase para habilitar.",
-    };
+  const rawUrl = Deno.env.get("IXC_API_URL");
+  const token = Deno.env.get("IXC_API_TOKEN");
+  if (!rawUrl || !token) {
+    return { erro: "Consulta por cliente na API do IXC ainda não está configurada (faltam os secrets IXC_API_URL e IXC_API_TOKEN no Supabase)." };
   }
-  // IXC: HTTP Basic (token base64) + header ixcsoft: listar. Busca por contratos.
-  const auth = "Basic " + btoa(IXC_TOKEN);
+  // Normaliza a URL: aceita com ou sem /webservice/vN e barra final
+  const base = rawUrl.replace(/[<>\s]/g, "").replace(/\/+$/, "").replace(/\/webservice\/v\d+$/i, "");
+  const termo = String(busca || "").trim();
+  if (!termo) return { erro: "Informe um nome, CPF/CNPJ ou ID de cliente." };
+
   try {
-    const res = await fetch(`${IXC_URL.replace(/\/$/, "")}/webservice/v1/cliente_contrato`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: auth, ixcsoft: "listar" },
-      body: JSON.stringify({
-        qtype: "cliente_contrato.id",
-        query: busca,
-        oper: "=",
-        page: "1",
-        rp: "5",
-        sortname: "cliente_contrato.id",
-        sortorder: "asc",
-      }),
-    });
-    if (!res.ok) return { erro: `IXC respondeu ${res.status}` };
-    const data = await res.json();
-    return { resultado: data?.registros ?? data };
+    const soDigitos = termo.replace(/\D/g, "");
+    let clientes: Array<Record<string, unknown>> = [];
+
+    if (soDigitos.length >= 11) {
+      clientes = await ixcConsultar(base, token, "cliente", {
+        qtype: "cliente.cnpj_cpf", query: soDigitos, oper: "=", page: "1", rp: "5",
+        sortname: "cliente.id", sortorder: "asc",
+      });
+    }
+    if (clientes.length === 0 && /^\d+$/.test(termo)) {
+      clientes = await ixcConsultar(base, token, "cliente", {
+        qtype: "cliente.id", query: termo, oper: "=", page: "1", rp: "5",
+        sortname: "cliente.id", sortorder: "asc",
+      });
+    }
+    if (clientes.length === 0) {
+      clientes = await ixcConsultar(base, token, "cliente", {
+        qtype: "cliente.razao", query: termo, oper: "L", page: "1", rp: "8",
+        sortname: "cliente.razao", sortorder: "asc",
+      });
+    }
+    if (clientes.length === 0) {
+      return { encontrado: false, busca: termo, mensagem: "Nenhum cliente encontrado com esse nome/CPF/ID." };
+    }
+
+    const out = [];
+    for (const c of clientes.slice(0, 3)) {
+      const contratos = await ixcConsultar(base, token, "cliente_contrato", {
+        qtype: "cliente_contrato.id_cliente", query: String(c.id), oper: "=", page: "1", rp: "20",
+        sortname: "cliente_contrato.id", sortorder: "asc",
+      });
+      out.push({ id: c.id, nome: c.razao ?? c.fantasia, cpf_cnpj: c.cnpj_cpf, cidade: c.cidade, contratos });
+    }
+    return {
+      encontrado: true,
+      busca: termo,
+      clientes: out,
+      nota: "O valor mensal no IXC pode estar em campos como 'valor', 'valor_servico' ou no plano do contrato. Use o campo que estiver preenchido. status 'A' = ativo.",
+    };
   } catch (e) {
-    return { erro: `Falha ao consultar IXC: ${String(e)}` };
+    return { erro: "Falha ao consultar IXC: " + String((e as Error).message || e) };
   }
 }
 
