@@ -34,3 +34,7 @@ jobs:
       # whatsapp-webhook: chamada pela Evolution API sem token → sem verificação de JWT
       - name: Deploy whatsapp-webhook
         run: supabase functions deploy whatsapp-webhook --no-verify-jwt --project-ref "$PROJECT_REF"
+
+      # buscar-cliente: chamada pelo dashboard (navegador). Sem verify-jwt (preflight CORS).
+      - name: Deploy buscar-cliente
+        run: supabase functions deploy buscar-cliente --no-verify-jwt --project-ref "$PROJECT_REF"

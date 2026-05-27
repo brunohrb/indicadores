@@ -141,7 +141,7 @@
       const v = document.getElementById('viewType').value;
       document.querySelectorAll('.view-container').forEach(c=>{c.classList.remove('active');c.style.display='none';});
       
-      const hideHeader = ['consolidado','comparativo','ia-estrategica','coach-ia','diretoria','comissao-financeiro','comissao-operacional','demonstrativo'];
+      const hideHeader = ['consolidado','comparativo','ia-estrategica','coach-ia','cliente-ixc','diretoria','comissao-financeiro','comissao-operacional','demonstrativo'];
       document.getElementById('mainHeader').style.display = hideHeader.includes(v) ? 'none' : 'block';
       const show = id => { const el=document.getElementById(id); el.style.display='block'; el.classList.add('active'); };
       if (v==='dashboard') { show('dashboardView'); renderizarGraficos();  }
@@ -149,6 +149,7 @@
       else if (v==='comparativo') { show('comparativoView'); renderComparisonCards(); renderCompTab('receitas-comp'); }
       else if (v==='ia-estrategica') { show('iaEstrategicaView'); carregarApiKey(); }
       else if (v==='coach-ia') { show('coachView'); }
+      else if (v==='cliente-ixc') { show('clienteIxcView'); }
       else if (v==='demonstrativo') {
         show('demonstrativoView');
         setTimeout(function() { if (typeof carregarDemonstrativo === 'function') carregarDemonstrativo(); }, 100);
