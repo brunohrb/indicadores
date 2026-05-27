@@ -51,21 +51,42 @@
         return;
       }
       let html = `<p style="color:#64748b;font-size:0.85rem;margin-bottom:0.75rem">${data.total} resultado(s)${data.total > 30 ? ' (mostrando 30)' : ''}</p>`;
-      html += '<div style="display:flex;flex-direction:column;gap:0.6rem">';
+      html += '<div style="display:flex;flex-direction:column;gap:0.8rem">';
       for (const c of data.clientes) {
         const ativo = String(c.ativo).toUpperCase() === 'S';
+        const contratos = Array.isArray(c.contratos) ? c.contratos : [];
+        let pontosHtml = '';
+        if (contratos.length) {
+          pontosHtml = '<div style="margin-top:0.6rem;display:flex;flex-direction:column;gap:0.35rem">';
+          for (const ct of contratos) {
+            const ctAtivo = String(ct.status).toUpperCase() === 'A';
+            pontosHtml += `
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:0.75rem;padding:0.45rem 0.7rem;background:#f8fafc;border-radius:8px;font-size:0.83rem">
+                <span style="color:#334155">📍 ${escapar(ct.plano || 'sem plano')} <span style="color:#94a3b8">#${escapar(ct.id)}</span></span>
+                <span style="display:flex;align-items:center;gap:0.5rem">
+                  <span style="font-size:0.65rem;padding:0.05rem 0.4rem;border-radius:20px;background:${ctAtivo ? '#dcfce7' : '#fee2e2'};color:${ctAtivo ? '#166534' : '#991b1b'}">${ctAtivo ? 'ativo' : ct.status}</span>
+                  <b style="color:#0f3460">${brl(ct.valor)}</b>
+                </span>
+              </div>`;
+          }
+          pontosHtml += '</div>';
+        } else {
+          pontosHtml = '<div style="margin-top:0.5rem;font-size:0.8rem;color:#94a3b8">Sem contratos cadastrados.</div>';
+        }
         html += `
-          <div style="border:1px solid #e2e8f0;border-radius:10px;padding:0.8rem 1rem;background:#fff">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+          <div style="border:1px solid #e2e8f0;border-radius:12px;padding:0.9rem 1.1rem;background:#fff">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
               <div>
                 <div style="font-weight:700;color:#1e293b">${escapar(c.nome || '—')}</div>
-                <div style="font-size:0.8rem;color:#64748b">ID ${escapar(c.id)} · ${escapar(c.cpf || '—')} · ${escapar(c.plano || 'sem plano')}</div>
+                <div style="font-size:0.78rem;color:#64748b">ID ${escapar(c.id)} · ${escapar(c.cpf || '—')} · ${contratos.length} ponto(s)</div>
               </div>
               <div style="text-align:right">
-                <div style="font-weight:800;font-size:1.15rem;color:#0f3460">${brl(c.valor)}</div>
-                <span style="font-size:0.72rem;padding:0.1rem 0.5rem;border-radius:20px;background:${ativo ? '#dcfce7' : '#fee2e2'};color:${ativo ? '#166534' : '#991b1b'}">${ativo ? 'Ativo' : 'Inativo/Cancelado'}</span>
+                <div style="font-size:0.68rem;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px">Total mensal</div>
+                <div style="font-weight:800;font-size:1.2rem;color:#0f3460">${brl(c.total_mensal)}</div>
+                <span style="font-size:0.7rem;padding:0.1rem 0.5rem;border-radius:20px;background:${ativo ? '#dcfce7' : '#fee2e2'};color:${ativo ? '#166534' : '#991b1b'}">${ativo ? 'Cliente ativo' : 'Inativo/Cancelado'}</span>
               </div>
             </div>
+            ${pontosHtml}
           </div>`;
       }
       html += '</div>';

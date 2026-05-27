@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // =====================================================
-// Sincroniza CLIENTES do IXC → Supabase (pra o Coach IA responder)
-// Roda LOCAL, do PC do escritório (IP autorizado no IXC).
-// SEM dependências (só módulos nativos do Node). Dois cliques no .bat.
+// Sincroniza CLIENTES do IXC → Supabase (pra o Coach IA / dashboard)
+// Roda LOCAL, do PC do escritório (IP autorizado no IXC). Sem dependências.
+// Guarda TODOS os contratos (pontos) de cada cliente, com plano e valor.
 // Grava em app_storage: ixc_clientes (lista) + ixc_clientes_sync (data).
 // =====================================================
 
@@ -57,33 +57,34 @@ async function upsert(key, value) {
 }
 
 (async () => {
-  console.log('\n🔄 Sincronizando clientes do IXC para o sistema (Coach IA)...\n');
+  console.log('\n🔄 Sincronizando clientes do IXC (com TODOS os contratos/pontos)...\n');
 
   console.log('1/3 Baixando clientes...');
   const clientes = await listarTodos('cliente', { qtype: 'cliente.id', query: '0', oper: '>', sortname: 'cliente.id', sortorder: 'asc' });
 
-  console.log('2/3 Baixando contratos (plano)...');
-  const planoPorCliente = {};
+  console.log('2/3 Baixando contratos (todos os pontos)...');
+  const contratosPorCliente = {};
   try {
     const contratos = await listarTodos('cliente_contrato', { qtype: 'cliente_contrato.id', query: '0', oper: '>', sortname: 'cliente_contrato.id', sortorder: 'asc' });
     for (const ct of contratos) {
       const k = String(ct.id_cliente);
-      if (!planoPorCliente[k] || Number(ct.id) > Number(planoPorCliente[k]._id)) {
-        planoPorCliente[k] = { plano: ct.contrato, status: ct.status, _id: ct.id };
-      }
+      (contratosPorCliente[k] = contratosPorCliente[k] || []).push({ id: ct.id, plano: ct.contrato, status: ct.status });
     }
-  } catch (e) { console.log('   (sem plano: ' + e.message + ')'); }
+  } catch (e) { console.log('   (sem contratos: ' + e.message + ')'); }
 
-  console.log('3/3 Baixando faturas recentes (valor mensal)...');
-  const valorPorCliente = {};
+  console.log('3/3 Baixando faturas recentes (valor por contrato)...');
+  const valorPorContrato = {};
   try {
     const ini = new Date(); ini.setMonth(ini.getMonth() - 2);
     const dataIni = ini.toISOString().slice(0, 10);
     let page = 1;
-    while (page <= 300) {
+    while (page <= 400) {
       const { registros } = await ixc('fn_areceber', { qtype: 'fn_areceber.data_vencimento', query: dataIni, oper: '>=', sortname: 'fn_areceber.id', sortorder: 'desc', page: String(page), rp: '2000' });
-      for (const f of registros) { const k = String(f.id_cliente); if (valorPorCliente[k] === undefined) valorPorCliente[k] = Number(f.valor) || 0; }
-      process.stdout.write(`\r   faturas: pagina ${page} (${Object.keys(valorPorCliente).length} clientes c/ valor)     `);
+      for (const f of registros) {
+        const kc = String(f.id_contrato || '');
+        if (kc && kc !== '0' && valorPorContrato[kc] === undefined) valorPorContrato[kc] = Number(f.valor) || 0;
+      }
+      process.stdout.write(`\r   faturas: pagina ${page} (${Object.keys(valorPorContrato).length} contratos c/ valor)     `);
       if (registros.length < 2000) break;
       page++;
       await new Promise((r) => setTimeout(r, 150));
@@ -91,18 +92,18 @@ async function upsert(key, value) {
     process.stdout.write('\n');
   } catch (e) { console.log('   (sem valor: ' + e.message + ')'); }
 
-  const lista = clientes.map((c) => ({
-    id: c.id,
-    nome: c.razao || c.fantasia,
-    cpf: c.cnpj_cpf,
-    ativo: c.ativo,
-    valor: valorPorCliente[String(c.id)] ?? null,
-    plano: planoPorCliente[String(c.id)] ? planoPorCliente[String(c.id)].plano : null,
-  }));
+  const lista = clientes.map((c) => {
+    const cts = (contratosPorCliente[String(c.id)] || []).map((ct) => ({
+      id: ct.id, plano: ct.plano, status: ct.status,
+      valor: valorPorContrato[String(ct.id)] ?? null,
+    }));
+    const totalMensal = cts.reduce((s, ct) => s + (Number(ct.valor) || 0), 0);
+    return { id: c.id, nome: c.razao || c.fantasia, cpf: c.cnpj_cpf, ativo: c.ativo, contratos: cts, total_mensal: Math.round(totalMensal * 100) / 100 };
+  });
 
   console.log(`\nEnviando ${lista.length} clientes pro Supabase...`);
   await upsert('ixc_clientes', lista);
   await upsert('ixc_clientes_sync', { timestamp: new Date().toISOString(), total: lista.length });
 
-  console.log(`\n✅ Pronto! ${lista.length} clientes sincronizados. Agora pergunte no Coach IA: "quanto o cliente X paga?"`);
+  console.log(`\n✅ Pronto! ${lista.length} clientes sincronizados (com todos os pontos). Pergunte no Coach ou use a aba Cliente IXC.`);
 })().catch((e) => { console.error('\n❌ ERRO:', e.message); console.error('   Se for erro de IP/tempo esgotado, libere o IP deste PC no IXC.'); process.exit(1); });

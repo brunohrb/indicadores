@@ -60,6 +60,10 @@ serve(async (req) => {
     encontrado: matches.length > 0,
     total: matches.length,
     sincronizado_em: sincronizadoEm,
-    clientes: matches.slice(0, 30).map((c) => ({ id: c.id, nome: c.nome, cpf: c.cpf, ativo: c.ativo, valor: c.valor, plano: c.plano })),
+    clientes: matches.slice(0, 30).map((c) => ({
+      id: c.id, nome: c.nome, cpf: c.cpf, ativo: c.ativo,
+      contratos: Array.isArray(c.contratos) ? c.contratos : [],
+      total_mensal: c.total_mensal ?? null,
+    })),
   });
 });

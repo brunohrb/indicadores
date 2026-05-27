@@ -229,8 +229,12 @@ async function toolPagamentoCliente(sb: SupabaseClient, busca: string) {
     encontrado: true,
     busca: termo,
     sincronizado_em: sincronizadoEm,
-    clientes: matches.slice(0, 8).map((c) => ({ id: c.id, nome: c.nome, cpf: c.cpf, ativo: c.ativo, valor_mensal: c.valor, plano: c.plano })),
-    nota: "Dados da ultima sincronizacao local (nao ao vivo). valor_mensal = valor da fatura mais recente do cliente. ativo S=ativo, N=inativo/cancelado.",
+    clientes: matches.slice(0, 8).map((c) => ({
+      id: c.id, nome: c.nome, cpf: c.cpf, ativo: c.ativo,
+      total_mensal: c.total_mensal ?? null,
+      contratos: Array.isArray(c.contratos) ? c.contratos : [],
+    })),
+    nota: "Dados da ultima sincronizacao local (nao ao vivo). Um cliente pode ter VARIOS contratos/pontos (cada um com plano e valor). total_mensal = soma dos pontos. status do contrato A=ativo. O valor de cada contrato vem da fatura mais recente daquele ponto.",
   };
 }
 
