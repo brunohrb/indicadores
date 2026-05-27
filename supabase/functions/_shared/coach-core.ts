@@ -81,7 +81,7 @@ export const TOOLS = [
   {
     name: "get_pagamento_cliente",
     description:
-      "Consulta os dados e contratos de um cliente direto na API do IXC, buscando por nome, CPF/CNPJ ou ID. Retorna os contratos do cliente (com valor mensal e status) para responder quanto ele paga. Use quando o usuário pedir o valor/mensalidade ou os contratos de UM cliente.",
+      "Consulta quanto um cliente paga por mês, na lista de clientes do IXC sincronizada no sistema (não é ao vivo). Busca por nome, CPF/CNPJ ou ID e retorna o valor mensal, plano e situação. Use quando o usuário pedir o valor/mensalidade de UM cliente.",
     input_schema: {
       type: "object",
       properties: {
@@ -104,7 +104,7 @@ export async function executarTool(sb: SupabaseClient, nome: string, input: Reco
     case "get_ixc":
       return await toolIxc(sb, String(input.tipo ?? ""), input.mes ? String(input.mes) : mesAtualYM());
     case "get_pagamento_cliente":
-      return await toolPagamentoCliente(String(input.busca ?? ""));
+      return await toolPagamentoCliente(sb, String(input.busca ?? ""));
     default:
       return { erro: `Tool desconhecida: ${nome}` };
   }
@@ -190,121 +190,48 @@ async function toolIxc(sb: SupabaseClient, tipo: string, mes: string) {
   return d ?? { mes, tipo, erro: "Sem dados IXC para este tipo/mês." };
 }
 
-async function ixcConsultar(base: string, token: string, tabela: string, body: Record<string, string>): Promise<Array<Record<string, unknown>>> {
-  const auth = "Basic " + btoa(token);
-  const res = await fetch(`${base}/webservice/v1/${tabela}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: auth, ixcsoft: "listar" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`IXC ${tabela} HTTP ${res.status}`);
-  const data = await res.json();
-  return Array.isArray(data?.registros) ? data.registros : [];
-}
-
-async function toolPagamentoCliente(busca: string) {
-  const rawUrl = Deno.env.get("IXC_API_URL");
-  const token = Deno.env.get("IXC_API_TOKEN");
-  if (!rawUrl || !token) {
-    return { erro: "Consulta por cliente na API do IXC ainda não está configurada (faltam os secrets IXC_API_URL e IXC_API_TOKEN no Supabase)." };
-  }
-  // Normaliza a URL: aceita com ou sem /webservice/vN e barra final
-  const base = rawUrl.replace(/[<>\s]/g, "").replace(/\/+$/, "").replace(/\/webservice\/v\d+$/i, "");
+async function toolPagamentoCliente(sb: SupabaseClient, busca: string) {
   const termo = String(busca || "").trim();
   if (!termo) return { erro: "Informe um nome, CPF/CNPJ ou ID de cliente." };
 
-  const norm = (s: unknown) => String(s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  try {
-    const soDigitos = termo.replace(/\D/g, "");
-    let clientes: Array<Record<string, unknown>> = [];
-    let comoBuscou = "";
-
-    if (soDigitos.length >= 11) {
-      clientes = await ixcConsultar(base, token, "cliente", {
-        qtype: "cliente.cnpj_cpf", query: soDigitos, oper: "=", page: "1", rp: "5",
-        sortname: "cliente.id", sortorder: "asc",
-      });
-      comoBuscou = "cpf_cnpj";
-    }
-    if (clientes.length === 0 && /^\d+$/.test(termo)) {
-      clientes = await ixcConsultar(base, token, "cliente", {
-        qtype: "cliente.id", query: termo, oper: "=", page: "1", rp: "5",
-        sortname: "cliente.id", sortorder: "asc",
-      });
-      comoBuscou = "id";
-    }
-    if (clientes.length === 0) {
-      // Por nome: tenta nome completo, depois sobrenome, depois primeiro nome
-      const palavras = termo.split(/\s+/).filter((w) => w.length >= 3);
-      const tentativas = [termo];
-      if (palavras.length >= 2) { tentativas.push(palavras[palavras.length - 1]); tentativas.push(palavras[0]); }
-      for (const t of tentativas) {
-        const r = await ixcConsultar(base, token, "cliente", {
-          qtype: "cliente.razao", query: t, oper: "L", page: "1", rp: "50",
-          sortname: "cliente.razao", sortorder: "asc",
-        });
-        comoBuscou = "nome~" + t;
-        if (r.length) { clientes = r; break; }
-      }
-      // Refina: mantém quem contém TODAS as palavras (ignora acento/maiúscula)
-      if (clientes.length > 1 && palavras.length) {
-        const pn = palavras.map(norm);
-        const exatos = clientes.filter((c) => { const r = norm(c.razao); return pn.every((w) => r.includes(w)); });
-        if (exatos.length) clientes = exatos;
-      }
-    }
-
-    if (clientes.length === 0) {
-      // Diagnóstico: confirma se a API/tabela/campo respondem e quais campos existem
-      let diag = "sem diagnóstico";
-      try {
-        const auth = "Basic " + btoa(token);
-        const res = await fetch(`${base}/webservice/v1/cliente`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: auth, ixcsoft: "listar" },
-          body: JSON.stringify({ qtype: "cliente.id", query: "0", oper: ">", page: "1", rp: "3", sortname: "cliente.id", sortorder: "asc" }),
-        });
-        const txt = await res.text();
-        let json: Record<string, unknown> | null = null;
-        try { json = JSON.parse(txt); } catch { /* resposta não-JSON */ }
-        // Mostra a resposta crua (revela mensagens de erro tipo {type:"error", message:"..."})
-        diag = `HTTP ${res.status} | resposta: ${json ? JSON.stringify(json).slice(0, 350) : txt.slice(0, 250)}`;
-      } catch (e) { diag = "erro no diagnóstico: " + String((e as Error).message || e); }
-      return {
-        encontrado: false,
-        busca: termo,
-        como_buscou: comoBuscou,
-        diagnostico_tecnico: diag,
-        instrucao_para_ia: "Diga ao usuário que não encontrou e MOSTRE a linha 'diagnostico_tecnico' exatamente como está, pedindo pra ele encaminhar ao desenvolvedor.",
-      };
-    }
-
-    // Muitos resultados → devolve lista pra desambiguar (sem contratos)
-    if (clientes.length > 5) {
-      return {
-        encontrado: true, busca: termo, ambiguo: true,
-        candidatos: clientes.slice(0, 15).map((c) => ({ id: c.id, nome: c.razao ?? c.fantasia, cpf_cnpj: c.cnpj_cpf, cidade: c.cidade })),
-        mensagem: "Vários clientes batem. Peça pra refinar (nome completo, CPF ou ID).",
-      };
-    }
-
-    const out = [];
-    for (const c of clientes.slice(0, 5)) {
-      const contratos = await ixcConsultar(base, token, "cliente_contrato", {
-        qtype: "cliente_contrato.id_cliente", query: String(c.id), oper: "=", page: "1", rp: "30",
-        sortname: "cliente_contrato.id", sortorder: "asc",
-      });
-      out.push({ id: c.id, nome: c.razao ?? c.fantasia, cpf_cnpj: c.cnpj_cpf, cidade: c.cidade, ativo: c.ativo, contratos });
-    }
+  const lista = await lerStorage(sb, "ixc_clientes");
+  if (!Array.isArray(lista) || lista.length === 0) {
     return {
-      encontrado: true,
-      busca: termo,
-      clientes: out,
-      nota: "Inclui contratos cancelados. Valor mensal pode estar em 'valor'/'valor_servico'/plano. status do contrato: A=ativo, I/C/D=inativo/cancelado/desativado.",
+      erro: "A lista de clientes do IXC ainda nao foi sincronizada para o sistema. Rode o programa SINCRONIZAR-CLIENTES no PC do escritorio (que tem IP autorizado no IXC). Depois eu consigo responder aqui.",
     };
-  } catch (e) {
-    return { erro: "Falha ao consultar IXC: " + String((e as Error).message || e) };
   }
+
+  const syncInfo = await lerStorage(sb, "ixc_clientes_sync");
+  const sincronizadoEm = (syncInfo as Record<string, unknown>)?.timestamp ?? null;
+
+  const norm = (x: unknown) => String(x ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const dig = termo.replace(/\D/g, "");
+
+  let matches: Array<Record<string, unknown>> = [];
+  if (dig.length >= 11) matches = lista.filter((c) => String(c.cpf ?? "").replace(/\D/g, "") === dig);
+  if (matches.length === 0 && /^\d+$/.test(termo)) matches = lista.filter((c) => String(c.id) === termo);
+  if (matches.length === 0) {
+    const palavras = norm(termo).split(/\s+/).filter((w) => w.length >= 2);
+    matches = lista.filter((c) => { const n = norm(c.nome); return palavras.every((w) => n.includes(w)); });
+  }
+
+  if (matches.length === 0) {
+    return { encontrado: false, busca: termo, sincronizado_em: sincronizadoEm, mensagem: "Nenhum cliente com esse nome/CPF/ID na lista sincronizada." };
+  }
+  if (matches.length > 8) {
+    return {
+      encontrado: true, busca: termo, ambiguo: true, sincronizado_em: sincronizadoEm,
+      candidatos: matches.slice(0, 15).map((c) => ({ id: c.id, nome: c.nome, cpf: c.cpf, ativo: c.ativo })),
+      mensagem: "Varios clientes batem. Peca pra refinar (nome completo, CPF ou ID).",
+    };
+  }
+  return {
+    encontrado: true,
+    busca: termo,
+    sincronizado_em: sincronizadoEm,
+    clientes: matches.slice(0, 8).map((c) => ({ id: c.id, nome: c.nome, cpf: c.cpf, ativo: c.ativo, valor_mensal: c.valor, plano: c.plano })),
+    nota: "Dados da ultima sincronizacao local (nao ao vivo). valor_mensal = valor da fatura mais recente do cliente. ativo S=ativo, N=inativo/cancelado.",
+  };
 }
 
 // ── System prompt ──────────────────────────────────────────────
