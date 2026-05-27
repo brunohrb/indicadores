@@ -74,6 +74,26 @@ async function buscarClientes(termo) {
   return cl;
 }
 
+async function valorDoContrato(ct) {
+  // 1) campo direto no próprio contrato
+  for (const k of ['valor', 'mensalidade', 'valor_mensal', 'valor_servico', 'valor_total']) {
+    if (Number(ct[k]) > 0) return { valor: Number(ct[k]), origem: 'contrato.' + k };
+  }
+  // 2) plano de venda vinculado (vd_contrato)
+  const idPlano = ct.id_vd_contrato || ct.id_contrato || ct.id_plano;
+  if (idPlano) {
+    try {
+      const p = await ixc('vd_contrato', { qtype: 'vd_contrato.id', query: String(idPlano), oper: '=', page: '1', rp: '1', sortname: 'vd_contrato.id', sortorder: 'asc' });
+      if (p[0]) {
+        for (const k of ['valor', 'valor_total', 'valor_servico', 'valor_plano']) {
+          if (Number(p[0][k]) > 0) return { valor: Number(p[0][k]), origem: 'plano.' + k };
+        }
+      }
+    } catch { /* ignora */ }
+  }
+  return { valor: 0, origem: null };
+}
+
 async function consultar(termo) {
   const clientes = await buscarClientes(termo);
   if (!clientes.length) {
@@ -82,6 +102,7 @@ async function consultar(termo) {
     return;
   }
   console.log(`\n✅ ${clientes.length} cliente(s) encontrado(s) para "${termo}":`);
+  let jaMostrouCampos = false;
   for (const c of clientes.slice(0, 8)) {
     console.log('\n────────────────────────────────────────────');
     console.log(`👤 ${c.razao || c.fantasia}   (ID ${c.id})`);
@@ -92,9 +113,16 @@ async function consultar(termo) {
     });
     if (!contratos.length) { console.log('   (sem contratos)'); continue; }
     for (const ct of contratos) {
-      const camposValor = Object.keys(ct).filter((k) => /valor|mensal|preco|preç/i.test(k) && Number(ct[k]) > 0);
-      const valores = camposValor.map((k) => `${k}=${brl(ct[k])}`).join('   ');
-      console.log(`   • Contrato ${ct.id} | status ${ct.status} | ${valores || '(sem valor preenchido — campos: ' + Object.keys(ct).filter((k) => /valor|mensal/i.test(k)).join(', ') + ')'}`);
+      const { valor, origem } = await valorDoContrato(ct);
+      const txtValor = valor > 0 ? `${brl(valor)} (${origem})` : 'valor não localizado';
+      console.log(`   • Contrato ${ct.id} | status ${ct.status} | ${txtValor}`);
+      // Diagnóstico (1x): se não achou valor, mostra todos os campos do contrato
+      if (valor === 0 && !jaMostrouCampos) {
+        jaMostrouCampos = true;
+        console.log('\n   [DIAGNÓSTICO] todos os campos deste contrato (pra achar o valor):');
+        console.log('   ' + JSON.stringify(ct));
+        console.log('');
+      }
     }
   }
 }
