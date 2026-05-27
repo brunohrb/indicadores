@@ -80,6 +80,7 @@
     const bubble = coachAddMsg('bot', '');
     bubble.innerHTML = '<span style="opacity:0.5">…</span>';
     let acumulado = '';
+    let statusCode = 0;
     coachStatus('Coach pensando…');
 
     try {
@@ -92,10 +93,11 @@
         },
         body: JSON.stringify({ messages: coachHistory.slice(-10) }),
       });
+      statusCode = res.status;
 
       if (!res.ok || !res.body) {
-        const err = await res.text().catch(() => '');
-        throw new Error('HTTP ' + res.status + ' ' + err.slice(0, 200));
+        const raw = await res.text().catch(() => '');
+        throw new Error(mensagemErro(res.status, raw));
       }
 
       const reader = res.body.getReader();
@@ -123,7 +125,7 @@
           } else if (ev.type === 'tool') {
             coachStatus('🔎 Consultando: ' + nomeTool(ev.name));
           } else if (ev.type === 'error') {
-            throw new Error(ev.error);
+            throw new Error(mensagemErro(200, String(ev.error || '')));
           } else if (ev.type === 'done') {
             coachStatus('');
           }
@@ -136,13 +138,33 @@
         coachHistory.push({ role: 'assistant', content: acumulado });
       }
     } catch (e) {
-      bubble.innerHTML = '<span style="color:#dc2626">Erro: ' + escaparHtml(e.message || String(e)) + '</span>';
+      const msg = statusCode === 0 ? '📡 Sem conexão com o servidor. Verifique sua internet e tente de novo.' : (e.message || String(e));
+      bubble.innerHTML =
+        '<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:0.7rem 0.9rem;font-size:0.88rem">' +
+        escaparHtml(msg) + '</div>';
     } finally {
       coachStatus('');
       coachEnviando = false;
       el('coachSendBtn')?.removeAttribute('disabled');
       input?.focus();
     }
+  }
+
+  function mensagemErro(status, raw) {
+    const txt = String(raw || '');
+    if (status === 404 || /NOT_FOUND|was not found/i.test(txt)) {
+      return '⚠️ O Coach IA ainda não foi ativado no servidor. Falta publicar a função "coach-ia" no Supabase.';
+    }
+    if (status === 401 || status === 403) {
+      return '🔒 Sem autorização pra falar com o Coach. Confira a configuração de acesso do Supabase.';
+    }
+    if (/ANTHROPIC_API_KEY|api[_ ]?key/i.test(txt)) {
+      return '🔑 Falta configurar a chave da IA (ANTHROPIC_API_KEY) no Supabase.';
+    }
+    if (status >= 500) {
+      return '🛠️ O servidor do Coach teve um erro. Tente de novo em instantes.';
+    }
+    return '⚠️ Não consegui falar com o Coach agora. Tente novamente em instantes.';
   }
 
   function nomeTool(name) {
