@@ -189,6 +189,13 @@ const IXCDados = (() => {
     if (old) old.remove();
     document.body.appendChild(div);
 
+    // Some sozinho após alguns segundos pra não ficar sobre os cards
+    div.style.transition = 'opacity 0.6s';
+    setTimeout(() => {
+      div.style.opacity = '0';
+      setTimeout(() => { if (div.parentNode) div.remove(); }, 700);
+    }, 8000);
+
     return div;
   }
 

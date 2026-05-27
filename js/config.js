@@ -3,8 +3,11 @@
     const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc';
     const sb = supabase.createClient(SB_URL, SB_KEY);
 
-    // Log visual no canto da tela para debug
+    // Log visual no canto da tela. Só mostra problemas (erro/warn);
+    // sucessos/infos (Testando conexão, Conexão OK, SET ✓) são silenciosos
+    // pra não poluir a tela, principalmente no celular.
     function sbLog(msg, tipo='info') {
+      if (tipo === 'info' || tipo === 'ok') return;
       const colors = { ok:'#059669', erro:'#dc2626', info:'#2563eb', warn:'#d97706' };
       const div = document.createElement('div');
       div.style.cssText = `position:fixed;bottom:${10 + document.querySelectorAll('.sb-log').length*42}px;right:10px;background:white;border-left:4px solid ${colors[tipo]};padding:6px 12px;border-radius:6px;font-size:0.75rem;box-shadow:0 2px 8px rgba(0,0,0,0.15);z-index:99999;max-width:320px;word-break:break-all`;
