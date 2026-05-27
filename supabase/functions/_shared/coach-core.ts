@@ -213,45 +213,73 @@ async function toolPagamentoCliente(busca: string) {
   const termo = String(busca || "").trim();
   if (!termo) return { erro: "Informe um nome, CPF/CNPJ ou ID de cliente." };
 
+  const norm = (s: unknown) => String(s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   try {
     const soDigitos = termo.replace(/\D/g, "");
     let clientes: Array<Record<string, unknown>> = [];
+    let comoBuscou = "";
 
     if (soDigitos.length >= 11) {
       clientes = await ixcConsultar(base, token, "cliente", {
         qtype: "cliente.cnpj_cpf", query: soDigitos, oper: "=", page: "1", rp: "5",
         sortname: "cliente.id", sortorder: "asc",
       });
+      comoBuscou = "cpf_cnpj";
     }
     if (clientes.length === 0 && /^\d+$/.test(termo)) {
       clientes = await ixcConsultar(base, token, "cliente", {
         qtype: "cliente.id", query: termo, oper: "=", page: "1", rp: "5",
         sortname: "cliente.id", sortorder: "asc",
       });
+      comoBuscou = "id";
     }
     if (clientes.length === 0) {
-      clientes = await ixcConsultar(base, token, "cliente", {
-        qtype: "cliente.razao", query: termo, oper: "L", page: "1", rp: "8",
-        sortname: "cliente.razao", sortorder: "asc",
-      });
+      // Por nome: tenta nome completo, depois sobrenome, depois primeiro nome
+      const palavras = termo.split(/\s+/).filter((w) => w.length >= 3);
+      const tentativas = [termo];
+      if (palavras.length >= 2) { tentativas.push(palavras[palavras.length - 1]); tentativas.push(palavras[0]); }
+      for (const t of tentativas) {
+        const r = await ixcConsultar(base, token, "cliente", {
+          qtype: "cliente.razao", query: t, oper: "L", page: "1", rp: "50",
+          sortname: "cliente.razao", sortorder: "asc",
+        });
+        comoBuscou = "nome~" + t;
+        if (r.length) { clientes = r; break; }
+      }
+      // Refina: mantém quem contém TODAS as palavras (ignora acento/maiúscula)
+      if (clientes.length > 1 && palavras.length) {
+        const pn = palavras.map(norm);
+        const exatos = clientes.filter((c) => { const r = norm(c.razao); return pn.every((w) => r.includes(w)); });
+        if (exatos.length) clientes = exatos;
+      }
     }
+
     if (clientes.length === 0) {
-      return { encontrado: false, busca: termo, mensagem: "Nenhum cliente encontrado com esse nome/CPF/ID." };
+      return { encontrado: false, busca: termo, como_buscou: comoBuscou, mensagem: "Nenhum cliente encontrado (a busca inclui cancelados). Confira a grafia do nome." };
+    }
+
+    // Muitos resultados → devolve lista pra desambiguar (sem contratos)
+    if (clientes.length > 5) {
+      return {
+        encontrado: true, busca: termo, ambiguo: true,
+        candidatos: clientes.slice(0, 15).map((c) => ({ id: c.id, nome: c.razao ?? c.fantasia, cpf_cnpj: c.cnpj_cpf, cidade: c.cidade })),
+        mensagem: "Vários clientes batem. Peça pra refinar (nome completo, CPF ou ID).",
+      };
     }
 
     const out = [];
-    for (const c of clientes.slice(0, 3)) {
+    for (const c of clientes.slice(0, 5)) {
       const contratos = await ixcConsultar(base, token, "cliente_contrato", {
-        qtype: "cliente_contrato.id_cliente", query: String(c.id), oper: "=", page: "1", rp: "20",
+        qtype: "cliente_contrato.id_cliente", query: String(c.id), oper: "=", page: "1", rp: "30",
         sortname: "cliente_contrato.id", sortorder: "asc",
       });
-      out.push({ id: c.id, nome: c.razao ?? c.fantasia, cpf_cnpj: c.cnpj_cpf, cidade: c.cidade, contratos });
+      out.push({ id: c.id, nome: c.razao ?? c.fantasia, cpf_cnpj: c.cnpj_cpf, cidade: c.cidade, ativo: c.ativo, contratos });
     }
     return {
       encontrado: true,
       busca: termo,
       clientes: out,
-      nota: "O valor mensal no IXC pode estar em campos como 'valor', 'valor_servico' ou no plano do contrato. Use o campo que estiver preenchido. status 'A' = ativo.",
+      nota: "Inclui contratos cancelados. Valor mensal pode estar em 'valor'/'valor_servico'/plano. status do contrato: A=ativo, I/C/D=inativo/cancelado/desativado.",
     };
   } catch (e) {
     return { erro: "Falha ao consultar IXC: " + String((e as Error).message || e) };
