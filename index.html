@@ -346,6 +346,7 @@
       <div class="nav-item" onclick="selectMenu(this,'consolidado')"><span class="nav-icon">📋</span><span>Fluxo de Caixa</span></div>
       <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📊</span><span>Diretoria (Power BI)</span></div>
       <div class="nav-item" onclick="abrirCoachView(this)"><span class="nav-icon">🧠</span><span>Coach IA</span></div>
+      <div class="nav-item" onclick="abrirClienteIxcView(this)"><span class="nav-icon">🔎</span><span>Cliente IXC</span></div>
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Estudo com IA</span></div>
       <div class="nav-item" onclick="selectMenu(this,'demonstrativo');setTimeout(function(){if(typeof dreRender==='function')dreRender();},120)"><span class="nav-icon">📉</span><span>Demonstrativo</span></div>
       <div class="nav-item" onclick="selectMenu(this,'diretoria')"><span class="nav-icon">⚙️</span><span>Parâmetros</span></div>
@@ -370,6 +371,7 @@
         <option value="comparativo">Comparativo Anual</option>
         <option value="demonstrativo">Demonstrativo</option>
         <option value="coach-ia">Coach IA</option>
+        <option value="cliente-ixc">Cliente IXC</option>
         <option value="ia-estrategica">Estudo com IA</option>
         <option value="diretoria">Parâmetros</option>
         <option value="comissao-financeiro">Comissão Financeiro</option>
@@ -635,6 +637,27 @@
             </div>
           </div>
 
+        </div>
+      </div>
+
+      <!-- Cliente IXC View (busca na lista sincronizada) -->
+      <div id="clienteIxcView" class="view-container" style="display:none">
+        <div style="max-width:900px;margin:0 auto;padding:2rem">
+          <div style="background:linear-gradient(135deg,#0f3460,#1a1a2e);padding:1.5rem 2rem;border-radius:16px;color:white;margin-bottom:1.25rem">
+            <h1 style="margin:0;font-size:1.5rem">🔎 Consulta de Cliente (IXC)</h1>
+            <p style="margin:0.3rem 0 0;opacity:0.85;font-size:0.85rem">Quanto o cliente paga por mês — busca por nome, CPF ou ID</p>
+          </div>
+
+          <div id="cliIxcSync" style="font-size:0.82rem;color:#475569;background:#f1f5f9;border-radius:10px;padding:0.6rem 1rem;margin-bottom:1rem"></div>
+
+          <div style="display:flex;gap:0.6rem;margin-bottom:0.5rem;flex-wrap:wrap">
+            <input id="cliIxcInput" type="text" placeholder="Ex: Lucas Peixoto Cavalcante, CPF ou ID" style="flex:1;min-width:220px;padding:0.7rem 1rem;border:1px solid #e2e8f0;border-radius:10px;font-size:0.9rem;outline:none" onkeydown="if(event.key==='Enter')clienteIxcBuscar()">
+            <button onclick="clienteIxcBuscar()" style="padding:0.7rem 1.5rem;background:linear-gradient(135deg,#0f3460,#1a1a2e);color:white;border:none;border-radius:10px;font-weight:700;cursor:pointer">Buscar</button>
+            <button onclick="clienteIxcStatusSync()" title="Atualizar status da sincronização" style="padding:0.7rem 1rem;background:#e2e8f0;color:#1e293b;border:none;border-radius:10px;font-weight:600;cursor:pointer">🔄</button>
+          </div>
+          <p style="font-size:0.75rem;color:#94a3b8;margin:0 0 1.25rem">A lista é atualizada pelo programa <b>SINCRONIZAR-CLIENTES</b> no PC do escritório (o navegador não acessa o IXC direto).</p>
+
+          <div id="cliIxcResultado"></div>
         </div>
       </div>
 
@@ -2340,6 +2363,7 @@ document.addEventListener('click', function() {
   <script src="js/consolidado.js"></script>
   <script src="js/init-operacional.js?v=4"></script>
   <script src="js/coach-ia.js?v=2"></script>
+  <script src="js/cliente-ixc.js?v=1"></script>
   <script>
     // PWA — registra o service worker
     if ('serviceWorker' in navigator) {
