@@ -267,10 +267,8 @@ async function toolPagamentoCliente(busca: string) {
         const txt = await res.text();
         let json: Record<string, unknown> | null = null;
         try { json = JSON.parse(txt); } catch { /* resposta não-JSON */ }
-        const regs = (json && Array.isArray(json.registros)) ? json.registros as Array<Record<string, unknown>> : null;
-        const campos = regs && regs[0] ? Object.keys(regs[0]).join(", ") : "—";
-        const chaves = json ? Object.keys(json).join(", ") : "(não-JSON)";
-        diag = `HTTP ${res.status} | chaves_resposta: [${chaves}] | total: ${json?.total ?? "?"} | campos_cadastro: [${campos}]${json ? "" : " | crua: " + txt.slice(0, 150)}`;
+        // Mostra a resposta crua (revela mensagens de erro tipo {type:"error", message:"..."})
+        diag = `HTTP ${res.status} | resposta: ${json ? JSON.stringify(json).slice(0, 350) : txt.slice(0, 250)}`;
       } catch (e) { diag = "erro no diagnóstico: " + String((e as Error).message || e); }
       return {
         encontrado: false,
