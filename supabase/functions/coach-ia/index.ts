@@ -6,6 +6,7 @@
 //   {type:"done"}           fim
 //   {type:"error", error}   erro
 // Roda o loop de tool-use no servidor; só o texto é transmitido.
+// Deploy com --no-verify-jwt (preflight CORS do navegador não leva token).
 // =====================================================
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
