@@ -1,0 +1,35 @@
+name: Deploy Supabase Functions
+
+# Publica as Edge Functions no Supabase automaticamente quando algo em
+# supabase/functions/ muda na main — ou manualmente pelo botão "Run workflow".
+# Pré-requisito (1x): criar o secret SUPABASE_ACCESS_TOKEN no repositório
+# (Settings → Secrets and variables → Actions → New repository secret).
+# O token é gerado em https://supabase.com/dashboard/account/tokens
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: xuwwgprchhfshrqdhuqn
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # coach-ia: chamada pelo navegador com a anon key → mantém verificação de JWT (padrão)
+      - name: Deploy coach-ia
+        run: supabase functions deploy coach-ia --project-ref "$PROJECT_REF"
+
+      # whatsapp-webhook: chamada pela Evolution API sem token → sem verificação de JWT
+      - name: Deploy whatsapp-webhook
+        run: supabase functions deploy whatsapp-webhook --no-verify-jwt --project-ref "$PROJECT_REF"

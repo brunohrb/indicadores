@@ -77,7 +77,6 @@ async function rodarLoop(
   for (let i = 0; i < maxIter; i++) {
     const { textBlocks, toolUses, stopReason } = await streamUmaVez(convo, send);
 
-    // Reconstrói o content do assistant pra manter o histórico do loop
     const assistantContent: unknown[] = [];
     for (const t of textBlocks) assistantContent.push({ type: "text", text: t });
     for (const tu of toolUses) assistantContent.push({ type: "tool_use", id: tu.id, name: tu.name, input: tu.input });

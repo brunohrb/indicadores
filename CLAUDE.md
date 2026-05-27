@@ -69,7 +69,7 @@ Assistente estilo WHOOP Coach: chat conversacional que busca dados REAIS de neg�
 `ANTHROPIC_API_KEY` (obrigatório — usuário disse que já setou). Opcionais: `IXC_API_URL`, `IXC_API_TOKEN`. WhatsApp já usa `EVOLUTION_URL/EVOLUTION_API_KEY/EVOLUTION_INSTANCE` + `WHATSAPP_PHONES_AUTORIZADOS`.
 
 ### Deploy
-Edge Functions precisam de `supabase functions deploy coach-ia` e `supabase functions deploy whatsapp-webhook` (usuário roda — não tenho acesso ao Supabase CLI). `coach-ia` é chamada do browser com anon key (JWT verify passa). `whatsapp-webhook` provavelmente está com `--no-verify-jwt`.
+**Deploy automático via GitHub Actions** (`.github/workflows/deploy-supabase.yml`): roda no push pra main que mexa em `supabase/functions/**`, ou manual (workflow_dispatch). Faz `supabase functions deploy coach-ia` (JWT verify on — browser usa anon key) e `whatsapp-webhook --no-verify-jwt` (Evolution chama sem token). **Pré-requisito 1x**: secret `SUPABASE_ACCESS_TOKEN` no repo (token gerado em supabase.com/dashboard/account/tokens). Project ref: `xuwwgprchhfshrqdhuqn`. Alternativa manual: `supabase functions deploy <nome>` no terminal (usuário não tem CLI → preferir o workflow).
 
 ## Power BI sync (`powerbi-sync/`)
 
