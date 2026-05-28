@@ -2382,10 +2382,19 @@ document.addEventListener('click', function() {
   <script src="js/cliente-ixc.js?v=2"></script>
   <script src="js/mobile-fix.js?v=1"></script>
   <script>
-    // PWA — registra o service worker
+    // PWA — registra o service worker e força atualização quando há versão nova
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('sw.js').catch(function () {});
+        navigator.serviceWorker.register('sw.js').then(function (reg) {
+          reg.update();
+        }).catch(function () {});
+      });
+      // Quando um SW novo assume o controle, recarrega 1x pra pegar assets frescos
+      var jaRecarregou = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (jaRecarregou) return;
+        jaRecarregou = true;
+        window.location.reload();
       });
     }
   </script>
