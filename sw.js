@@ -1,7 +1,7 @@
 // Service Worker — TEXNET Indicadores PWA
 // Estratégia: network-first pra same-origin (sempre pega versão fresca online;
 // cai pro cache só quando offline). Cross-origin (Supabase, CDNs, Anthropic) passa direto.
-const CACHE = 'texnet-v2';
+const CACHE = 'texnet-v3';
 const SHELL = [
   './',
   './index.html',

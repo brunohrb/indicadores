@@ -236,6 +236,11 @@
   .modal-body { padding: 1rem; }
   /* Badges wrap */
   .badge { font-size: 0.75rem; padding: 0.4rem 0.75rem; }
+  /* Views ganham folga de topo pro título não ficar embaixo do ☰ */
+  .view-container { padding-top: 3.75rem; }
+  /* Badge de usuário desliza junto com o menu (não flutua sobre o conteúdo) */
+  #userBadge { transform: translateX(-100%); transition: transform 0.3s ease; background: var(--sidebar-bg); z-index: 1001; }
+  #userBadge.open { transform: translateX(0); }
 }
 @media (max-width: 480px) {
   .stat-value { font-size: 1.25rem; }
@@ -3935,6 +3940,8 @@ window.prbExportarCSV=function(){
     var btn = document.getElementById('menuToggle');
     var isOpen = sidebar.classList.toggle('open');
     overlay.classList.toggle('open', isOpen);
+    var badge = document.getElementById('userBadge');
+    if (badge) badge.classList.toggle('open', isOpen);
     btn.textContent = isOpen ? '✕' : '☰';
     document.body.style.overflow = isOpen ? 'hidden' : '';
   }
@@ -3950,6 +3957,8 @@ window.prbExportarCSV=function(){
           var btn = document.getElementById('menuToggle');
           sidebar.classList.remove('open');
           overlay.classList.remove('open');
+          var badge = document.getElementById('userBadge');
+          if (badge) badge.classList.remove('open');
           btn.textContent = '☰';
           document.body.style.overflow = '';
         }
