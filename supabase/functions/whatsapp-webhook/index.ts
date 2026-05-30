@@ -5,7 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enviarMensagem, extrairPhone } from "../_shared/evolution.ts";
 import { responderCoach } from "../_shared/coach-core.ts";
 
-const VERSAO = "wpp-v6";
+const VERSAO = "wpp-v7";
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Números autorizados a usar o bot (separados por vírgula, ex: "5511999999999,5511888888888")
@@ -17,7 +17,11 @@ serve(async (req) => {
   // GET de sanidade — abra a URL da function no navegador pra confirmar
   // que ela está publicada, ver os secrets configurados, e sondar a
   // Evolution direto pra saber se o socket WhatsApp dela está vivo.
+  // Aceita ?action=restart pra forçar restart do Baileys quando ele zumbi.
   if (req.method === "GET") {
+    const u = new URL(req.url);
+    const action = u.searchParams.get("action");
+    const restart = action === "restart" ? await restartEvolution() : undefined;
     const evolution = await diagnosticarEvolution();
     return new Response(
       JSON.stringify(
@@ -34,6 +38,7 @@ serve(async (req) => {
             WHATSAPP_PHONES_AUTORIZADOS:
               PHONES_AUTORIZADOS.length > 0 ? `${PHONES_AUTORIZADOS.length} número(s)` : "(vazio = libera geral)",
           },
+          ...(restart ? { restart } : {}),
           evolution,
         },
         null,
@@ -350,4 +355,34 @@ async function diagnosticarEvolution(): Promise<Record<string, unknown>> {
     connectionState: await probe(`/instance/connectionState/${inst}`),
     webhookConfig: await probe(`/webhook/find/${inst}`),
   };
+}
+
+// Força restart do Baileys (quando ele vira zumbi: state=open mas não
+// repassa mensagens). Tenta PUT primeiro (Evolution v2.x), POST fallback.
+async function restartEvolution(): Promise<Record<string, unknown>> {
+  const url = Deno.env.get("EVOLUTION_URL");
+  const key = Deno.env.get("EVOLUTION_API_KEY");
+  const inst = Deno.env.get("EVOLUTION_INSTANCE") ?? "texnet";
+  if (!url || !key) return { erro: "EVOLUTION_URL/KEY não setados" };
+
+  async function tentar(method: string) {
+    const t0 = Date.now();
+    try {
+      const res = await fetch(`${url}/instance/restart/${inst}`, {
+        method,
+        headers: { apikey: key, "Content-Type": "application/json" },
+      });
+      const txt = await res.text();
+      let body: unknown = txt;
+      try { body = JSON.parse(txt); } catch { /* texto puro */ }
+      return { method, status: res.status, ms: Date.now() - t0, body };
+    } catch (e) {
+      return { method, erro: String(e), ms: Date.now() - t0 };
+    }
+  }
+
+  const put = await tentar("PUT");
+  if (typeof put.status === "number" && put.status < 300) return { put };
+  const post = await tentar("POST");
+  return { put, post };
 }
