@@ -5,7 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enviarMensagem, extrairPhone } from "../_shared/evolution.ts";
 import { responderCoach } from "../_shared/coach-core.ts";
 
-const VERSAO = "wpp-v5";
+const VERSAO = "wpp-v6";
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Números autorizados a usar o bot (separados por vírgula, ex: "5511999999999,5511888888888")
@@ -15,9 +15,10 @@ const sb = createClient(SB_URL, SB_KEY);
 
 serve(async (req) => {
   // GET de sanidade — abra a URL da function no navegador pra confirmar
-  // que ela está publicada e ver quais secrets estão configurados (sem
-  // expor os valores — só true/false).
+  // que ela está publicada, ver os secrets configurados, e sondar a
+  // Evolution direto pra saber se o socket WhatsApp dela está vivo.
   if (req.method === "GET") {
+    const evolution = await diagnosticarEvolution();
     return new Response(
       JSON.stringify(
         {
@@ -33,6 +34,7 @@ serve(async (req) => {
             WHATSAPP_PHONES_AUTORIZADOS:
               PHONES_AUTORIZADOS.length > 0 ? `${PHONES_AUTORIZADOS.length} número(s)` : "(vazio = libera geral)",
           },
+          evolution,
         },
         null,
         2,
@@ -318,4 +320,34 @@ function mesAtual(): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
+}
+
+// Sonda a Evolution direto pra ver se o socket WhatsApp dela está
+// realmente vivo (o dashboard às vezes mostra "Connected" cacheado).
+// Retorna estados crus + erros, sem lançar — só pra diagnóstico.
+async function diagnosticarEvolution(): Promise<Record<string, unknown>> {
+  const url = Deno.env.get("EVOLUTION_URL");
+  const key = Deno.env.get("EVOLUTION_API_KEY");
+  const inst = Deno.env.get("EVOLUTION_INSTANCE") ?? "texnet";
+  if (!url || !key) return { erro: "EVOLUTION_URL ou EVOLUTION_API_KEY não setados" };
+
+  async function probe(path: string) {
+    const t0 = Date.now();
+    try {
+      const res = await fetch(`${url}${path}`, { headers: { apikey: key } });
+      const ms = Date.now() - t0;
+      const txt = await res.text();
+      let body: unknown = txt;
+      try { body = JSON.parse(txt); } catch { /* texto puro */ }
+      return { status: res.status, ms, body };
+    } catch (e) {
+      return { erro: String(e), ms: Date.now() - t0 };
+    }
+  }
+
+  return {
+    instance: inst,
+    connectionState: await probe(`/instance/connectionState/${inst}`),
+    webhookConfig: await probe(`/webhook/find/${inst}`),
+  };
 }
