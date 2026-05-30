@@ -5,61 +5,145 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enviarMensagem, extrairPhone } from "../_shared/evolution.ts";
 import { responderCoach } from "../_shared/coach-core.ts";
 
+const VERSAO = "wpp-v3";
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-// Números autorizados a usar comandos (separados por vírgula, ex: "5511999999999,5511888888888")
+// Números autorizados a usar o bot (separados por vírgula, ex: "5511999999999,5511888888888")
 const PHONES_AUTORIZADOS = (Deno.env.get("WHATSAPP_PHONES_AUTORIZADOS") ?? "").split(",").map((p) => p.trim()).filter(Boolean);
 
 const sb = createClient(SB_URL, SB_KEY);
 
 serve(async (req) => {
+  // GET de sanidade — abra a URL da function no navegador pra confirmar
+  // que ela está publicada e ver quais secrets estão configurados (sem
+  // expor os valores — só true/false).
+  if (req.method === "GET") {
+    return new Response(
+      JSON.stringify(
+        {
+          ok: true,
+          function: "whatsapp-webhook",
+          versao: VERSAO,
+          ts: new Date().toISOString(),
+          secrets: {
+            EVOLUTION_URL: !!Deno.env.get("EVOLUTION_URL"),
+            EVOLUTION_API_KEY: !!Deno.env.get("EVOLUTION_API_KEY"),
+            EVOLUTION_INSTANCE: Deno.env.get("EVOLUTION_INSTANCE") ?? "(default: texnet)",
+            ANTHROPIC_API_KEY: !!Deno.env.get("ANTHROPIC_API_KEY"),
+            WHATSAPP_PHONES_AUTORIZADOS:
+              PHONES_AUTORIZADOS.length > 0 ? `${PHONES_AUTORIZADOS.length} número(s)` : "(vazio = libera geral)",
+          },
+        },
+        null,
+        2,
+      ),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   if (req.method !== "POST") return new Response("ok", { status: 200 });
 
   let payload: Record<string, unknown>;
   try {
     payload = await req.json();
   } catch {
+    console.log("[wpp] JSON inválido no body");
     return new Response("ok", { status: 200 });
   }
 
-  // Evolution API envia event = "messages.upsert"
-  if (payload.event !== "messages.upsert") return new Response("ok", { status: 200 });
+  console.log("[wpp] event recebido:", payload.event);
+
+  // Aceita variações de case (algumas versões da Evolution mandam em CAPS)
+  const event = String(payload.event ?? "").toLowerCase();
+  if (event !== "messages.upsert") {
+    console.log("[wpp] evento ignorado:", event);
+    return new Response("ok", { status: 200 });
+  }
 
   const data = payload.data as Record<string, unknown>;
   const key = data?.key as Record<string, unknown>;
   const remoteJid = String(key?.remoteJid ?? "");
   const fromMe = Boolean(key?.fromMe);
 
-  // Ignora mensagens enviadas pelo próprio bot
-  if (fromMe || !remoteJid) return new Response("ok", { status: 200 });
+  if (fromMe) {
+    console.log("[wpp] fromMe=true, ignorando eco do próprio bot");
+    return new Response("ok", { status: 200 });
+  }
+  if (!remoteJid) {
+    console.log("[wpp] sem remoteJid no payload");
+    return new Response("ok", { status: 200 });
+  }
 
-  // Extrai texto da mensagem
+  // Extrai texto da mensagem (cobre tipos comuns: texto simples, extendido, legenda de imagem/vídeo)
   const msg = data?.message as Record<string, unknown>;
   const textoOriginal = String(
-    msg?.conversation ?? (msg?.extendedTextMessage as Record<string, unknown>)?.text ?? ""
+    msg?.conversation
+      ?? (msg?.extendedTextMessage as Record<string, unknown>)?.text
+      ?? (msg?.imageMessage as Record<string, unknown>)?.caption
+      ?? (msg?.videoMessage as Record<string, unknown>)?.caption
+      ?? "",
   ).trim();
   const texto = textoOriginal.toLowerCase();
 
   const phone = extrairPhone(remoteJid);
+  console.log(`[wpp] de=${phone} texto="${textoOriginal.slice(0, 100)}"`);
 
-  // Verifica autorização
-  if (PHONES_AUTORIZADOS.length > 0 && !PHONES_AUTORIZADOS.includes(phone)) {
+  // Verifica autorização (tolerante a quirks de número BR — 9 a mais/menos)
+  if (PHONES_AUTORIZADOS.length > 0 && !numeroAutorizado(phone)) {
+    console.log(`[wpp] número NÃO autorizado: ${phone}. Lista: ${PHONES_AUTORIZADOS.join(",")}`);
+    // Em vez de ignorar calado, avisa o remetente — facilita demais o debug.
+    await enviarMensagem(
+      phone,
+      `❌ Número não autorizado: ${phone}\n\nAdicione esse número em WHATSAPP_PHONES_AUTORIZADOS no Supabase (sem espaços, sem +).`,
+    ).catch((e) => console.log("[wpp] falhou ao avisar não-autorizado:", String(e)));
+    return new Response("ok", { status: 200 });
+  }
+
+  if (!texto) {
+    console.log("[wpp] mensagem sem texto extraível (talvez áudio/sticker/etc), ignorando");
     return new Response("ok", { status: 200 });
   }
 
   try {
     await processarComando(texto, textoOriginal, phone);
   } catch (e) {
-    await enviarMensagem(phone, `❌ Erro interno: ${String(e)}`).catch(() => {});
+    console.log("[wpp] erro processando:", String(e));
+    await enviarMensagem(phone, `❌ Erro interno: ${String(e).slice(0, 200)}`).catch(() => {});
   }
 
   return new Response("ok", { status: 200 });
 });
 
+// ── Normalização de número BR (quirk: 9 extra/faltando, sufixo :device) ──
+function normalizar(n: string): string {
+  return n.replace(/[^\d]/g, "").split(":")[0];
+}
+// 13 dígitos (com 9) ↔ 12 dígitos (sem 9). Aceita os dois lados.
+function variantes(n: string): string[] {
+  const base = normalizar(n);
+  const out = new Set<string>([base]);
+  if (base.length === 13 && base.startsWith("55") && base[4] === "9") {
+    out.add(base.slice(0, 4) + base.slice(5)); // remove o 9
+  } else if (base.length === 12 && base.startsWith("55")) {
+    out.add(base.slice(0, 4) + "9" + base.slice(4)); // adiciona o 9
+  }
+  return [...out];
+}
+function numeroAutorizado(phone: string): boolean {
+  const phoneVars = variantes(phone);
+  for (const a of PHONES_AUTORIZADOS) {
+    const authVars = variantes(a);
+    if (phoneVars.some((p) => authVars.includes(p))) return true;
+  }
+  return false;
+}
+
 async function processarComando(texto: string, textoOriginal: string, phone: string) {
   if (!texto) return;
   if (texto === "ajuda" || texto === "help" || texto === "menu") {
-    await enviarMensagem(phone, `📊 *TEXNET Indicadores Bot*
+    await enviarMensagem(
+      phone,
+      `📊 *TEXNET Indicadores Bot*
 
 💬 *Pode falar comigo naturalmente!* Pergunte qualquer coisa sobre os indicadores, faturamento, clientes, cancelamentos, etc. — eu busco os dados reais e respondo.
 
@@ -68,7 +152,8 @@ Comandos rápidos:
 *relatorio YYYY-MM* — KPIs de um mês específico
 *status* — status dos últimos syncs
 *limpar* — reinicia a conversa
-*ajuda* — este menu`);
+*ajuda* — este menu`,
+    );
     return;
   }
 
@@ -99,7 +184,10 @@ async function responderComCoach(phone: string, pergunta: string) {
   const historico = await lerHistorico(phone);
   historico.push({ role: "user", content: pergunta });
 
+  console.log(`[wpp] chamando Coach IA pra ${phone}...`);
   const resposta = await responderCoach(sb, historico.slice(-10));
+  console.log(`[wpp] Coach respondeu (${resposta.length} chars)`);
+
   historico.push({ role: "assistant", content: resposta });
   await salvarHistorico(phone, historico.slice(-10));
 

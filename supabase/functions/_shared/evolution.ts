@@ -16,5 +16,6 @@ export async function enviarMensagem(phone: string, text: string): Promise<void>
 
 export function extrairPhone(remoteJid: string): string {
   // "5511999999999@s.whatsapp.net" → "5511999999999"
-  return remoteJid.replace(/@.+$/, "");
+  // "5511999999999:5@s.whatsapp.net" (com sufixo de device) → "5511999999999"
+  return remoteJid.replace(/@.+$/, "").replace(/:.+$/, "");
 }
