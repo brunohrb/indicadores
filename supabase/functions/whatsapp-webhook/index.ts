@@ -5,7 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enviarMensagem, extrairPhone } from "../_shared/evolution.ts";
 import { responderCoach } from "../_shared/coach-core.ts";
 
-const VERSAO = "wpp-v3";
+const VERSAO = "wpp-v4";
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 // Números autorizados a usar o bot (separados por vírgula, ex: "5511999999999,5511888888888")
@@ -85,17 +85,36 @@ serve(async (req) => {
   ).trim();
   const texto = textoOriginal.toLowerCase();
 
-  const phone = extrairPhone(remoteJid);
-  console.log(`[wpp] de=${phone} texto="${textoOriginal.slice(0, 100)}"`);
+  // Em multi-device o WhatsApp manda um LID (ID interno opaco) em remoteJid
+  // e o número real aparece em outro campo. Pra resolver isso pra qualquer
+  // contato, juntamos candidatos de vários lugares e logamos tudo.
+  const dAny = data as Record<string, unknown>;
+  const fontes: unknown[] = [
+    remoteJid,
+    key?.participant,
+    (key as Record<string, unknown>)?.senderPn,
+    (dAny?.contact as Record<string, unknown>)?.id,
+    (dAny?.contact as Record<string, unknown>)?.number,
+    dAny?.sender,
+    dAny?.participant,
+    dAny?.pushName,
+  ];
+  const candidatos = fontes
+    .map((v) => String(v ?? ""))
+    .filter(Boolean)
+    .map(extrairPhone);
+  console.log("[wpp] candidatos:", JSON.stringify(candidatos));
+  console.log("[wpp] payload.data:", JSON.stringify(data).slice(0, 2000));
 
-  // Verifica autorização (tolerante a quirks de número BR — 9 a mais/menos)
-  if (PHONES_AUTORIZADOS.length > 0 && !numeroAutorizado(phone)) {
-    console.log(`[wpp] número NÃO autorizado: ${phone}. Lista: ${PHONES_AUTORIZADOS.join(",")}`);
-    // Em vez de ignorar calado, avisa o remetente — facilita demais o debug.
-    await enviarMensagem(
-      phone,
-      `❌ Número não autorizado: ${phone}\n\nAdicione esse número em WHATSAPP_PHONES_AUTORIZADOS no Supabase (sem espaços, sem +).`,
-    ).catch((e) => console.log("[wpp] falhou ao avisar não-autorizado:", String(e)));
+  // Pra responder de volta, prefere um número BR válido (12-13 dígitos com 55).
+  const numerosBR = candidatos.filter((c) => /^55\d{10,11}$/.test(c));
+  const phone = numerosBR[0] ?? candidatos[0] ?? extrairPhone(remoteJid);
+  console.log(`[wpp] phone-para-resposta=${phone} texto="${textoOriginal.slice(0, 100)}"`);
+
+  // Autorização: aceita se QUALQUER candidato bater com a lista.
+  if (PHONES_AUTORIZADOS.length > 0 && !candidatos.some(numeroAutorizado)) {
+    console.log(`[wpp] NÃO autorizado. candidatos=${candidatos.join(",")} lista=${PHONES_AUTORIZADOS.join(",")}`);
+    // Não tenta responder de volta — pra LIDs o Evolution dá 400 e polui o log.
     return new Response("ok", { status: 200 });
   }
 
