@@ -92,17 +92,20 @@ function classRede(idFilial) {
   // ──────────────────────────────────────────────────────────────────
   console.log('1/3 Cancelamentos do mês...');
   try {
+    // Tenta filtrar por status C/D e depois filtra por data localmente
+    // (evita campo data_desativacao que pode não existir nesta versão do IXC)
     const contratos = await listarTodos('cliente_contrato', {
-      qtype: 'cliente_contrato.data_desativacao',
-      query: dataIni,
-      oper: '>=',
+      qtype: 'cliente_contrato.status',
+      query: 'C',
+      oper: '=',
       sortname: 'cliente_contrato.id',
       sortorder: 'desc',
     });
 
+    // Campos possíveis de data de cancelamento em diferentes versões do IXC
     const canceladosMes = contratos.filter(c => {
-      const dt = (c.data_desativacao || c.data_cancelamento || '').slice(0, 10);
-      return dt >= dataIni && dt <= dataFim && (c.status === 'C' || c.status === 'D');
+      const dt = (c.data_cancelamento || c.data_desativacao || c.data_rescisao || c.updated_at || '').slice(0, 10);
+      return dt >= dataIni && dt <= dataFim;
     });
 
     const por_rede = { texnet: [], vtal_fortaleza: [], vtal_fora: [], pj: [] };
