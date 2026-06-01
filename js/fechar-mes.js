@@ -172,9 +172,6 @@
         }
       }
 
-      const aviso = document.getElementById('comissaoAvisoDiretoria');
-      if (aviso) aviso.style.display = reajuste > 0 ? 'none' : 'block';
-
       const cards = [
         { icon:'💰', label:'Faturamento Base',   val: fatTotal,  cor:'#2563eb', sub:'Total Receitas (Fluxo de Caixa)' },
         { icon:'📋', label:'Juros/Multa',         val: juros,     cor:'#10b981', sub:'Receita de juros' },
@@ -342,10 +339,6 @@
       const reajuste     = hasDiretoria
         ? ((dirDados.dados.reajuste_pf || 0) + (dirDados.dados.reajuste_pj || 0)) || dirDados.dados.reajuste || 0
         : 0;
-
-      // Aviso diretoria
-      const aviso = document.getElementById('comissaoAvisoDiretoria');
-      if (aviso) aviso.style.display = hasDiretoria ? 'none' : 'block';
 
       // Monta params e calculos no mesmo formato do snapshot para reusar renderComissaoComDados
       const params = {
