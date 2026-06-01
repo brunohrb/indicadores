@@ -1,10 +1,8 @@
 // Service Worker — TEXNET Indicadores PWA
-// Estratégia: network-first pra same-origin (sempre pega versão fresca online;
-// cai pro cache só quando offline). Cross-origin (Supabase, CDNs, Anthropic) passa direto.
-const CACHE = 'texnet-v3';
+// Estratégia: index.html SEMPRE vai pra rede (nunca cacheado).
+// Restante (assets) é network-first, cache como fallback offline.
+const CACHE = 'texnet-v5';
 const SHELL = [
-  './',
-  './index.html',
   './logotexnet.png',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -32,6 +30,15 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // só same-origin
+
+  // index.html e raiz: SEMPRE rede, nunca cache (evita app travado em versão velha)
+  const isHtml = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html') || req.mode === 'navigate';
+  if (isHtml) {
+    e.respondWith(
+      fetch(req, { cache: 'no-store' }).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
 
   e.respondWith(
     fetch(req)
