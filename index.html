@@ -549,48 +549,6 @@
 
         </div>
 
-        <!-- ═══ PAINEL IXC SOFT — dados em tempo real ═══ -->
-        <div id="ixc-dashboard-painel" style="padding:0 2rem 0.5rem;display:none">
-          <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb);border-radius:16px;padding:1.25rem 1.75rem;color:white">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
-              <div style="display:flex;align-items:center;gap:0.6rem">
-                <span style="font-size:1.1rem">🔄</span>
-                <span style="font-weight:700;font-size:0.9rem">DADOS IXC SOFT — Caixa Real</span>
-                <span id="ixc-dash-periodo" style="font-size:0.75rem;opacity:0.75;background:rgba(255,255,255,0.15);padding:0.15rem 0.6rem;border-radius:10px"></span>
-              </div>
-              <span id="ixc-dash-sync-hora" style="font-size:0.72rem;opacity:0.65"></span>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.85rem">
-              <div style="background:rgba(255,255,255,0.13);border-radius:12px;padding:0.9rem 1rem">
-                <div style="font-size:0.68rem;font-weight:600;opacity:0.75;margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:.04em">👥 Clientes Ativos</div>
-                <div id="ixc-dash-clientes" style="font-size:1.5rem;font-weight:800">—</div>
-                <div style="font-size:0.7rem;opacity:0.6;margin-top:0.2rem">Base IXC ao vivo</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.13);border-radius:12px;padding:0.9rem 1rem">
-                <div style="font-size:0.68rem;font-weight:600;opacity:0.75;margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:.04em">💰 Recebido no Mês</div>
-                <div id="ixc-dash-recebido" style="font-size:1.25rem;font-weight:800">—</div>
-                <div id="ixc-dash-recebido-qtd" style="font-size:0.7rem;opacity:0.6;margin-top:0.2rem">— boletos pagos</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.13);border-radius:12px;padding:0.9rem 1rem">
-                <div style="font-size:0.68rem;font-weight:600;opacity:0.75;margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:.04em">💸 Despesas Pagas</div>
-                <div id="ixc-dash-despesas" style="font-size:1.25rem;font-weight:800">—</div>
-                <div id="ixc-dash-despesas-qtd" style="font-size:0.7rem;opacity:0.6;margin-top:0.2rem">— contas pagas</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.13);border-radius:12px;padding:0.9rem 1rem">
-                <div style="font-size:0.68rem;font-weight:600;opacity:0.75;margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:.04em">📊 Saldo do Mês</div>
-                <div id="ixc-dash-saldo" style="font-size:1.25rem;font-weight:800">—</div>
-                <div id="ixc-dash-saldo-label" style="font-size:0.7rem;opacity:0.6;margin-top:0.2rem">Recebido − Despesas</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.13);border-radius:12px;padding:0.9rem 1rem">
-                <div style="font-size:0.68rem;font-weight:600;opacity:0.75;margin-bottom:0.3rem;text-transform:uppercase;letter-spacing:.04em">📡 Usuários Radius</div>
-                <div id="ixc-dash-usuarios" style="font-size:1.5rem;font-weight:800">—</div>
-                <div style="font-size:0.7rem;opacity:0.6;margin-top:0.2rem">Conexões ativas</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- ══════════════════════════════════════════ -->
-
         <!-- Charts -->
         <div class="chart-grid" style="padding:1.25rem 2rem">
           <div class="chart-card"><div class="chart-header"><h3 class="chart-title">Composição das Receitas</h3><p class="chart-subtitle" id="dash_sub_rec">Distribuição por categoria</p></div><div class="chart-container"><canvas id="receitasChart"></canvas></div></div>
