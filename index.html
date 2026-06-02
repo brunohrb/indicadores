@@ -2225,9 +2225,8 @@
         <p style="font-size:0.8rem;color:#64748b;margin:0.2rem 0 0">36 indicadores sincronizados automaticamente todo dia</p>
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
-        <select id="diretoriaPBI_inputAno" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer"></select>
-        <select id="diretoriaPBI_inputMesNum" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer"></select>
-        <button onclick="diretoriaPBI_trocarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Mostra só este mês (substitui a seleção)">Ver este mês</button>
+        <select id="diretoriaPBI_inputAno" onchange="diretoriaPBI_trocarMes()" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer"></select>
+        <select id="diretoriaPBI_inputMesNum" onchange="diretoriaPBI_trocarMes()" style="padding:0.4rem 0.55rem;font-size:0.8rem;border:1px solid #cbd5e1;border-radius:8px;background:white;cursor:pointer"></select>
         <button onclick="diretoriaPBI_adicionarMes()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#0f172a;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600" title="Adiciona este mês aos já selecionados (soma/agrega)">+ Comparar</button>
         <button onclick="renderDiretoriaPBI()" style="padding:0.45rem 0.85rem;font-size:0.8rem;background:#64748b;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600">🔄 Recarregar</button>
       </div>
@@ -2620,6 +2619,14 @@ async function diretoriaPBI_carregarMes(mes) {
   const rPJ = valores['Reajuste Contratos PJ'];
   if (typeof rPF === 'number' && typeof rPJ === 'number' && rPF === rPJ && rPF !== 0) {
     valores['__reajusteDuplicado'] = true;
+  }
+
+  // Base de Contratos = Base PF + Base PJ+PME + Base Isentos (garante consistência matemática)
+  const bPF  = valores['Base de Cliente PF'];
+  const bPJ  = valores['Base Clientes PJ+PME'] ?? valores['Base Clientes PJ +PME'] ?? valores['Base Clientes PJ + PME'];
+  const bIso = valores['Base de Isentos'];
+  if (typeof bPF === 'number' && typeof bPJ === 'number' && typeof bIso === 'number') {
+    valores['Base de Contratos'] = bPF + bPJ + bIso;
   }
 
   diretoriaPBI_dadosCache[mes] = merged;
