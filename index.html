@@ -2423,6 +2423,12 @@ const DIRETORIA_PBI_CHUTES = new Set([
 ]);
 
 // Agrupamento visual dos cards (Diretoria + complementos do Comercial PF mesclados)
+// Tooltips informativos (ⓘ) por nome de card
+const DIRETORIA_PBI_INFO = {
+  'Base de Contratos': 'Conta CONTRATOS (pontos), não clientes. Um cliente pode ter vários contratos — por isso o total não é igual à soma de PF + PJ+PME + Isentos.',
+  'Base de Isentos': 'Clientes com Tipo_Cliente = ISENTO. Esses clientes também aparecem em Base PF ou PJ, não são exclusivos.',
+};
+
 const DIRETORIA_PBI_GRUPOS = [
   { titulo: 'Base / Clientes', cards: [
     'Base de Cliente PF', 'Base Clientes PJ +PME', 'Base de Isentos', 'Base de Contratos',
@@ -3024,6 +3030,8 @@ async function renderDiretoriaPBI() {
           ? 'DAX não conseguiu segmentar PF/PJ — está mostrando o total nos 2 cards'
           : 'Valor inferido — pode não bater com Power BI original';
         const badge = ehChute ? `<span title="${tituloBadge}" style="font-size:0.65rem;color:#d97706;background:#fef3c7;padding:1px 6px;border-radius:3px;margin-left:0.4rem;font-weight:600">⚠️ inferido</span>` : '';
+        const infoTxt = DIRETORIA_PBI_INFO[card];
+        const infoBadge = infoTxt ? `<span title="${infoTxt}" style="cursor:help;font-size:0.72rem;color:#3b82f6;margin-left:0.35rem">ⓘ</span>` : '';
         const cor = isVazio ? '#94a3b8' : (ehChute ? '#b45309' : '#0f172a');
         let tagAgg = '';
         if (isMulti) {
@@ -3033,7 +3041,7 @@ async function renderDiretoriaPBI() {
         }
         html += `
           <div style="background:white;border-radius:10px;padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);border:1px solid #e2e8f0">
-            <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${card}${badge}</div>
+            <div style="font-size:0.72rem;color:#64748b;font-weight:600;letter-spacing:0.02em;margin-bottom:0.4rem;min-height:2em;line-height:1.3">${card}${infoBadge}${badge}</div>
             <div style="font-size:1.35rem;font-weight:700;color:${cor}">${vStr}</div>
             ${tagAgg}
           </div>`;
