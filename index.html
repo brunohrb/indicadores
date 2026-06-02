@@ -2621,14 +2621,6 @@ async function diretoriaPBI_carregarMes(mes) {
     valores['__reajusteDuplicado'] = true;
   }
 
-  // Base de Contratos = Base PF + Base PJ+PME + Base Isentos (garante consistência matemática)
-  const bPF  = valores['Base de Cliente PF'];
-  const bPJ  = valores['Base Clientes PJ+PME'] ?? valores['Base Clientes PJ +PME'] ?? valores['Base Clientes PJ + PME'];
-  const bIso = valores['Base de Isentos'];
-  if (typeof bPF === 'number' && typeof bPJ === 'number' && typeof bIso === 'number') {
-    valores['Base de Contratos'] = bPF + bPJ + bIso;
-  }
-
   diretoriaPBI_dadosCache[mes] = merged;
   return merged;
 }
