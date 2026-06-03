@@ -66,9 +66,10 @@ async function dormir(ms) { return new Promise(r => setTimeout(r, ms)); }
 function daxDeCard(mesNum, ano) {
   // Filtros que a página "Performance de Vendas" do PBI aplica em TODOS os cards
   // (filtros de relatório). Sem eles, números ficam ~3-6 unidades maiores.
+  // Usa KEEPFILTERS pra não sobrescrever filtros de mês/relacionamentos.
   const FILIAIS_REPORT = '{1, 2, 3, 5, 10, 20, 21, 22, 27, 28, 45, 47}';
   const VENDEDORES_EXCLUIR = '{"Renovação de Plano (USAR APENAS PARA RENOVAR CLIENTE)", "TECNICO VENDEDOR", "CADASTROS GERAIS"}';
-  const filtroPagina = `FILTER(ALL(fVendas), fVendas[filial_id] IN ${FILIAIS_REPORT} && NOT(fVendas[vendedor] IN ${VENDEDORES_EXCLUIR}))`;
+  const filtroPagina = `KEEPFILTERS(fVendas[filial_id] IN ${FILIAIS_REPORT}), KEEPFILTERS(NOT(fVendas[vendedor] IN ${VENDEDORES_EXCLUIR}))`;
 
   const filtroMes = `'dCalendario'[Ano] = ${ano}, 'dCalendario'[Mês numero] = ${mesNum}`;
   const comMes = (expr) => `CALCULATE(${expr}, ${filtroMes}, ${filtroPagina})`;
