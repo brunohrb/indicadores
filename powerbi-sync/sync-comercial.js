@@ -125,6 +125,28 @@ function daxDeCard(mesNum, ano) {
     { card: 'Mesh Pago',                      dax: comMes('[Mesh Pago]') },
     { card: 'Mesh Não Pago',                  dax: comMes('[Mesh Nao Pago]') },
 
+    // ─── Eventos / Serviços Adicionais / ISP (vistos no relatório COMERCIAL) ───
+    // Discovery: tenta múltiplos nomes — sync ignora os que não existem.
+    { card: 'Eventos',                        dax: comMes('[Eventos]') },
+    { card: 'Servicos Adicionais',            dax: comMes('[Servicos Adicionais]') },
+    { card: 'ISP Provedor',                   dax: comMes('[ISP]') },
+
+    // ─── Vendas por Rede (Texnet / VTAL Fortaleza / VTAL Fora) ────────
+    // Filiais a partir do report COMERCIAL > VENDA POR FILIAL.
+    // Cada uma tenta o nome do filial primeiro como coluna 'filial', depois 'Filial'.
+    { card: 'Vendas Texnet',
+      dax: `CALCULATE([Total Venda], ${filtroMes}, fVendas[filial] = "TEXNET")` },
+    { card: 'Vendas VTAL Fortaleza',
+      dax: `CALCULATE([Total Venda], ${filtroMes}, fVendas[filial] = "PF V.TAL - PBR")` },
+    { card: 'Vendas VTAL Fora',
+      dax: `CALCULATE([Total Venda], ${filtroMes}, fVendas[filial] = "PF TAIBA - PBR")` },
+    { card: 'Qtd Vendas Texnet',
+      dax: `CALCULATE(COUNTROWS(fVendas), ${filtroMes}, fVendas[filial] = "TEXNET")` },
+    { card: 'Qtd Vendas VTAL Fortaleza',
+      dax: `CALCULATE(COUNTROWS(fVendas), ${filtroMes}, fVendas[filial] = "PF V.TAL - PBR")` },
+    { card: 'Qtd Vendas VTAL Fora',
+      dax: `CALCULATE(COUNTROWS(fVendas), ${filtroMes}, fVendas[filial] = "PF TAIBA - PBR")` },
+
     // ─── Recebimentos ──────────────────────────────────────────
     { card: 'Juros (Recebimentos)',           dax: comMes('[Juros1]') },
 
