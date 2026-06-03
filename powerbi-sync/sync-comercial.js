@@ -64,8 +64,14 @@ async function executarDAX(token, dax, tentativa = 1) {
 async function dormir(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function daxDeCard(mesNum, ano) {
+  // Filtros que a página "Performance de Vendas" do PBI aplica em TODOS os cards
+  // (filtros de relatório). Sem eles, números ficam ~3-6 unidades maiores.
+  const FILIAIS_REPORT = '{1, 2, 3, 5, 10, 20, 21, 22, 27, 28, 45, 47}';
+  const VENDEDORES_EXCLUIR = '{"Renovação de Plano (USAR APENAS PARA RENOVAR CLIENTE)", "TECNICO VENDEDOR", "CADASTROS GERAIS"}';
+  const filtroPagina = `FILTER(ALL(fVendas), fVendas[filial_id] IN ${FILIAIS_REPORT} && NOT(fVendas[vendedor] IN ${VENDEDORES_EXCLUIR}))`;
+
   const filtroMes = `'dCalendario'[Ano] = ${ano}, 'dCalendario'[Mês numero] = ${mesNum}`;
-  const comMes = (expr) => `CALCULATE(${expr}, ${filtroMes})`;
+  const comMes = (expr) => `CALCULATE(${expr}, ${filtroMes}, ${filtroPagina})`;
 
   // Valor Canc. 1a Mens. — medida não existe no dataset; calcula inline via
   // motivo CONTAINS "PRIMEIRA MENSALIDADE" (confirmado em testar-canc-1men-v3:
