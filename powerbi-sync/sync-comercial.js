@@ -73,9 +73,6 @@ function daxDeCard(mesNum, ano) {
 
   const filtroMes = `'dCalendario'[Ano] = ${ano}, 'dCalendario'[Mês numero] = ${mesNum}`;
   const comMes = (expr) => `CALCULATE(${expr}, ${filtroMes}, ${filtroPagina})`;
-  // Cards do relatório COMERCIAL (diferente de "Performance de Vendas") NÃO têm
-  // os filtros de página, então tentamos sem eles também.
-  const comMesSemFiltro = (expr) => `CALCULATE(${expr}, ${filtroMes})`;
 
   // Valor Canc. 1a Mens. — medida não existe no dataset; calcula inline via
   // motivo CONTAINS "PRIMEIRA MENSALIDADE" (confirmado em testar-canc-1men-v3:
@@ -127,32 +124,6 @@ function daxDeCard(mesNum, ano) {
     { card: 'Valor Mesh',                     dax: comMes('[Valor Mesh]') },
     { card: 'Mesh Pago',                      dax: comMes('[Mesh Pago]') },
     { card: 'Mesh Não Pago',                  dax: comMes('[Mesh Nao Pago]') },
-
-    // ─── Eventos / Serviços Adicionais / ISP (vistos no relatório COMERCIAL) ───
-    // SEM os filtros de página (Performance de Vendas) — pois os valores
-    // que vimos no relatório COMERCIAL vêm sem essas restrições.
-    { card: 'Eventos',                        dax: comMesSemFiltro('[Eventos]') },
-    { card: 'Servicos Adicionais',            dax: comMesSemFiltro('[Servicos Adicionais]') },
-    { card: 'ISP Provedor',                   dax: comMesSemFiltro('[ISP]') },
-
-    // ─── Vendas por Rede (Texnet / VTAL Fortaleza / VTAL Fora) ────────
-    // Filiais do relatório COMERCIAL > VENDA POR FILIAL. SEM filtros de página.
-    // Usa filial_id (numérico) que já sabemos existir, mapeando pra cada rede:
-    //   TEXNET pura       → filial_id ∈ {1, 2, 3, 5, 10, 20, 22, 27, 28} (PF Texnet)
-    //   PF V.TAL - PBR    → filial_id ∈ {45, 47} (VTAL Fortaleza)
-    //   PF TAIBA - PBR    → filial_id ∈ {43} (VTAL Fora/Taiba)
-    { card: 'Vendas Texnet',
-      dax: `CALCULATE([Total Venda], ${filtroMes}, fVendas[filial_id] IN {1, 2, 3, 5, 10, 20, 22, 27, 28})` },
-    { card: 'Vendas VTAL Fortaleza',
-      dax: `CALCULATE([Total Venda], ${filtroMes}, fVendas[filial_id] IN {45, 47})` },
-    { card: 'Vendas VTAL Fora',
-      dax: `CALCULATE([Total Venda], ${filtroMes}, fVendas[filial_id] = 43)` },
-    { card: 'Qtd Vendas Texnet',
-      dax: `CALCULATE(COUNTROWS(fVendas), ${filtroMes}, fVendas[filial_id] IN {1, 2, 3, 5, 10, 20, 22, 27, 28})` },
-    { card: 'Qtd Vendas VTAL Fortaleza',
-      dax: `CALCULATE(COUNTROWS(fVendas), ${filtroMes}, fVendas[filial_id] IN {45, 47})` },
-    { card: 'Qtd Vendas VTAL Fora',
-      dax: `CALCULATE(COUNTROWS(fVendas), ${filtroMes}, fVendas[filial_id] = 43)` },
 
     // ─── Recebimentos ──────────────────────────────────────────
     { card: 'Juros (Recebimentos)',           dax: comMes('[Juros1]') },
