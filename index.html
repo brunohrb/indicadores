@@ -2425,7 +2425,7 @@ const DIRETORIA_PBI_CHUTES = new Set([
 // Agrupamento visual dos cards (Diretoria + complementos do Comercial PF mesclados)
 // Tooltips informativos (ⓘ) por nome de card
 const DIRETORIA_PBI_INFO = {
-  'Base de Contratos': 'Conta CONTRATOS (pontos), não clientes. Um cliente pode ter vários contratos — por isso o total não é igual à soma de PF + PJ+PME + Isentos.',
+  'Base de Contratos': 'Soma de Base PF + Base PJ+PME + Base de Isentos.',
   'Base de Isentos': 'Clientes com Tipo_Cliente = ISENTO. Esses clientes também aparecem em Base PF ou PJ, não são exclusivos.',
 };
 
@@ -2625,6 +2625,14 @@ async function diretoriaPBI_carregarMes(mes) {
   const rPJ = valores['Reajuste Contratos PJ'];
   if (typeof rPF === 'number' && typeof rPJ === 'number' && rPF === rPJ && rPF !== 0) {
     valores['__reajusteDuplicado'] = true;
+  }
+
+  // Base de Contratos = soma simples das 3 bases (mesmo cálculo que o PBI faz)
+  const bPF  = valores['Base de Cliente PF'];
+  const bPJ  = valores['Base Clientes PJ +PME'] ?? valores['Base Clientes PJ+PME'];
+  const bIso = valores['Base de Isentos'];
+  if (typeof bPF === 'number' && typeof bPJ === 'number' && typeof bIso === 'number') {
+    valores['Base de Contratos'] = bPF + bPJ + bIso;
   }
 
   diretoriaPBI_dadosCache[mes] = merged;
