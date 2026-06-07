@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f3460">
+<title>Consultar Cliente — TEXNET</title>
+<link rel="manifest" href='data:application/json,{"name":"Consulta Cliente","short_name":"Cliente IXC","start_url":".","display":"standalone","background_color":"%231a1a2e","theme_color":"%230f3460","icons":[]}'>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+    color: #fff;
+    min-height: 100vh;
+    padding: env(safe-area-inset-top, 1rem) 1rem env(safe-area-inset-bottom, 1rem) 1rem;
+  }
+  .container { max-width: 600px; margin: 0 auto; padding: 1rem 0; }
+  h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .sub { color: #9fb3d1; font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .busca { display: flex; gap: 0.6rem; margin-bottom: 1.5rem; }
+  input[type=text] {
+    flex: 1; padding: 0.9rem 1rem; font-size: 16px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; border-radius: 12px; outline: none;
+  }
+  input[type=text]::placeholder { color: #6b7c93; }
+  input[type=text]:focus { border-color: #34d399; }
+  button {
+    padding: 0.9rem 1.4rem; font-size: 0.95rem; font-weight: 700;
+    background: #34d399; color: #0f3460; border: none; border-radius: 12px;
+    cursor: pointer; transition: opacity 0.2s; min-height: 44px;
+  }
+  button:active { opacity: 0.7; }
+  button:disabled { opacity: 0.5; }
+  #resultado { margin-top: 0.5rem; }
+  .cliente {
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 1.1rem 1.2rem; margin-bottom: 1rem;
+  }
+  .cliente-nome { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.2rem; }
+  .cliente-id { color: #9fb3d1; font-size: 0.8rem; margin-bottom: 0.85rem; }
+  .ativo { background: #064e3b; color: #34d399; padding: 0.15rem 0.55rem; border-radius: 6px; font-size: 0.72rem; font-weight: 600; margin-left: 0.4rem; }
+  .inativo { background: #7f1d1d; color: #fca5a5; padding: 0.15rem 0.55rem; border-radius: 6px; font-size: 0.72rem; font-weight: 600; margin-left: 0.4rem; }
+  .total { font-size: 1.8rem; font-weight: 800; color: #34d399; margin-bottom: 0.85rem; line-height: 1.1; }
+  .total-label { font-size: 0.7rem; color: #9fb3d1; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.2rem; font-weight: 600; }
+  .contratos { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.85rem; }
+  .contrato { display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0; font-size: 0.9rem; }
+  .contrato-plano { color: #cbd5e1; flex: 1; }
+  .contrato-status { background: #7f1d1d; color: #fca5a5; padding: 0.1rem 0.45rem; border-radius: 5px; font-size: 0.7rem; margin: 0 0.4rem; }
+  .contrato-valor { font-weight: 700; color: #fff; }
+  .mensagem { text-align: center; color: #9fb3d1; padding: 2rem 1rem; }
+  .erro { color: #f87171; }
+  .loading { color: #9fb3d1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Consulta Cliente</h1>
+  <div class="sub">TEXNET — Busca por Nome, CPF ou ID</div>
+  <div class="busca">
+    <input type="text" id="termo" placeholder="Ex: Golden, 12345678900, 42" autocomplete="off" autocapitalize="off">
+    <button id="btnBuscar" onclick="buscar()">Buscar</button>
+  </div>
+  <div id="resultado"></div>
+</div>
+
+<script>
+const SB_URL = 'https://xuwwgprchhfshrqdhuqn.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc';
+
+function brl(v) {
+  if (v === null || v === undefined || v === '') return 'R$ 0,00';
+  return 'R$ ' + Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function escapar(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+async function buscar() {
+  const termo = document.getElementById('termo').value.trim();
+  if (!termo) return;
+  const div = document.getElementById('resultado');
+  const btn = document.getElementById('btnBuscar');
+  div.innerHTML = '<div class="mensagem loading">Buscando...</div>';
+  btn.disabled = true;
+  try {
+    const resp = await fetch(SB_URL + '/functions/v1/buscar-cliente', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+      body: JSON.stringify({ busca: termo }),
+    });
+    const data = await resp.json();
+    if (data.erro) {
+      div.innerHTML = '<div class="mensagem erro">Erro: ' + escapar(data.erro) + '</div>';
+      return;
+    }
+    if (!data.encontrado || !Array.isArray(data.clientes) || !data.clientes.length) {
+      div.innerHTML = '<div class="mensagem">Nenhum cliente encontrado para: <b>' + escapar(termo) + '</b></div>';
+      return;
+    }
+    let html = '';
+    for (const c of data.clientes.slice(0, 10)) {
+      const ativo = String(c.ativo).toUpperCase() === 'S';
+      const badge = ativo ? '<span class="ativo">ATIVO</span>' : '<span class="inativo">INATIVO</span>';
+      const cts = Array.isArray(c.contratos) ? c.contratos : [];
+      html += '<div class="cliente">';
+      html += '<div class="cliente-nome">' + escapar(c.nome) + badge + '</div>';
+      html += '<div class="cliente-id">ID ' + escapar(c.id) + (c.cpf ? ' · ' + escapar(c.cpf) : '') + '</div>';
+      html += '<div class="total-label">Total Mensal</div>';
+      html += '<div class="total">' + brl(c.total_mensal) + '</div>';
+      if (cts.length) {
+        html += '<div class="contratos">';
+        for (const ct of cts) {
+          const ok = String(ct.status).toUpperCase() === 'A';
+          html += '<div class="contrato">';
+          html += '<span class="contrato-plano">' + escapar(ct.plano || '(sem plano)') + '</span>';
+          if (!ok) html += '<span class="contrato-status">' + escapar(ct.status) + '</span>';
+          html += '<span class="contrato-valor">' + brl(ct.valor) + '</span>';
+          html += '</div>';
+        }
+        html += '</div>';
+      } else {
+        html += '<div class="contratos" style="color:#9fb3d1;font-size:0.85rem">(sem contratos)</div>';
+      }
+      html += '</div>';
+    }
+    div.innerHTML = html;
+  } catch (e) {
+    div.innerHTML = '<div class="mensagem erro">Erro de conexão: ' + escapar(e.message || e) + '</div>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('termo').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') buscar();
+});
+</script>
+</body>
+</html>
