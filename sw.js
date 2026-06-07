@@ -1,7 +1,7 @@
 // Service Worker — TEXNET Indicadores PWA
 // Estratégia: index.html SEMPRE vai pra rede (nunca cacheado).
 // Restante (assets) é network-first, cache como fallback offline.
-const CACHE = 'texnet-v5';
+const CACHE = 'texnet-v6';
 const SHELL = [
   './logotexnet.png',
   './icons/icon-192.png',
@@ -30,6 +30,13 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // só same-origin
+
+  // consulta-cliente.html é página standalone (PWA própria) — SW principal
+  // não intercepta. Evita fallback acidental pro login do dashboard.
+  if (url.pathname.endsWith('/consulta-cliente.html') ||
+      url.pathname.endsWith('/consulta-cliente.webmanifest')) {
+    return; // deixa o browser cuidar direto
+  }
 
   // index.html e raiz: SEMPRE rede, nunca cache (evita app travado em versão velha)
   const isHtml = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html') || req.mode === 'navigate';
