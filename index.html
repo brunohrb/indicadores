@@ -613,11 +613,19 @@
                 <button class="btn-detalhar" onclick="abrirModalTudoConsolidado()" style="margin-left:0.5rem;">📊 Ver Tudo Consolidado</button>
                 <button class="btn-detalhar" onclick="abrirModalConsolidadoAnual()" style="margin-left:0.25rem;background:linear-gradient(135deg,#7c3aed,#5b21b6);">📅 Consolidado Anual</button>
                 <button class="btn-detalhar" id="btnAnaliseQ1" onclick="abrirPainelAnaliseQ1(document.querySelector('.tab-btn.active')?.textContent?.toLowerCase().trim() || 'custos')" style="margin-left:0.25rem;background:linear-gradient(135deg,#059669,#047857);">🎯 Análise Q1</button>
+                <input type="file" id="uploadOrcado" accept=".xlsx,.xls" style="display:none" onchange="uploadOrcadoAndOpen()">
+                <button class="btn-detalhar" onclick="document.getElementById('uploadOrcado').click()" style="margin-left:0.25rem;background:linear-gradient(135deg,#06b6d4,#0891b2);">📁 Carregar Orçamento</button>
+                <button class="btn-detalhar" id="btnDashOrcado" onclick="abrirDashboardOrcado()" style="margin-left:0.25rem;background:linear-gradient(135deg,#8b5cf6,#7c3aed);display:none;">💰 Dashboard Orçado</button>
               </div>
             </div>
             <div id="tableContent"></div>
           </div>
         </div>
+      </div>
+
+      <!-- Dashboard Realizado x Orçado -->
+      <div id="orcadoView" class="view-container" style="display:none">
+        <!-- Conteúdo renderizado dinamicamente -->
       </div>
 
       <!-- Comparativo View -->
@@ -2396,6 +2404,7 @@ document.addEventListener('click', function() {
   <script src="js/fechar-mes.js"></script>
   <script src="js/consolidado.js"></script>
   <script src="js/analise-q1.js?v=1"></script>
+  <script src="js/dashboard-orcado.js?v=1"></script>
   <script src="js/init-operacional.js?v=4"></script>
   <script src="js/apresentacao-op.js?v=1"></script>
   <script src="js/coach-ia.js?v=2"></script>
