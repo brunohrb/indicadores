@@ -575,6 +575,11 @@
              style="padding:0.35rem 0.85rem;background:#0ea5e9;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;border:none;">
             🔄 Sync OneDrive
           </button>
+          <input type="file" id="consolidadoXlsxInput" accept=".xlsx,.xls" style="display:none" onchange="consolidadoParseXlsx(this)">
+          <button onclick="document.getElementById('consolidadoXlsxInput').click()"
+             style="padding:0.35rem 0.85rem;background:#7c3aed;color:white;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;border:none;">
+            📁 Upload XLSX
+          </button>
           <span id="syncStatusMsg" style="font-size:0.75rem;color:#64748b"></span>
           <div id="syncProgressBar" style="display:none;flex:1;min-width:120px;">
             <div style="background:#e2e8f0;border-radius:99px;height:5px;overflow:hidden;">
