@@ -325,6 +325,76 @@
             atualizados++;
           }
 
+          // ============================================================
+          // Parse abas mensais (JAN 2026, FEV 2026, ...) para dadosDiarios
+          // ============================================================
+          syncSetProgress(85, 'Lendo abas mensais (dia a dia)...');
+          const MESES_ABREV = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+          // Mapeamento seção da planilha → chave em dadosDiarios
+          const SEC_DIARIO = {
+            'receitas': 'receitas', 'impostos': 'impostos', 'custos': 'custos',
+            'despesas operac.': 'despesas_operacionais',
+            'despesas financ.': 'despesas_financeiras',
+            'ajustes de caixa': 'ajustes_caixa',
+          };
+          const STOP_DIARIO = new Set(['saidas','entradas','geracao de caixa','sld acumulado','sldo acumulado','saldo inicial','sald final','faturamento','gastos','divida/imposto/ invest','(ebtida)','(ebtida ajustado)','pro-labore','caixa + pro-labore','lucro (ebtida) + pro-labore','lucro (ebtida ajustado) + pro-labore','ebitda','ebitda (ajustado)','folha/receita total','rescisao/folha']);
+
+          const dadosDiariosNovo = (typeof dadosDiarios !== 'undefined') ? Object.assign({}, dadosDiarios) : {};
+
+          for (let mi = 0; mi < 12; mi++) {
+            const abrev = MESES_ABREV[mi];
+            const tabName = wb.SheetNames.find(s => s.toUpperCase().startsWith(abrev + ' 20') || s.toUpperCase().startsWith(abrev + ' 26') || s.toUpperCase() === `${abrev} 2026`);
+            if (!tabName) continue;
+            const wsM = wb.Sheets[tabName];
+            if (!wsM) continue;
+            const rowsM = XLSX.utils.sheet_to_json(wsM, { header: 1, defval: 0 });
+
+            // Header dos dias está na linha 4 (índice 3): col B-AF = 1..31
+            // Mas confirma achando linha com sequência 1,2,3
+            let headerDia = -1;
+            for (let i = 0; i < Math.min(8, rowsM.length); i++) {
+              const r = rowsM[i];
+              if (typeof r[1] === 'number' && r[1] === 1 && typeof r[2] === 'number' && r[2] === 2) { headerDia = i; break; }
+            }
+            if (headerDia < 0) continue;
+
+            const mesKey = abrev + '/26'; // formato existente (JAN/26, FEV/26, ...)
+            const dadosMes = { receitas: [], impostos: [], custos: [], despesas_operacionais: [], despesas_financeiras: [], ajustes_caixa: [] };
+            let curSec = null;
+
+            for (let i = headerDia + 1; i < rowsM.length; i++) {
+              const rM = rowsM[i];
+              const nomeRaw = typeof rM[0] === 'string' ? rM[0].trim() : '';
+              if (!nomeRaw) continue;
+              const nM = norm(nomeRaw);
+              if (nM in SEC_DIARIO) { curSec = SEC_DIARIO[nM]; continue; }
+              if (STOP_DIARIO.has(nM)) { curSec = null; continue; }
+              if (!curSec) continue;
+              // Skip linhas tipo % ou totalizadores que não fazem parte de itens normais
+              const v0 = rM[1];
+              if (typeof v0 === 'number' && v0 !== 0 && Math.abs(v0) < 2) continue; // % rows
+
+              const valores = {};
+              let total = 0;
+              for (let d = 1; d <= 31; d++) {
+                const v = rM[d];
+                const val = typeof v === 'number' ? Math.round(v*100)/100 : 0;
+                valores[`dia_${d}`] = val;
+                total += val;
+              }
+              if (total === 0 && Object.values(valores).every(x => x === 0)) continue; // pula linhas zeradas
+              dadosMes[curSec].push({ nome: nomeRaw, valores, total: Math.round(total*100)/100 });
+            }
+            dadosDiariosNovo[mesKey] = dadosMes;
+          }
+
+          // Mutate global existente (não pode reatribuir const) e persiste
+          if (typeof dadosDiarios !== 'undefined') {
+            Object.keys(dadosDiarios).forEach(k => delete dadosDiarios[k]);
+            Object.assign(dadosDiarios, dadosDiariosNovo);
+          }
+          await sbStorage.set('consolidado_diarios', JSON.stringify(dadosDiariosNovo));
+
           syncSetProgress(90, 'Salvando no Supabase...');
           await sbStorage.set('consolidado_dados', JSON.stringify(dadosFinanceiros));
           await sbStorage.set('consolidado_versao', DADOS_VERSION);
@@ -483,6 +553,16 @@
           await sbStorage.set('consolidado_versao', DADOS_VERSION);
           syncSetStatus('⚡ Dados atualizados. Faça upload do XLSX para sincronizar meses futuros.', 'info');
         }
+
+        // Carrega dados diários (Fluxo de Caixa Detalhado) se disponíveis
+        try {
+          const savedDiarios = await sbStorage.get('consolidado_diarios');
+          if (savedDiarios && typeof dadosDiarios !== 'undefined') {
+            const parsedDiarios = JSON.parse(savedDiarios);
+            Object.keys(dadosDiarios).forEach(k => delete dadosDiarios[k]);
+            Object.assign(dadosDiarios, parsedDiarios);
+          }
+        } catch(e) { console.warn('consolidado_diarios load erro:', e); }
       } catch(e) {
         console.warn('consolidadoInicializar erro:', e);
       }
