@@ -563,6 +563,11 @@
             Object.assign(dadosDiarios, parsedDiarios);
           }
         } catch(e) { console.warn('consolidado_diarios load erro:', e); }
+
+        // Inicializa análise Q1
+        try {
+          if (typeof q1_inicializar === 'function') q1_inicializar();
+        } catch(e) { console.warn('q1_inicializar erro:', e); }
       } catch(e) {
         console.warn('consolidadoInicializar erro:', e);
       }

@@ -153,6 +153,34 @@ NÃO existem: `fFinanceiro`, `dPlanos`.
 - Para filtrar por filial sem perder isso, use `FILTER('dContratos', ID_Filial IN FILIAIS_PF)` em vez de `dContratos[ID_Filial] IN FILIAIS_PF` direto. (O FILTER cria filtro de linha, não sobrescreve o CALCULATE interno.)
 - INFO.MEASURES (listar medidas via DAX) está BLOQUEADO pra service principal — não dá pra descobrir as medidas via API.
 
+## Fluxo de Caixa — Análise Q1 + Orçamento (jun/2026)
+
+**Nova feature**: painel lateral "Análise Q1" na aba Fluxo de Caixa. Mostra:
+- **Referência Q1**: média mensal dos 3 primeiros meses (jan, fev, mar)
+- **Ranking de desvios**: itens com maior variação vs. referência (separados por crítico >50% e alerta 20-50%)
+- **Toggle Q1 vs Orçamento**: preparado pra comparativo com orçamento no futuro
+
+### Arquivos envolvidos
+- `js/analise-q1.js` — núcleo: cálculo de referência, desvios, renderização do painel
+- `index.html` — botão "🎯 Análise Q1" na barra de abas (Receitas/Impostos/Custos/...)
+- `js/consolidado.js` — chama `q1_inicializar()` ao carregar dados
+
+### Storage Supabase
+- `ref_q1_custos_2026`, `ref_q1_despesas_2026`, etc. — referência Q1 persistida (med. mensal jan/fev/mar)
+- `orcamento_custos_2026`, `orcamento_despesas_2026`, etc. — orçamento (prep. pra futuro)
+
+### Como usar
+1. Aba **Fluxo de Caixa** → seleciona categoria (Custos, Despesas, etc.)
+2. Clica **"🎯 Análise Q1"** → abre painel lateral
+3. Mostra anomalias: críticos (vermelho) e alertas (laranja)
+4. Botão "💰 Orçamento" (desativado até carregar arquivo)
+
+### Pra implementar orçamento (futuro)
+1. Criar upload XLSX similar ao consolidado
+2. Parser pra montar `Q1_CONFIG.orcamento`
+3. Trocar toggle pra "Comparar com Orçamento"
+4. Mudar cálculo de desvios pra usar coluna orçamento em vez de Q1
+
 ## Pendências (TODOs reais)
 
 1. **Valor Canc. 1 Men. / QTD. Canc. 1 Men.** — investigar fórmula real do PB. Hipótese: "1 Men." = "1 Mensalidade paga" (não "1 mês na base"). Buscar coluna `Mensalidades_Pagas` ou similar em `dCancelamentos`.
