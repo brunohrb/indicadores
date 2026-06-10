@@ -260,10 +260,21 @@
             if (STOP_SECTIONS.has(n)) { stopped = true; continue; }
             if (stopped) continue;
 
-            if (n in SECTIONS) { cur = SECTIONS[n]; continue; }
+            if (n in SECTIONS) {
+              cur = SECTIONS[n];
+              // Linha "EBITDA" é ao mesmo tempo header de seção E linha com valores.
+              // Captura os valores antes de pular pra próxima linha.
+              if (n === 'ebitda') {
+                const v = row[colMeses['jan']];
+                if (typeof v === 'number' && v > 100000) {
+                  MESES.forEach(m => { ebitdaValuesRow[m] = typeof row[colMeses[m]] === 'number' ? Math.round(row[colMeses[m]]*100)/100 : 0; });
+                }
+              }
+              continue;
+            }
             if (!cur || SKIP_ROWS.has(n)) continue;
 
-            // Special: capture EBITDA real row
+            // Special: capture EBITDA real row (caso apareça em linha separada)
             if (n === 'ebitda' && cur === 'ebitda_section') {
               const v = row[colMeses['jan']];
               if (typeof v === 'number' && v > 100000) {
