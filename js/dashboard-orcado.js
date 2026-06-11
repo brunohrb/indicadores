@@ -8,6 +8,14 @@ const DASHBOARD_ORCADO = {
   categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda'],
 };
 
+// Helper: formata moeda (fallback se formatCurrency não estiver disponível)
+function formatCurrencyLocal(valor) {
+  if (typeof window.formatCurrency === 'function') {
+    return window.formatCurrency(valor);
+  }
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
+}
+
 // Função wrapper pra upload
 async function uploadOrcadoAndOpen() {
   const fileInput = document.getElementById('uploadOrcado');
@@ -187,11 +195,11 @@ function renderDashboardOrcado() {
               <div style="background: ${cor_bg}; border-radius: 12px; padding: 1.5rem; border-left: 4px solid ${status === 'ok' ? '#10b981' : status === 'alerta' ? '#fb923c' : '#ef4444'}">
                 <div style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem; opacity: 0.9">${cat.toUpperCase()}</div>
                 <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">
-                  <div>Real: <strong>${formatCurrency(somaReal)}</strong></div>
-                  <div>Orçado: <strong>${formatCurrency(somaOrcado)}</strong></div>
+                  <div>Real: <strong>${formatCurrencyLocal(somaReal)}</strong></div>
+                  <div>Orçado: <strong>${formatCurrencyLocal(somaOrcado)}</strong></div>
                 </div>
                 <div style="font-size: 1.2rem; font-weight: 700; color: ${status === 'ok' ? '#d1fae5' : status === 'alerta' ? '#fed7aa' : '#fee2e2'}">
-                  ${desvio >= 0 ? '↑' : '↓'} ${Math.abs(desvio_pct).toFixed(1)}% (${formatCurrency(Math.abs(desvio))})
+                  ${desvio >= 0 ? '↑' : '↓'} ${Math.abs(desvio_pct).toFixed(1)}% (${formatCurrencyLocal(Math.abs(desvio))})
                 </div>
               </div>
             `;
@@ -267,10 +275,10 @@ function renderOrcadoTab(categoria) {
               return `
                 <tr style="border-bottom: 1px solid #e2e8f0; background: ${cor_linha}; hover {background: #f8fafc}">
                   <td style="padding: 1rem; font-weight: 600; color: #1e293b;">${DASHBOARD_ORCADO.meses_label[idx]}</td>
-                  <td style="padding: 1rem; text-align: right; color: #1e293b;">${formatCurrency(realizado)}</td>
-                  <td style="padding: 1rem; text-align: right; color: #64748b;">${formatCurrency(orcad)}</td>
+                  <td style="padding: 1rem; text-align: right; color: #1e293b;">${formatCurrencyLocal(realizado)}</td>
+                  <td style="padding: 1rem; text-align: right; color: #64748b;">${formatCurrencyLocal(orcad)}</td>
                   <td style="padding: 1rem; text-align: right; color: ${desvio >= 0 ? '#ef4444' : '#10b981'}; font-weight: 600;">
-                    ${desvio >= 0 ? '+' : ''}${formatCurrency(desvio)}
+                    ${desvio >= 0 ? '+' : ''}${formatCurrencyLocal(desvio)}
                   </td>
                   <td style="padding: 1rem; text-align: right; color: ${Math.abs(desvio_pct) <= 5 ? '#10b981' : Math.abs(desvio_pct) <= 15 ? '#fb923c' : '#ef4444'}; font-weight: 600;">
                     ${desvio_pct >= 0 ? '+' : ''}${desvio_pct.toFixed(1)}%
