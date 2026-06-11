@@ -333,8 +333,8 @@ function renderOrcadoTab(categoria) {
 
   document.getElementById('orcadoTabContent').innerHTML = html;
 
-  // Renderiza gráfico
-  setTimeout(() => renderGraficoOrcado(categoria), 100);
+  // Renderiza gráfico (desativado temporariamente)
+  // setTimeout(() => renderGraficoOrcado(categoria), 100);
 }
 
 function renderGraficoOrcado(categoria) {
