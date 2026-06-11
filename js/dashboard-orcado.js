@@ -208,9 +208,9 @@ function renderDashboardOrcado() {
       </div>
 
       <!-- Tabs de categorias -->
-      <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap;">
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap;" id="orcadoTabsContainer">
         ${DASHBOARD_ORCADO.categorias.map((cat, idx) => `
-          <button class="orcado-tab-btn ${idx === 0 ? 'active' : ''}" onclick="renderOrcadoTab('${cat}', this)"
+          <button class="orcado-tab-btn" data-categoria="${cat}" onclick="renderOrcadoTab('${cat}')"
             style="padding: 0.6rem 1.2rem; background: ${idx === 0 ? '#0f3460' : '#e2e8f0'}; color: ${idx === 0 ? 'white' : '#1e293b'}; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
             ${cat.toUpperCase()}
           </button>
@@ -228,11 +228,14 @@ function renderDashboardOrcado() {
 
 function renderOrcadoTab(categoria) {
   // Atualiza botões
-  document.querySelectorAll('.orcado-tab-btn').forEach(btn => {
-    btn.style.background = '#e2e8f0';
-    btn.style.color = '#1e293b';
+  const botoes = document.querySelectorAll('.orcado-tab-btn');
+  botoes.forEach(function(botao) {
+    botao.style.background = '#e2e8f0';
+    botao.style.color = '#1e293b';
   });
-  const btnAtivo = document.querySelector(`[onclick*="'${categoria}'"]`);
+
+  // Marca ativo
+  const btnAtivo = document.querySelector(`[data-categoria="${categoria}"]`);
   if (btnAtivo) {
     btnAtivo.style.background = '#0f3460';
     btnAtivo.style.color = 'white';
