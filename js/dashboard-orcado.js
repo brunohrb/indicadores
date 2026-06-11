@@ -12,19 +12,33 @@ const DASHBOARD_ORCADO = {
 async function uploadOrcadoAndOpen() {
   const fileInput = document.getElementById('uploadOrcado');
   const file = fileInput.files[0];
-  if (!file) return;
+  if (!file) {
+    alert('❌ Nenhum arquivo selecionado');
+    return;
+  }
 
   try {
+    console.log('📂 Carregando arquivo:', file.name);
     const orcado = await carregarOrcadoDoXLSX(file);
-    if (orcado) {
-      document.getElementById('btnDashOrcado').style.display = 'block';
-      abrirDashboardOrcado();
-      alert('✅ Orçamento carregado com sucesso!');
-    } else {
-      alert('❌ Erro ao processar o arquivo');
+
+    if (!orcado) {
+      alert('❌ Erro ao processar o arquivo - orcado é null');
+      return;
     }
+
+    // Verifica se tem dados
+    const temDados = Object.values(orcado).some(cat => Object.keys(cat).length > 0);
+    if (!temDados) {
+      alert('❌ Nenhum dado de orçamento encontrado no arquivo.\n\nVerifique se a aba "Anual - Orçamento 2026" existe e tem dados.');
+      return;
+    }
+
+    console.log('✅ Orçamento carregado:', orcado);
+    document.getElementById('btnDashOrcado').style.display = 'block';
+    abrirDashboardOrcado();
+    alert('✅ Orçamento carregado com sucesso!');
   } catch(e) {
-    console.error('Erro:', e);
+    console.error('❌ Erro:', e);
     alert('❌ Erro: ' + e.message);
   }
   fileInput.value = '';
@@ -35,82 +49,92 @@ async function carregarOrcadoDoXLSX(arquivo) {
   try {
     const arrayBuffer = await arquivo.arrayBuffer();
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
+    console.log('📊 Abas encontradas:', wb.SheetNames);
 
     const orcamento = {
       receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}
     };
 
     // Tenta parsear a aba "Anual - Orçamento 2026"
-    const sheetAnual = wb.Sheets['Anual - Orçamento 2026'];
-    if (sheetAnual) {
-      const data = XLSX.utils.sheet_to_json(sheetAnual, { header: 1 });
+    const abaTarget = 'Anual - Orçamento 2026';
+    const sheetAnual = wb.Sheets[abaTarget];
 
-      // Encontra a linha do header (tem 'Jan', 'Fev', etc)
-      let headerIdx = -1;
-      let headerRow = [];
-      for (let i = 0; i < Math.min(10, data.length); i++) {
-        const row = data[i];
-        const hasMonths = row && row.some(h => h && String(h).toLowerCase().match(/jan|fev|mar|abr|mai|jun/i));
-        if (hasMonths) { headerIdx = i; headerRow = row; break; }
-      }
+    if (!sheetAnual) {
+      console.warn(`⚠️ Aba "${abaTarget}" não encontrada`);
+      return null;
+    }
 
-      if (headerIdx >= 0) {
-        const colMeses = {};
-        const nomesAbrev = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-        headerRow.forEach((h, colIdx) => {
-          if (!h) return;
-          const hStr = String(h).toLowerCase();
-          nomesAbrev.forEach((abrev, mesIdx) => {
-            if (hStr.includes(abrev)) colMeses[DASHBOARD_ORCADO.meses[mesIdx]] = colIdx;
-          });
-        });
+    const data = XLSX.utils.sheet_to_json(sheetAnual, { header: 1 });
+    console.log(`📋 ${abaTarget} tem ${data.length} linhas`);
 
-        // Itera pelas linhas de dados
-        for (let i = headerIdx + 1; i < data.length; i++) {
-          const row = data[i];
-          const nomeRaw = row?.[0];
-          if (!nomeRaw || typeof nomeRaw !== 'string') continue;
-
-          const nome = nomeRaw.toLowerCase().trim();
-
-          // Detecta categoria principal
-          let categoria = null;
-          if (nome.includes('receita')) categoria = 'receitas';
-          else if (nome.includes('imposto') || nome.includes('icms') || nome.includes('cofins')) categoria = 'impostos';
-          else if (nome.includes('custo') || nome.includes('kit') || nome.includes('material') || nome.includes('vtal') || nome.includes('folha')) categoria = 'custos';
-          else if (nome.includes('despesa') || nome.includes('marketing') || nome.includes('aluguel') || nome.includes('serv')) categoria = 'despesas';
-          else if (nome.includes('ebitda')) categoria = 'ebitda';
-
-          if (categoria && Object.keys(colMeses).length > 0) {
-            // Soma valores do mês
-            Object.entries(colMeses).forEach(([mes, col]) => {
-              const val = row[col];
-              if (typeof val === 'number' && val !== 0) {
-                if (!orcamento[categoria][mes]) orcamento[categoria][mes] = 0;
-                orcamento[categoria][mes] += val;
-              }
-            });
-          }
-        }
+    // Encontra a linha do header (tem 'Jan', 'Fev', etc)
+    let headerIdx = -1;
+    let headerRow = [];
+    for (let i = 0; i < Math.min(10, data.length); i++) {
+      const row = data[i];
+      if (!row) continue;
+      const hasMonths = row.some(h => h && String(h).toLowerCase().match(/jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez/i));
+      if (hasMonths) {
+        headerIdx = i;
+        headerRow = row;
+        console.log(`✅ Header encontrado na linha ${i}:`, headerRow.slice(0, 5));
+        break;
       }
     }
 
-    // Se não achou dados, tenta abas trimestrais (ABR-MAI-JUN, JUL-AGO-SET)
-    if (!Object.values(orcamento).some(cat => Object.keys(cat).length > 0)) {
-      const abas_trim = ['ABR-MAI-JUN', 'JUL-AGO-SET'];
-      abas_trim.forEach(abaName => {
-        const sheet = wb.Sheets[abaName];
-        if (!sheet) return;
-        // (implementar parsing similar se necessário)
+    if (headerIdx < 0) {
+      console.error('❌ Header com meses não encontrado');
+      return null;
+    }
+
+    // Mapeia colunas de meses
+    const colMeses = {};
+    const nomesAbrev = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    headerRow.forEach((h, colIdx) => {
+      if (!h) return;
+      const hStr = String(h).toLowerCase().trim();
+      nomesAbrev.forEach((abrev, mesIdx) => {
+        if (hStr.includes(abrev)) colMeses[DASHBOARD_ORCADO.meses[mesIdx]] = colIdx;
       });
+    });
+    console.log('📅 Colunas de meses:', colMeses);
+
+    // Itera pelas linhas de dados
+    let countLinhas = 0;
+    for (let i = headerIdx + 1; i < data.length; i++) {
+      const row = data[i];
+      const nomeRaw = row?.[0];
+      if (!nomeRaw || typeof nomeRaw !== 'string') continue;
+
+      const nome = nomeRaw.toLowerCase().trim();
+
+      // Detecta categoria principal
+      let categoria = null;
+      if (nome.includes('receita')) categoria = 'receitas';
+      else if (nome.includes('imposto') || nome.includes('icms') || nome.includes('cofins') || nome.includes('pis') || nome.includes('irpj') || nome.includes('csll')) categoria = 'impostos';
+      else if (nome.includes('custo') || nome.includes('kit') || nome.includes('material') || nome.includes('vtal') || nome.includes('folha') || nome.includes('link')) categoria = 'custos';
+      else if (nome.includes('despesa') || nome.includes('marketing') || nome.includes('aluguel') || nome.includes('serv') || nome.includes('pró')) categoria = 'despesas';
+      else if (nome.includes('ebitda')) categoria = 'ebitda';
+
+      if (categoria && Object.keys(colMeses).length > 0) {
+        // Soma valores do mês
+        Object.entries(colMeses).forEach(([mes, col]) => {
+          const val = row[col];
+          if (typeof val === 'number' && val !== 0) {
+            if (!orcamento[categoria][mes]) orcamento[categoria][mes] = 0;
+            orcamento[categoria][mes] += val;
+            countLinhas++;
+          }
+        });
+      }
     }
+    console.log(`✅ ${countLinhas} valores de orçamento carregados`);
 
     DASHBOARD_ORCADO.orcamento = orcamento;
-    console.log('✅ Orçamento carregado:', orcamento);
     return orcamento;
   } catch(e) {
-    console.error('Erro ao carregar orçamento:', e);
-    return null;
+    console.error('❌ Erro ao carregar orçamento:', e);
+    throw e;
   }
 }
 
