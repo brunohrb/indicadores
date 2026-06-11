@@ -228,9 +228,15 @@ function renderDashboardOrcado() {
 
 function renderOrcadoTab(categoria) {
   // Atualiza botões
-  document.querySelectorAll('.orcado-tab-btn').forEach(btn => btn.style.background = '#e2e8f0', btn.style.color = '#1e293b');
-  document.querySelector(`[onclick*="'${categoria}'"]`).style.background = '#0f3460';
-  document.querySelector(`[onclick*="'${categoria}'"]`).style.color = 'white';
+  document.querySelectorAll('.orcado-tab-btn').forEach(btn => {
+    btn.style.background = '#e2e8f0';
+    btn.style.color = '#1e293b';
+  });
+  const btnAtivo = document.querySelector(`[onclick*="'${categoria}'"]`);
+  if (btnAtivo) {
+    btnAtivo.style.background = '#0f3460';
+    btnAtivo.style.color = 'white';
+  }
 
   const real = dadosFinanceiros;
   const orcado = DASHBOARD_ORCADO.orcamento;
