@@ -159,15 +159,15 @@ function renderDashboardOrcado() {
   let html = '<div style="padding: 2rem;">';
   html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;"><h1 style="margin: 0; color: #0f3460;">📊 Dashboard — Realizado × Orçado</h1><button onclick="fecharDashboardOrcado()" style="padding: 0.5rem 1rem; background: #e2e8f0; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">✕ Fechar</button></div>';
 
-  // Resumo Trimestral
-  html += '<div style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-radius: 16px; padding: 2rem; margin-bottom: 2rem;"><h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">💡 Resumo Realizado vs Orçado (Abr-Set)</h2>';
+  // Resumo Anual
+  html += '<div style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-radius: 16px; padding: 2rem; margin-bottom: 2rem;"><h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">💡 Resumo Anual — Realizado vs Orçado</h2>';
   html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">';
 
   DASHBOARD_ORCADO.categorias.forEach(cat => {
-    const meses_trim = ['abr', 'mai', 'jun', 'jul', 'ago', 'set'];
+    const meses_todos = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
     let somaReal = 0, somaOrcado = 0;
 
-    meses_trim.forEach(mes => {
+    meses_todos.forEach(mes => {
       const items = real[cat] || [];
       const totalMes = items.reduce((sum, item) => sum + (item[mes] || 0), 0);
       somaReal += totalMes;
