@@ -160,7 +160,7 @@ function renderDashboardOrcado() {
   html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;"><h1 style="margin: 0; color: #0f3460;">📊 Dashboard — Realizado × Orçado</h1><button onclick="fecharDashboardOrcado()" style="padding: 0.5rem 1rem; background: #e2e8f0; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">✕ Fechar</button></div>';
 
   // Resumo Trimestral
-  html += '<div style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-radius: 16px; padding: 2rem; margin-bottom: 2rem;"><h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">💡 Resumo Desvios Q2+Q3</h2>';
+  html += '<div style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-radius: 16px; padding: 2rem; margin-bottom: 2rem;"><h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">💡 Resumo Realizado vs Orçado (Abr-Set)</h2>';
   html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">';
 
   DASHBOARD_ORCADO.categorias.forEach(cat => {
