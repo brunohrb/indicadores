@@ -17,40 +17,94 @@ function formatCurrencyLocal(valor) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
 }
 
-// Função wrapper pra upload
-async function uploadOrcadoAndOpen() {
-  const fileInput = document.getElementById('uploadOrcado');
-  const file = fileInput.files[0];
-  if (!file) {
-    alert('❌ Nenhum arquivo selecionado');
-    return;
-  }
-
+// Carrega orçamento do XLSX bytes (usado pelo Sync OneDrive automático)
+async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
   try {
-    console.log('📂 Carregando arquivo:', file.name);
-    const orcado = await carregarOrcadoDoXLSX(file);
+    const wb = XLSX.read(arrayBuffer, { type: 'array' });
+    console.log('📊 Abas encontradas:', wb.SheetNames);
 
-    if (!orcado) {
-      alert('❌ Erro ao processar o arquivo - orcado é null');
-      return;
+    const orcamento = {
+      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}
+    };
+
+    // Lê aba "Orçamento"
+    const abaTarget = 'Orçamento';
+    const sheet = wb.Sheets[abaTarget];
+
+    if (!sheet) {
+      console.warn(`⚠️ Aba "Orçamento" não encontrada — pulando carregamento`);
+      return null;
     }
 
-    // Verifica se tem dados
-    const temDados = Object.values(orcado).some(cat => Object.keys(cat).length > 0);
-    if (!temDados) {
-      alert('❌ Nenhum dado de orçamento encontrado no arquivo.\n\nVerifique se a aba "Anual - Orçamento 2026" existe e tem dados.');
-      return;
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    console.log(`📋 Aba "Orçamento" tem ${data.length} linhas`);
+
+    const headerRow = data[3];
+    const colMeses = {};
+    const mesesEsperados = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+    for (let i = 1; i < Math.min(13, headerRow.length); i++) {
+      const h = headerRow[i];
+      if (h && typeof h === 'string') {
+        const hLower = h.toLowerCase().trim();
+        for (let m = 0; m < mesesEsperados.length; m++) {
+          if (hLower.includes(mesesEsperados[m]) || hLower.includes(mesesEsperados[m].substring(0, 3))) {
+            colMeses[DASHBOARD_ORCADO.meses[m]] = i;
+            break;
+          }
+        }
+      }
     }
 
-    console.log('✅ Orçamento carregado:', orcado);
-    document.getElementById('btnDashOrcado').style.display = 'block';
-    abrirDashboardOrcado();
-    alert('✅ Orçamento carregado com sucesso!');
+    // Itera pelas linhas
+    let countValores = 0;
+    for (let i = 4; i < data.length; i++) {
+      const row = data[i];
+      const nomeRaw = row?.[0];
+      if (!nomeRaw || typeof nomeRaw !== 'string') continue;
+
+      const nome = nomeRaw.toLowerCase().trim();
+
+      let categoria = null;
+      if (nome.includes('receita')) categoria = 'receitas';
+      else if (nome.includes('imposto') || nome.includes('icms') || nome.includes('cofins') ||
+               nome.includes('pis') || nome.includes('irpj') || nome.includes('csll') ||
+               nome.includes('iss') || nome.includes('fust')) categoria = 'impostos';
+      else if (nome.includes('custo') || nome.includes('kit') || nome.includes('material') ||
+               nome.includes('vtal') || nome.includes('folha') || nome.includes('link') ||
+               nome.includes('aluguel') || nome.includes('comissão') || nome.includes('combustível')) categoria = 'custos';
+      else if (nome.includes('despesa') || nome.includes('marketing') || nome.includes('serv') ||
+               nome.includes('pró') || nome.includes('sistema') || nome.includes('tarifa') ||
+               nome.includes('taxa')) categoria = 'despesas';
+      else if (nome.includes('ebitda')) categoria = 'ebitda';
+
+      if (categoria) {
+        Object.entries(colMeses).forEach(([mes, col]) => {
+          const val = row[col];
+          if (typeof val === 'number' && val !== 0) {
+            if (!orcamento[categoria][mes]) orcamento[categoria][mes] = 0;
+            orcamento[categoria][mes] += val;
+            countValores++;
+          }
+        });
+      }
+    }
+
+    console.log(`✅ ${countValores} valores de orçamento carregados via Sync`);
+    DASHBOARD_ORCADO.orcamento = orcamento;
+
+    // Salva no Supabase pra reutilizar
+    try {
+      await sbStorage.set('dashboard_orcado', JSON.stringify(orcamento));
+    } catch(e) {
+      console.warn('Aviso: não conseguiu salvar orçamento no Supabase:', e);
+    }
+
+    return orcamento;
   } catch(e) {
-    console.error('❌ Erro:', e);
-    alert('❌ Erro: ' + e.message);
+    console.error('❌ Erro ao carregar orçamento:', e);
+    return null;
   }
-  fileInput.value = '';
 }
 
 // Parseia o orçamento do XLSX — aba "Orçamento"
