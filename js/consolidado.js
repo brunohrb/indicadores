@@ -398,6 +398,17 @@
           syncSetProgress(90, 'Salvando no Supabase...');
           await sbStorage.set('consolidado_dados', JSON.stringify(dadosFinanceiros));
           await sbStorage.set('consolidado_versao', DADOS_VERSION);
+
+          // Carrega orçamento da aba "Orçamento" (novo)
+          syncSetProgress(95, 'Carregando orçamento...');
+          if (typeof carregarOrcadoDoXLSXBytes === 'function') {
+            try {
+              await carregarOrcadoDoXLSXBytes(new Uint8Array(buf));
+            } catch(e) {
+              console.warn('⚠️ Não conseguiu carregar aba "Orçamento":', e);
+            }
+          }
+
           syncMarcarFeito();
           showTab(document.querySelector('.tab-btn.active')?.textContent?.toLowerCase().trim() || 'receitas');
           renderComissao();
