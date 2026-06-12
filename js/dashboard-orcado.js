@@ -3,6 +3,7 @@
 
 const DASHBOARD_ORCADO = {
   orcamento: null,
+  modo_resumo: 'mes', // 'mes' ou 'trimestre'
   meses: ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
   meses_label: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
   categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda'],
@@ -159,34 +160,76 @@ function renderDashboardOrcado() {
   let html = '<div style="padding: 2rem;">';
   html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;"><h1 style="margin: 0; color: #0f3460;">📊 Dashboard — Realizado × Orçado</h1><button onclick="fecharDashboardOrcado()" style="padding: 0.5rem 1rem; background: #e2e8f0; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">✕ Fechar</button></div>';
 
-  // Resumo Anual
-  html += '<div style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-radius: 16px; padding: 2rem; margin-bottom: 2rem;"><h2 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.5rem;">💡 Resumo Anual — Realizado vs Orçado</h2>';
+  // Resumo Anual - Toggle entre Trimestre e Mês
+  html += '<div style="background: linear-gradient(135deg, #0f3460, #1a1a2e); color: white; border-radius: 16px; padding: 2rem; margin-bottom: 2rem;">';
+  html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">';
+  html += '<h2 style="margin: 0; font-size: 1.5rem;">💡 Resumo Realizado vs Orçado</h2>';
+  html += '<div style="display: flex; gap: 0.5rem;">';
+  html += '<button onclick="DASHBOARD_ORCADO.modo_resumo=\'trimestre\'; renderDashboardOrcado()" style="padding: 0.6rem 1.2rem; background: ' + (DASHBOARD_ORCADO.modo_resumo === 'trimestre' ? '#10b981' : 'rgba(255,255,255,0.2)') + '; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">📊 Trimestre</button>';
+  html += '<button onclick="DASHBOARD_ORCADO.modo_resumo=\'mes\'; renderDashboardOrcado()" style="padding: 0.6rem 1.2rem; background: ' + (DASHBOARD_ORCADO.modo_resumo === 'mes' ? '#10b981' : 'rgba(255,255,255,0.2)') + '; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">📅 Mês</button>';
+  html += '</div></div>';
   html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">';
 
-  DASHBOARD_ORCADO.categorias.forEach(cat => {
-    const meses_todos = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
-    let somaReal = 0, somaOrcado = 0;
+  if (DASHBOARD_ORCADO.modo_resumo === 'trimestre') {
+    // Resumo por TRIMESTRE
+    const trimestres = [
+      { nome: '1º Trimestre', meses: ['jan', 'fev', 'mar'] },
+      { nome: '2º Trimestre', meses: ['abr', 'mai', 'jun'] },
+      { nome: '3º Trimestre', meses: ['jul', 'ago', 'set'] },
+      { nome: '4º Trimestre', meses: ['out', 'nov', 'dez'] }
+    ];
 
-    meses_todos.forEach(mes => {
-      const items = real[cat] || [];
-      const totalMes = items.reduce((sum, item) => sum + (item[mes] || 0), 0);
-      somaReal += totalMes;
-      somaOrcado += (orcado[cat]?.[mes] || 0);
+    trimestres.forEach(trim => {
+      DASHBOARD_ORCADO.categorias.forEach(cat => {
+        let somaReal = 0, somaOrcado = 0;
+        trim.meses.forEach(mes => {
+          const items = real[cat] || [];
+          const totalMes = items.reduce((sum, item) => sum + (item[mes] || 0), 0);
+          somaReal += totalMes;
+          somaOrcado += (orcado[cat]?.[mes] || 0);
+        });
+
+        if (somaReal > 0 || somaOrcado > 0) {
+          const desvio = somaReal - somaOrcado;
+          const desvio_pct = somaOrcado !== 0 ? ((desvio / somaOrcado) * 100) : 0;
+          const status = Math.abs(desvio_pct) <= 10 ? 'ok' : Math.abs(desvio_pct) <= 20 ? 'alerta' : 'critico';
+          const cor_bg = status === 'ok' ? 'rgba(16, 185, 129, 0.15)' : status === 'alerta' ? 'rgba(251, 146, 60, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+          const cor_borda = status === 'ok' ? '#10b981' : status === 'alerta' ? '#fb923c' : '#ef4444';
+
+          html += '<div style="background: ' + cor_bg + '; border-radius: 12px; padding: 1.5rem; border-left: 4px solid ' + cor_borda + '">';
+          html += '<div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.3rem; opacity: 0.9;">' + trim.nome + ' · ' + cat + '</div>';
+          html += '<div style="font-size: 0.95rem; margin-bottom: 0.5rem;"><div>Real: ' + formatCurrencyLocal(somaReal) + '</div>';
+          html += '<div>Orçado: ' + formatCurrencyLocal(somaOrcado) + '</div></div>';
+          html += '<div style="font-size: 1rem; font-weight: 700;">' + (desvio >= 0 ? '↑ +' : '↓ ') + Math.abs(desvio_pct).toFixed(1) + '%</div>';
+          html += '</div>';
+        }
+      });
     });
+  } else {
+    // Resumo por MÊS
+    DASHBOARD_ORCADO.categorias.forEach(cat => {
+      DASHBOARD_ORCADO.meses.forEach((mes, idx) => {
+        const items = real[cat] || [];
+        const somaReal = items.reduce((sum, item) => sum + (item[mes] || 0), 0);
+        const somaOrcado = (orcado[cat]?.[mes] || 0);
 
-    const desvio = somaReal - somaOrcado;
-    const desvio_pct = somaOrcado !== 0 ? ((desvio / somaOrcado) * 100) : 0;
-    const status = Math.abs(desvio_pct) <= 10 ? 'ok' : Math.abs(desvio_pct) <= 20 ? 'alerta' : 'critico';
-    const cor_bg = status === 'ok' ? 'rgba(16, 185, 129, 0.15)' : status === 'alerta' ? 'rgba(251, 146, 60, 0.15)' : 'rgba(239, 68, 68, 0.15)';
-    const cor_borda = status === 'ok' ? '#10b981' : status === 'alerta' ? '#fb923c' : '#ef4444';
+        if (somaReal > 0 || somaOrcado > 0) {
+          const desvio = somaReal - somaOrcado;
+          const desvio_pct = somaOrcado !== 0 ? ((desvio / somaOrcado) * 100) : 0;
+          const status = Math.abs(desvio_pct) <= 10 ? 'ok' : Math.abs(desvio_pct) <= 20 ? 'alerta' : 'critico';
+          const cor_bg = status === 'ok' ? 'rgba(16, 185, 129, 0.15)' : status === 'alerta' ? 'rgba(251, 146, 60, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+          const cor_borda = status === 'ok' ? '#10b981' : status === 'alerta' ? '#fb923c' : '#ef4444';
 
-    html += '<div style="background: ' + cor_bg + '; border-radius: 12px; padding: 1.5rem; border-left: 4px solid ' + cor_borda + '">';
-    html += '<div style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">' + cat.toUpperCase() + '</div>';
-    html += '<div style="font-size: 1rem; margin-bottom: 0.5rem;"><div>Real: <strong>' + formatCurrencyLocal(somaReal) + '</strong></div>';
-    html += '<div>Orçado: <strong>' + formatCurrencyLocal(somaOrcado) + '</strong></div></div>';
-    html += '<div style="font-size: 1.1rem; font-weight: 700;">' + (desvio >= 0 ? '↑ +' : '↓ ') + Math.abs(desvio_pct).toFixed(1) + '%</div>';
-    html += '</div>';
-  });
+          html += '<div style="background: ' + cor_bg + '; border-radius: 12px; padding: 1.5rem; border-left: 4px solid ' + cor_borda + '">';
+          html += '<div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.3rem; opacity: 0.9;">' + DASHBOARD_ORCADO.meses_label[idx] + ' · ' + cat + '</div>';
+          html += '<div style="font-size: 0.95rem; margin-bottom: 0.5rem;"><div>Real: ' + formatCurrencyLocal(somaReal) + '</div>';
+          html += '<div>Orçado: ' + formatCurrencyLocal(somaOrcado) + '</div></div>';
+          html += '<div style="font-size: 1rem; font-weight: 700;">' + (desvio >= 0 ? '↑ +' : '↓ ') + Math.abs(desvio_pct).toFixed(1) + '%</div>';
+          html += '</div>';
+        }
+      });
+    });
+  }
 
   html += '</div></div>';
 
