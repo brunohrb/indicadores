@@ -100,6 +100,9 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
       console.warn('Aviso: não conseguiu salvar orçamento no Supabase:', e);
     }
 
+    // Abre o dashboard automaticamente
+    setTimeout(() => abrirDashboardOrcado(), 500);
+
     return orcamento;
   } catch(e) {
     console.error('❌ Erro ao carregar orçamento:', e);
