@@ -403,7 +403,7 @@
           syncSetProgress(95, 'Carregando orçamento...');
           if (typeof carregarOrcadoDoXLSXBytes === 'function') {
             try {
-              await carregarOrcadoDoXLSXBytes(new Uint8Array(buf));
+              await carregarOrcadoDoXLSXBytes(data);
             } catch(e) {
               console.warn('⚠️ Não conseguiu carregar aba "Orçamento":', e);
             }
