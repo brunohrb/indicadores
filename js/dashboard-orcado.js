@@ -147,13 +147,14 @@ async function carregarOrcadoDoXLSX(arquivo) {
 
 // Renderiza dashboard visual: Real vs Orçado
 function renderDashboardOrcado() {
-  if (!DASHBOARD_ORCADO.orcamento) {
-    document.getElementById('orcadoView').innerHTML = '<div style="padding: 2rem; text-align: center; color: #94a3b8;"><div style="font-size: 3rem; margin-bottom: 1rem;">📊</div><h2>Nenhum orçamento carregado</h2><p>Use o botão "📁 Carregar Orçamento" para fazer upload do XLSX</p></div>';
-    return;
-  }
+  try {
+    if (!DASHBOARD_ORCADO.orcamento) {
+      document.getElementById('orcadoView').innerHTML = '<div style="padding: 2rem; text-align: center; color: #94a3b8;"><div style="font-size: 3rem; margin-bottom: 1rem;">📊</div><h2>Nenhum orçamento carregado</h2><p>Use o botão "📁 Carregar Orçamento" para fazer upload do XLSX</p></div>';
+      return;
+    }
 
-  const real = dadosFinanceiros;
-  const orcado = DASHBOARD_ORCADO.orcamento;
+    const real = dadosFinanceiros;
+    const orcado = DASHBOARD_ORCADO.orcamento;
 
   let html = '<div style="padding: 2rem;">';
   html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;"><h1 style="margin: 0; color: #0f3460;">📊 Dashboard — Realizado × Orçado</h1><button onclick="fecharDashboardOrcado()" style="padding: 0.5rem 1rem; background: #e2e8f0; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">✕ Fechar</button></div>';
@@ -201,86 +202,97 @@ function renderDashboardOrcado() {
   html += '<div id="orcadoTabContent"></div>';
   html += '</div>';
 
-  document.getElementById('orcadoView').innerHTML = html;
-  renderOrcadoTab('receitas');
+    document.getElementById('orcadoView').innerHTML = html;
+    renderOrcadoTab('receitas');
+  } catch(e) {
+    console.error('❌ ERRO em renderDashboardOrcado:', e);
+    alert('Erro ao renderizar dashboard: ' + e.message);
+  }
 }
 
 function renderOrcadoTab(categoria) {
-  // Atualiza botões
-  const botoes = document.querySelectorAll('.orcado-tab-btn');
-  for (let i = 0; i < botoes.length; i++) {
-    botoes[i].style.background = '#e2e8f0';
-    botoes[i].style.color = '#1e293b';
+  try {
+    // Atualiza botões
+    const botoes = document.querySelectorAll('.orcado-tab-btn');
+    for (let i = 0; i < botoes.length; i++) {
+      if (botoes[i]) {
+        botoes[i].style.background = '#e2e8f0';
+        botoes[i].style.color = '#1e293b';
+      }
+    }
+
+    const btnAtivo = document.querySelector('[data-categoria="' + categoria + '"]');
+    if (btnAtivo) {
+      btnAtivo.style.background = '#0f3460';
+      btnAtivo.style.color = 'white';
+    }
+
+    const real = dadosFinanceiros;
+    const orcado = DASHBOARD_ORCADO.orcamento;
+    const meses_disponiveis = DASHBOARD_ORCADO.meses.filter(function(m) {
+      const idx = DASHBOARD_ORCADO.meses.indexOf(m);
+      const hasReal = (real[categoria] || []).some(item => item[m]);
+      const hasOrc = orcado[categoria] && orcado[categoria][m];
+      return hasReal || hasOrc;
+    });
+
+    let html = '<div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">';
+    html += '<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: #0f3460; text-transform: uppercase;">📊 ' + categoria.toUpperCase() + ' — Mensal</h3>';
+
+    // Tabela
+    html += '<div style="overflow-x: auto; margin-bottom: 2rem;"><table style="width: 100%; border-collapse: collapse;"><thead style="background: #f1f5f9; border-bottom: 2px solid #0f3460;"><tr>';
+    html += '<th style="padding: 1rem; text-align: left; font-weight: 600; color: #0f3460;">Mês</th>';
+    html += '<th style="padding: 1rem; text-align: right; font-weight: 600; color: #0f3460;">Realizado</th>';
+    html += '<th style="padding: 1rem; text-align: right; font-weight: 600; color: #0f3460;">Orçado</th>';
+    html += '<th style="padding: 1rem; text-align: right; font-weight: 600; color: #0f3460;">Desvio %</th>';
+    html += '<th style="padding: 1rem; text-align: center; font-weight: 600; color: #0f3460;">Status</th>';
+    html += '</tr></thead><tbody>';
+
+    meses_disponiveis.forEach(function(mes) {
+      const idx = DASHBOARD_ORCADO.meses.indexOf(mes);
+      const realizado = (real[categoria] || []).reduce(function(sum, item) { return sum + (item[mes] || 0); }, 0);
+      const orcad = (orcado[categoria] && orcado[categoria][mes]) || 0;
+      const desvio_pct = orcad !== 0 ? ((realizado - orcad) / orcad) * 100 : 0;
+      const status = Math.abs(desvio_pct) <= 5 ? '✅ OK' : Math.abs(desvio_pct) <= 15 ? '🟡 ALERTA' : '🔴 CRÍTICO';
+      const cor_linha = Math.abs(desvio_pct) <= 5 ? 'rgba(16, 185, 129, 0.05)' : Math.abs(desvio_pct) <= 15 ? 'rgba(251, 146, 60, 0.05)' : 'rgba(239, 68, 68, 0.05)';
+
+      html += '<tr style="border-bottom: 1px solid #e2e8f0; background: ' + cor_linha + '">';
+      html += '<td style="padding: 1rem; font-weight: 600; color: #1e293b;">' + DASHBOARD_ORCADO.meses_label[idx] + '</td>';
+      html += '<td style="padding: 1rem; text-align: right;">' + formatCurrencyLocal(realizado) + '</td>';
+      html += '<td style="padding: 1rem; text-align: right;">' + formatCurrencyLocal(orcad) + '</td>';
+      html += '<td style="padding: 1rem; text-align: right; font-weight: 600;">' + (desvio_pct >= 0 ? '+' : '') + desvio_pct.toFixed(1) + '%</td>';
+      html += '<td style="padding: 1rem; text-align: center;">' + status + '</td>';
+      html += '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    // Heatmap
+    html += '<div style="margin-top: 2rem;"><h4 style="margin-bottom: 1rem; color: #0f3460;">🎨 Heatmap de Desvios</h4>';
+    html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 0.5rem;">';
+
+    meses_disponiveis.forEach(function(mes) {
+      const idx = DASHBOARD_ORCADO.meses.indexOf(mes);
+      const realizado = (real[categoria] || []).reduce(function(sum, item) { return sum + (item[mes] || 0); }, 0);
+      const orcad = (orcado[categoria] && orcado[categoria][mes]) || 0;
+      const desvio_pct = orcad !== 0 ? ((realizado - orcad) / orcad) * 100 : 0;
+      let cor = '#d1fae5';
+      if (Math.abs(desvio_pct) > 5 && Math.abs(desvio_pct) <= 15) cor = '#fed7aa';
+      if (Math.abs(desvio_pct) > 15) cor = '#fee2e2';
+
+      html += '<div style="background: ' + cor + '; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e2e8f0;">';
+      html += '<div style="font-size: 0.8rem; font-weight: 600; color: #1e293b; margin-bottom: 0.3rem;">' + DASHBOARD_ORCADO.meses_label[idx].substring(0, 3).toUpperCase() + '</div>';
+      html += '<div style="font-size: 0.9rem; font-weight: 700; color: #0f3460;">' + (desvio_pct >= 0 ? '+' : '') + desvio_pct.toFixed(1) + '%</div>';
+      html += '</div>';
+    });
+
+      html += '</div></div></div>';
+
+    document.getElementById('orcadoTabContent').innerHTML = html;
+  } catch(e) {
+    console.error('❌ ERRO em renderOrcadoTab:', e);
+    alert('Erro ao renderizar tab: ' + e.message);
   }
-
-  const btnAtivo = document.querySelector('[data-categoria="' + categoria + '"]');
-  if (btnAtivo) {
-    btnAtivo.style.background = '#0f3460';
-    btnAtivo.style.color = 'white';
-  }
-
-  const real = dadosFinanceiros;
-  const orcado = DASHBOARD_ORCADO.orcamento;
-  const meses_disponiveis = DASHBOARD_ORCADO.meses.filter(function(m) {
-    const idx = DASHBOARD_ORCADO.meses.indexOf(m);
-    const hasReal = (real[categoria] || []).some(item => item[m]);
-    const hasOrc = orcado[categoria] && orcado[categoria][m];
-    return hasReal || hasOrc;
-  });
-
-  let html = '<div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 2rem;">';
-  html += '<h3 style="margin-top: 0; margin-bottom: 1.5rem; color: #0f3460; text-transform: uppercase;">📊 ' + categoria.toUpperCase() + ' — Mensal</h3>';
-
-  // Tabela
-  html += '<div style="overflow-x: auto; margin-bottom: 2rem;"><table style="width: 100%; border-collapse: collapse;"><thead style="background: #f1f5f9; border-bottom: 2px solid #0f3460;"><tr>';
-  html += '<th style="padding: 1rem; text-align: left; font-weight: 600; color: #0f3460;">Mês</th>';
-  html += '<th style="padding: 1rem; text-align: right; font-weight: 600; color: #0f3460;">Realizado</th>';
-  html += '<th style="padding: 1rem; text-align: right; font-weight: 600; color: #0f3460;">Orçado</th>';
-  html += '<th style="padding: 1rem; text-align: right; font-weight: 600; color: #0f3460;">Desvio %</th>';
-  html += '<th style="padding: 1rem; text-align: center; font-weight: 600; color: #0f3460;">Status</th>';
-  html += '</tr></thead><tbody>';
-
-  meses_disponiveis.forEach(function(mes) {
-    const idx = DASHBOARD_ORCADO.meses.indexOf(mes);
-    const realizado = (real[categoria] || []).reduce(function(sum, item) { return sum + (item[mes] || 0); }, 0);
-    const orcad = (orcado[categoria] && orcado[categoria][mes]) || 0;
-    const desvio_pct = orcad !== 0 ? ((realizado - orcad) / orcad) * 100 : 0;
-    const status = Math.abs(desvio_pct) <= 5 ? '✅ OK' : Math.abs(desvio_pct) <= 15 ? '🟡 ALERTA' : '🔴 CRÍTICO';
-    const cor_linha = Math.abs(desvio_pct) <= 5 ? 'rgba(16, 185, 129, 0.05)' : Math.abs(desvio_pct) <= 15 ? 'rgba(251, 146, 60, 0.05)' : 'rgba(239, 68, 68, 0.05)';
-
-    html += '<tr style="border-bottom: 1px solid #e2e8f0; background: ' + cor_linha + '">';
-    html += '<td style="padding: 1rem; font-weight: 600; color: #1e293b;">' + DASHBOARD_ORCADO.meses_label[idx] + '</td>';
-    html += '<td style="padding: 1rem; text-align: right;">' + formatCurrencyLocal(realizado) + '</td>';
-    html += '<td style="padding: 1rem; text-align: right;">' + formatCurrencyLocal(orcad) + '</td>';
-    html += '<td style="padding: 1rem; text-align: right; font-weight: 600;">' + (desvio_pct >= 0 ? '+' : '') + desvio_pct.toFixed(1) + '%</td>';
-    html += '<td style="padding: 1rem; text-align: center;">' + status + '</td>';
-    html += '</tr>';
-  });
-
-  html += '</tbody></table></div>';
-
-  // Heatmap
-  html += '<div style="margin-top: 2rem;"><h4 style="margin-bottom: 1rem; color: #0f3460;">🎨 Heatmap de Desvios</h4>';
-  html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 0.5rem;">';
-
-  meses_disponiveis.forEach(function(mes) {
-    const idx = DASHBOARD_ORCADO.meses.indexOf(mes);
-    const realizado = (real[categoria] || []).reduce(function(sum, item) { return sum + (item[mes] || 0); }, 0);
-    const orcad = (orcado[categoria] && orcado[categoria][mes]) || 0;
-    const desvio_pct = orcad !== 0 ? ((realizado - orcad) / orcad) * 100 : 0;
-    let cor = '#d1fae5';
-    if (Math.abs(desvio_pct) > 5 && Math.abs(desvio_pct) <= 15) cor = '#fed7aa';
-    if (Math.abs(desvio_pct) > 15) cor = '#fee2e2';
-
-    html += '<div style="background: ' + cor + '; border-radius: 8px; padding: 1rem; text-align: center; border: 1px solid #e2e8f0;">';
-    html += '<div style="font-size: 0.8rem; font-weight: 600; color: #1e293b; margin-bottom: 0.3rem;">' + DASHBOARD_ORCADO.meses_label[idx].substring(0, 3).toUpperCase() + '</div>';
-    html += '<div style="font-size: 0.9rem; font-weight: 700; color: #0f3460;">' + (desvio_pct >= 0 ? '+' : '') + desvio_pct.toFixed(1) + '%</div>';
-    html += '</div>';
-  });
-
-  html += '</div></div></div>';
-
-  document.getElementById('orcadoTabContent').innerHTML = html;
 }
 
 function renderGraficoOrcado(categoria) {
