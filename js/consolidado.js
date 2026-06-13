@@ -197,8 +197,10 @@
       try {
           const wb = XLSX.read(data, { type: 'array' });
 
-          // Usa aba "Anual Real - XXXX"
-          const sheetName = wb.SheetNames.find(s => s.toLowerCase().includes('anual real')) || wb.SheetNames[0];
+          // Usa aba "Anual Real - 2026" (preferência) ou "Anual Real" qualquer ano
+          const sheetName = wb.SheetNames.find(s => s.toLowerCase().includes('anual real') && s.includes('2026'))
+                           || wb.SheetNames.find(s => s.toLowerCase().includes('anual real'))
+                           || wb.SheetNames[0];
           syncSetProgress(30, `Lendo aba: ${sheetName}`);
           const ws = wb.Sheets[sheetName];
           const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: 0 });
