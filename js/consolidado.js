@@ -305,6 +305,26 @@
             atualizados++;
           }
 
+          // Special: Lê linha exata "EBITDA (Ajustado)" se existir
+          const ebitdaAjItem = itemIdx['EBITDA (Ajustado)'];
+          if (ebitdaAjItem) {
+            for (let i = headerIdx + 1; i < rows.length; i++) {
+              const row = rows[i];
+              if (!row[0]) continue;
+              const nomeRaw = String(row[0]).trim();
+              if (norm(nomeRaw) === norm('EBITDA (Ajustado)')) {
+                // Encontrou a linha exata, lê seus valores
+                MESES.forEach(m => {
+                  const v = row[colMeses[m]];
+                  ebitdaAjItem[m] = typeof v === 'number' ? Math.round(v*100)/100 : 0;
+                });
+                ebitdaAjItem.total = Math.round(MESES.reduce((s,m)=>s+(ebitdaAjItem[m]||0),0)*100)/100;
+                atualizados++;
+                break;
+              }
+            }
+          }
+
           // Second pass: ajustes from SAÍDAS section
           let inSaidas = false;
           for (let i = headerIdx + 1; i < rows.length; i++) {
