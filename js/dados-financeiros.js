@@ -139,8 +139,18 @@
 
         function changeView() {
       const v = document.getElementById('viewType').value;
+
+      // Verifica permissões para abas restritas
+      const abasRestritas = ['diretoria', 'prb'];
+      if (abasRestritas.includes(v) && usuarioLogado && usuarioLogado.perfil !== 'edicao') {
+        alert('❌ Acesso negado! Apenas administradores podem acessar esta aba.');
+        document.getElementById('viewType').value = 'dashboard'; // volta pra home
+        changeView(); // recalling changeView para garantir que volta pra home
+        return;
+      }
+
       document.querySelectorAll('.view-container').forEach(c=>{c.classList.remove('active');c.style.display='none';});
-      
+
       const hideHeader = ['consolidado','comparativo','ia-estrategica','coach-ia','cliente-ixc','diretoria','comissao-financeiro','comissao-operacional','demonstrativo'];
       document.getElementById('mainHeader').style.display = hideHeader.includes(v) ? 'none' : 'block';
       const show = id => { const el=document.getElementById(id); el.style.display='block'; el.classList.add('active'); };
@@ -1439,11 +1449,20 @@
 
       // Controla abas restritas para perfil visualizacao
       const abasRestritas = ['diretoria', 'prb']; // ⚙️Parâmetros e 🤝PRB — só admin
+
+      // Esconde nav-items restritos
       document.querySelectorAll('.nav-item').forEach(item => {
         const onclick = item.getAttribute('onclick') || '';
         const match = onclick.match(/'([^']+)'/);
         if (match && abasRestritas.includes(match[1])) {
           item.style.display = user.perfil === 'visualizacao' ? 'none' : 'flex';
+        }
+      });
+
+      // Esconde options restritas no select
+      document.querySelectorAll('#viewType option').forEach(opt => {
+        if (abasRestritas.includes(opt.value)) {
+          opt.style.display = user.perfil === 'visualizacao' ? 'none' : 'block';
         }
       });
 
