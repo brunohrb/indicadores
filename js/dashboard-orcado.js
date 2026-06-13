@@ -7,8 +7,8 @@ const DASHBOARD_ORCADO = {
   categoria_selecionada: 'receitas', // categoria ativa
   meses: ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
   meses_label: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-  categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda'],
-  categorias_label: { receitas: 'Receitas', impostos: 'Impostos', custos: 'Custos', despesas: 'Despesas', ebitda: 'EBITDA' },
+  categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda', 'ebitda_ajustado'],
+  categorias_label: { receitas: 'Receitas', impostos: 'Impostos', custos: 'Custos', despesas: 'Despesas', ebitda: 'EBITDA', ebitda_ajustado: 'EBITDA Ajustado' },
 };
 
 // Helper: formata moeda (fallback se formatCurrency não estiver disponível)
@@ -26,7 +26,7 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
     console.log('📊 Abas encontradas:', wb.SheetNames);
 
     const orcamento = {
-      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}
+      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}, ebitda_ajustado: {}
     };
 
     // Lê aba "Orçamento"
@@ -81,14 +81,16 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
     // Linha 17 (índice 16): Impostos
     // Linha 27 (índice 26): Custos
     // Linha 47 (índice 46): Despesas
-    // Linha 65 (índice 64): EBITDA
+    // Linha 68 (índice 67): EBITDA
+    // Linha 77 (índice 76): EBITDA (Ajustado)
 
     const linhasCategoria = {
       receitas: 4,
       impostos: 16,
       custos: 26,
       despesas: 46,
-      ebitda: 64
+      ebitda: 67,
+      ebitda_ajustado: 76
     };
 
     let countValores = 0;
@@ -142,6 +144,21 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
   }
 }
 
+// Carrega orçamento do Supabase (para inicializar automaticamente)
+async function carregarOrcadoDoSupabase() {
+  try {
+    const raw = await sbStorage.get('dashboard_orcado');
+    if (raw) {
+      DASHBOARD_ORCADO.orcamento = JSON.parse(raw);
+      console.log('✅ Orçamento carregado do Supabase');
+      return DASHBOARD_ORCADO.orcamento;
+    }
+  } catch(e) {
+    console.warn('⚠️ Não conseguiu carregar orçamento do Supabase:', e);
+  }
+  return null;
+}
+
 // Parseia o orçamento do XLSX — aba "Orçamento"
 async function carregarOrcadoDoXLSX(arquivo) {
   try {
@@ -150,7 +167,7 @@ async function carregarOrcadoDoXLSX(arquivo) {
     console.log('📊 Abas encontradas:', wb.SheetNames);
 
     const orcamento = {
-      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}
+      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}, ebitda_ajustado: {}
     };
 
     // Lê aba "Orçamento"
@@ -323,7 +340,18 @@ function fecharDashboardOrcado() {
   document.getElementById('orcadoView').style.display = 'none';
 }
 
-function abrirDashboardOrcado() {
+async function abrirDashboardOrcado() {
   document.getElementById('orcadoView').style.display = 'block';
+
+  // Se não tem orçamento em memória, tenta carregar do Supabase
+  if (!DASHBOARD_ORCADO.orcamento) {
+    await carregarOrcadoDoSupabase();
+  }
+
   renderDashboardOrcado();
+}
+
+// Inicializa automaticamente ao carregar a página
+if (typeof sbStorage !== 'undefined') {
+  carregarOrcadoDoSupabase().catch(e => console.warn('⚠️ Erro ao carregar orçamento inicial:', e));
 }
