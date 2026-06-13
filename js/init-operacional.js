@@ -49,6 +49,13 @@
       await consolidadoInicializar();
       renderizarGraficos();
       initParamFormatting();
+
+      // Auto-fetch consolidado data from OneDrive on page load
+      setTimeout(() => {
+        if (typeof consolidadoAutoFetch === 'function') {
+          consolidadoAutoFetch().catch(e => console.warn('Auto-fetch consolidado failed:', e));
+        }
+      }, 1200);
     });
     // ==================== COMISSÃO OPERACIONAL ====================
     function renderComissaoOp(mesIdxArg, anoArg) {
