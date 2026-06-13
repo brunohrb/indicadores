@@ -7,8 +7,8 @@ const DASHBOARD_ORCADO = {
   categoria_selecionada: 'receitas', // categoria ativa
   meses: ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
   meses_label: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-  categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda'],
-  categorias_label: { receitas: 'Receitas', impostos: 'Impostos', custos: 'Custos', despesas: 'Despesas', ebitda: 'EBITDA' },
+  categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda', 'ebitda_ajustado'],
+  categorias_label: { receitas: 'Receitas', impostos: 'Impostos', custos: 'Custos', despesas: 'Despesas', ebitda: 'EBITDA', ebitda_ajustado: 'EBITDA Ajustado' },
 };
 
 // Helper: formata moeda (fallback se formatCurrency não estiver disponível)
@@ -26,7 +26,7 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
     console.log('📊 Abas encontradas:', wb.SheetNames);
 
     const orcamento = {
-      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}
+      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}, ebitda_ajustado: {}
     };
 
     // Lê aba "Orçamento"
@@ -82,13 +82,15 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
     // Linha 27 (índice 26): Custos
     // Linha 47 (índice 46): Despesas
     // Linha 68 (índice 67): EBITDA
+    // Linha 77 (índice 76): EBITDA (Ajustado)
 
     const linhasCategoria = {
       receitas: 4,
       impostos: 16,
       custos: 26,
       despesas: 46,
-      ebitda: 67
+      ebitda: 67,
+      ebitda_ajustado: 76
     };
 
     let countValores = 0;
@@ -165,7 +167,7 @@ async function carregarOrcadoDoXLSX(arquivo) {
     console.log('📊 Abas encontradas:', wb.SheetNames);
 
     const orcamento = {
-      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}
+      receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}, ebitda_ajustado: {}
     };
 
     // Lê aba "Orçamento"
