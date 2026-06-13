@@ -38,61 +38,91 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
       return null;
     }
 
-    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: 0 });
     console.log(`📋 Aba "Orçamento" tem ${data.length} linhas`);
 
+    // Linha 4 (índice 3) tem os meses: Jan, Fev, Mar, Abr, Mai, Jun, Jul, Ago, Set, Out, Nov, Dez
     const headerRow = data[3];
     const colMeses = {};
-    const mesesEsperados = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
-    for (let i = 1; i < Math.min(13, headerRow.length); i++) {
-      const h = headerRow[i];
-      if (h && typeof h === 'string') {
-        const hLower = h.toLowerCase().trim();
-        for (let m = 0; m < mesesEsperados.length; m++) {
-          if (hLower.includes(mesesEsperados[m]) || hLower.includes(mesesEsperados[m].substring(0, 3))) {
-            colMeses[DASHBOARD_ORCADO.meses[m]] = i;
+    // Map dos meses esperados
+    const mesesMap = {
+      'jan': ['jan', 'janeiro'],
+      'fev': ['fev', 'fevereiro'],
+      'mar': ['mar', 'março'],
+      'abr': ['abr', 'abril'],
+      'mai': ['mai', 'maio'],
+      'jun': ['jun', 'junho'],
+      'jul': ['jul', 'julho'],
+      'ago': ['ago', 'agosto'],
+      'set': ['set', 'setembro'],
+      'out': ['out', 'outubro'],
+      'nov': ['nov', 'novembro'],
+      'dez': ['dez', 'dezembro']
+    };
+
+    // Procura os índices das colunas dos meses
+    for (let i = 1; i < headerRow.length; i++) {
+      const h = (headerRow[i] || '').toString().toLowerCase().trim();
+      for (const [mes, aliases] of Object.entries(mesesMap)) {
+        for (const alias of aliases) {
+          if (h.includes(alias) && !colMeses[mes]) {
+            colMeses[mes] = i;
             break;
           }
         }
       }
     }
 
-    // Itera pelas linhas
+    console.log('Colunas de mês encontradas:', colMeses);
+
+    // ESTRUTURA DA ABA "ORÇAMENTO" (conforme verificado):
+    // Linha 5 (índice 4): Receitas
+    // Linha 17 (índice 16): Impostos
+    // Linha 27 (índice 26): Custos
+    // Linha 47 (índice 46): Despesas
+    // Linha 65 (índice 64): EBITDA
+
+    const linhasCategoria = {
+      receitas: 4,
+      impostos: 16,
+      custos: 26,
+      despesas: 46,
+      ebitda: 64
+    };
+
     let countValores = 0;
-    for (let i = 4; i < data.length; i++) {
-      const row = data[i];
-      const nomeRaw = row?.[0];
-      if (!nomeRaw || typeof nomeRaw !== 'string') continue;
 
-      const nome = nomeRaw.toLowerCase().trim();
+    // Lê cada categoria
+    for (const [cat, lineaIdx] of Object.entries(linhasCategoria)) {
+      if (data[lineaIdx]) {
+        const row = data[lineaIdx];
 
-      let categoria = null;
-      if (nome.includes('receita')) categoria = 'receitas';
-      else if (nome.includes('imposto') || nome.includes('icms') || nome.includes('cofins') ||
-               nome.includes('pis') || nome.includes('irpj') || nome.includes('csll') ||
-               nome.includes('iss') || nome.includes('fust')) categoria = 'impostos';
-      else if (nome.includes('custo') || nome.includes('kit') || nome.includes('material') ||
-               nome.includes('vtal') || nome.includes('folha') || nome.includes('link') ||
-               nome.includes('aluguel') || nome.includes('comissão') || nome.includes('combustível')) categoria = 'custos';
-      else if (nome.includes('despesa') || nome.includes('marketing') || nome.includes('serv') ||
-               nome.includes('pró') || nome.includes('sistema') || nome.includes('tarifa') ||
-               nome.includes('taxa')) categoria = 'despesas';
-      else if (nome.includes('ebitda')) categoria = 'ebitda';
+        // Itera pelos meses e coleta valores
+        for (const [mes, colIdx] of Object.entries(colMeses)) {
+          const val = row[colIdx];
 
-      if (categoria) {
-        Object.entries(colMeses).forEach(([mes, col]) => {
-          const val = row[col];
-          if (typeof val === 'number' && val !== 0) {
-            if (!orcamento[categoria][mes]) orcamento[categoria][mes] = 0;
-            orcamento[categoria][mes] += val;
+          // Tenta converter para número (pode ser string ou número)
+          let valNum = 0;
+          if (typeof val === 'number') {
+            valNum = val;
+          } else if (typeof val === 'string') {
+            // Remove caracteres especiais e tenta converter
+            const cleaned = val.replace(/[^\d.,\-]/g, '').replace(',', '.');
+            const parsed = parseFloat(cleaned);
+            if (!isNaN(parsed)) valNum = parsed;
+          }
+
+          if (valNum !== 0) {
+            orcamento[cat][mes] = parseFloat((valNum).toFixed(2));
             countValores++;
           }
-        });
+        }
       }
     }
 
-    console.log(`✅ ${countValores} valores de orçamento carregados via Sync`);
+    console.log(`✅ ${countValores} valores de orçamento carregados`);
+    console.log('Orçamento carregado:', orcamento);
     DASHBOARD_ORCADO.orcamento = orcamento;
 
     // Salva no Supabase pra reutilizar
