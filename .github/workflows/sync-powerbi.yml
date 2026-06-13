@@ -1,0 +1,64 @@
+name: Sync Power BI → Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      mes:
+        description: '1 mês específico (YYYY-MM). Tem prioridade sobre "meses". Vazio = ignorar.'
+        required: false
+        default: ''
+      meses:
+        description: 'YYYY-MM, lista vírgula-separada, "last:N", ou "since:YYYY-MM" (de X até hoje). Vazio = last:3.'
+        required: false
+        default: ''
+  schedule:
+    # BRT = UTC-3. 08h-19h BRT de 1/1h = 11h-22h UTC (12 runs/dia)
+    - cron: '0 11-22 * * *'
+    # 23h, 03h, 07h BRT = 02h, 06h, 10h UTC (3 runs/noite)
+    - cron: '0 2,6,10 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependências
+        working-directory: powerbi-sync
+        run: npm install
+
+      - name: Rodar sync Power BI
+        working-directory: powerbi-sync
+        env:
+          PBI_TENANT_ID: b6f5c3aa-17cb-4bce-8eb6-8b30b93166e8
+          PBI_CLIENT_ID: 750dc66f-367e-4461-9a69-3dd216f0b69d
+          PBI_WORKSPACE_ID: e8de7e89-a44d-4c9b-aebf-ca7e658e1bdb
+          PBI_DATASET_ID: a05016d1-ec5c-4d9d-9e74-1592bcd165f9
+          PBI_CLIENT_SECRET: ${{ secrets.PBI_CLIENT_SECRET }}
+          SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
+          SB_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc
+        run: |
+          if [ -n "${{ github.event.inputs.mes }}" ]; then
+            node sync.js --mes=${{ github.event.inputs.mes }}
+          elif [ -n "${{ github.event.inputs.meses }}" ]; then
+            node sync.js --meses=${{ github.event.inputs.meses }}
+          else
+            # Schedule e dispatch sem input: roda 3 últimos meses (corrente + 2 anteriores)
+            node sync.js --meses=last:3
+          fi
+
+      - name: Notificar WhatsApp (falha)
+        if: failure()
+        env:
+          SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
+          WHATSAPP_WEBHOOK_SECRET: ${{ secrets.WHATSAPP_WEBHOOK_SECRET }}
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE_ALERTA }}
+        run: |
+          curl -s -X POST "$SB_URL/functions/v1/whatsapp-send" \
+            -H "x-webhook-secret: $WHATSAPP_WEBHOOK_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "{\"phone\":\"$WHATSAPP_PHONE\",\"message\":\"❌ *Sync Power BI (Diretoria) falhou!*\n\nVerifique: https://github.com/brunohrb/indicadores/actions\"}" || true

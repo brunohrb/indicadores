@@ -1,0 +1,82 @@
+const https = require('https');
+const readline = require('readline');
+
+const IXC_URL   = 'https://ixcsoft.texnet.net.br';
+const IXC_TOKEN = '185:ef49bcecf6129a5b61690ac3da0ab99acdaca9171ea63d06cc403a73eef8c547';
+const BASIC = 'Basic ' + Buffer.from(IXC_TOKEN).toString('base64');
+
+function ixc(tabela, body) {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify(body);
+    const u = new URL(`${IXC_URL}/webservice/v1/${tabela}`);
+    const req = https.request({
+      hostname: u.hostname, path: u.pathname, method: 'POST',
+      headers: { Authorization: BASIC, 'Content-Type': 'application/json', ixcsoft: 'listar', 'Content-Length': Buffer.byteLength(payload) },
+      timeout: 60000,
+    }, (res) => {
+      let data = '';
+      res.on('data', (c) => (data += c));
+      res.on('end', () => {
+        let json;
+        try { json = JSON.parse(data); } catch { return reject(new Error(`HTTP ${res.statusCode}: ${data.slice(0,200)}`)); }
+        if (json && json.type === 'error') return reject(new Error(`IXC: ${json.message}`));
+        resolve(Array.isArray(json.registros) ? json.registros : []);
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('tempo esgotado (IP pode estar bloqueado no IXC)')));
+    req.write(payload); req.end();
+  });
+}
+
+const norm = (s) => String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const brl = (v) => 'R$ ' + Number(v||0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+async function buscarClientes(termo) {
+  const dig = termo.replace(/\D/g, '');
+  let cl = [];
+  if (dig.length >= 11) cl = await ixc('cliente', { qtype:'cliente.cnpj_cpf', query:dig, oper:'=', page:'1', rp:'5', sortname:'cliente.id', sortorder:'asc' });
+  if (!cl.length && /^\d+$/.test(termo)) cl = await ixc('cliente', { qtype:'cliente.id', query:termo, oper:'=', page:'1', rp:'5', sortname:'cliente.id', sortorder:'asc' });
+  if (!cl.length) {
+    const pal = termo.split(/\s+/).filter((w) => w.length >= 3);
+    const tent = [termo, ...(pal.length >= 2 ? [pal[pal.length-1], pal[0]] : [])];
+    for (const t of tent) { cl = await ixc('cliente', { qtype:'cliente.razao', query:t, oper:'L', page:'1', rp:'50', sortname:'cliente.razao', sortorder:'asc' }); if (cl.length) break; }
+    if (cl.length > 1 && pal.length) { const pn = pal.map(norm); const ex = cl.filter((c) => { const r = norm(c.razao); return pn.every((w) => r.includes(w)); }); if (ex.length) cl = ex; }
+  }
+  return cl;
+}
+
+async function consultar(termo) {
+  const clientes = await buscarClientes(termo);
+  if (!clientes.length) { console.log(`\n❌ Nenhum cliente para "${termo}". Tente CPF/CNPJ ou ID.`); return; }
+  console.log(`\n✅ ${clientes.length} cliente(s) para "${termo}":`);
+  for (const c of clientes.slice(0, 8)) {
+    console.log('\n────────────────────────────────────────────');
+    console.log(`👤 ${c.razao || c.fantasia}   (ID ${c.id})`);
+    console.log(`   CPF/CNPJ: ${c.cnpj_cpf||'-'}   Cidade: ${c.cidade||'-'}   Ativo: ${c.ativo||'-'}`);
+    const contratos = await ixc('cliente_contrato', { qtype:'cliente_contrato.id_cliente', query:String(c.id), oper:'=', page:'1', rp:'30', sortname:'cliente_contrato.id', sortorder:'asc' });
+    for (const ct of contratos) console.log(`   📄 Contrato ${ct.id} | ${ct.contrato||''} | status ${ct.status}`);
+    try {
+      const fat = await ixc('fn_areceber', { qtype:'fn_areceber.id_cliente', query:String(c.id), oper:'=', page:'1', rp:'8', sortname:'fn_areceber.id', sortorder:'desc' });
+      if (!fat.length) { console.log('   (sem faturas)'); continue; }
+      console.log('   💰 Últimas faturas (o valor que se repete é a mensalidade):');
+      for (const f of fat) {
+        const venc = f.data_vencimento || f.data_emissao || '?';
+        console.log(`      ${venc} | ${brl(f.valor)} | status ${f.status}`);
+      }
+    } catch (e) { console.log('   faturas: ' + e.message); }
+  }
+}
+
+async function main() {
+  let termo = process.argv.slice(2).join(' ').trim();
+  if (!termo) {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    termo = (await new Promise((res) => rl.question('\nDigite o NOME, CPF ou ID do cliente: ', res))).trim();
+    rl.close();
+  }
+  if (!termo) { console.log('Nada digitado.'); return; }
+  try { await consultar(termo); }
+  catch (e) { console.error('\n❌ ERRO:', e.message); console.error('   Se for erro de IP/tempo esgotado, libere o IP deste PC no IXC.'); }
+}
+main();
