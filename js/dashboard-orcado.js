@@ -255,14 +255,15 @@ async function carregarOrcadoDoXLSX(arquivo) {
 // Renderiza dashboard visual: Real vs Orçado (NOVO - organizado por categoria)
 function renderDashboardOrcado() {
   try {
-    if (!DASHBOARD_ORCADO.orcamento) {
-      document.getElementById('orcadoView').innerHTML = '<div style="padding: 2rem; text-align: center; color: #94a3b8;"><div style="font-size: 3rem; margin-bottom: 1rem;">📊</div><h2>Nenhum orçamento carregado</h2><p>Clique em "🔄 Sync OneDrive" para carregar automaticamente</p></div>';
-      return;
-    }
-
     const real = dadosFinanceiros;
     const orcado = DASHBOARD_ORCADO.orcamento;
     const cat = DASHBOARD_ORCADO.categoria_selecionada;
+
+    // Se não tiver dados reais, mostra mensagem
+    if (!real || !real[cat] || real[cat].length === 0) {
+      document.getElementById('orcadoView').innerHTML = '<div style="padding: 2rem; text-align: center; color: #94a3b8;"><div style="font-size: 3rem; margin-bottom: 1rem;">📊</div><h2>Carregando dados...</h2><p>Aguarde o sincronismo do OneDrive</p></div>';
+      return;
+    }
 
     let html = '<div style="padding: 2rem; background: #f8fafc; min-height: 100vh;">';
     html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">';
@@ -290,38 +291,52 @@ function renderDashboardOrcado() {
     html += '<thead style="background: #f1f5f9; border-bottom: 2px solid #0f3460;"><tr>';
     html += '<th style="padding: 1rem; text-align: left; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">MÊS</th>';
     html += '<th style="padding: 1rem; text-align: right; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">REALIZADO</th>';
-    html += '<th style="padding: 1rem; text-align: right; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">ORÇADO</th>';
-    html += '<th style="padding: 1rem; text-align: right; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">DESVIO %</th>';
-    html += '<th style="padding: 1rem; text-align: center; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">STATUS</th>';
+    if (orcado) {
+      html += '<th style="padding: 1rem; text-align: right; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">ORÇADO</th>';
+      html += '<th style="padding: 1rem; text-align: right; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">DESVIO %</th>';
+      html += '<th style="padding: 1rem; text-align: center; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">STATUS</th>';
+    }
     html += '</tr></thead><tbody>';
 
     DASHBOARD_ORCADO.meses.forEach(function(mes, idx) {
       const items = real[cat] || [];
       const realizado = items.reduce(function(sum, item) { return sum + (item[mes] || 0); }, 0);
-      const orcad = (orcado[cat] && orcado[cat][mes]) || 0;
-      const desvio_pct = orcad !== 0 ? ((realizado - orcad) / orcad) * 100 : 0;
 
-      let statusIcon, statusText, rowColor;
-      if (Math.abs(desvio_pct) <= 10) {
-        statusIcon = '✅';
-        statusText = 'OK';
-        rowColor = '#d1fae5';
-      } else if (Math.abs(desvio_pct) <= 20) {
-        statusIcon = '🟡';
-        statusText = 'ALERTA';
-        rowColor = '#fed7aa';
-      } else {
-        statusIcon = '🔴';
-        statusText = 'CRÍTICO';
-        rowColor = '#fee2e2';
+      let rowColor = '#ffffff';
+      let statusIcon = '';
+      let statusText = '';
+      let desvio_pct = 0;
+      let orcad = 0;
+
+      if (orcado && orcado[cat]) {
+        orcad = orcado[cat][mes] || 0;
+        desvio_pct = orcad !== 0 ? ((realizado - orcad) / orcad) * 100 : 0;
+
+        if (Math.abs(desvio_pct) <= 10) {
+          statusIcon = '✅';
+          statusText = 'OK';
+          rowColor = '#d1fae5';
+        } else if (Math.abs(desvio_pct) <= 20) {
+          statusIcon = '🟡';
+          statusText = 'ALERTA';
+          rowColor = '#fed7aa';
+        } else {
+          statusIcon = '🔴';
+          statusText = 'CRÍTICO';
+          rowColor = '#fee2e2';
+        }
       }
 
       html += '<tr style="border-bottom: 1px solid #e2e8f0; background: ' + rowColor + ';">';
       html += '<td style="padding: 1rem; font-weight: 600; color: #1e293b; border: 1px solid #e2e8f0;">' + DASHBOARD_ORCADO.meses_label[idx] + '</td>';
       html += '<td style="padding: 1rem; text-align: right; font-weight: 600; color: #1e293b; border: 1px solid #e2e8f0;">' + formatCurrencyLocal(realizado) + '</td>';
-      html += '<td style="padding: 1rem; text-align: right; font-weight: 600; color: #1e293b; border: 1px solid #e2e8f0;">' + formatCurrencyLocal(orcad) + '</td>';
-      html += '<td style="padding: 1rem; text-align: right; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">' + (desvio_pct >= 0 ? '+' : '') + desvio_pct.toFixed(1) + '%</td>';
-      html += '<td style="padding: 1rem; text-align: center; border: 1px solid #e2e8f0;">' + statusIcon + ' ' + statusText + '</td>';
+
+      if (orcado) {
+        html += '<td style="padding: 1rem; text-align: right; font-weight: 600; color: #1e293b; border: 1px solid #e2e8f0;">' + formatCurrencyLocal(orcad) + '</td>';
+        html += '<td style="padding: 1rem; text-align: right; font-weight: 700; color: #0f3460; border: 1px solid #e2e8f0;">' + (desvio_pct >= 0 ? '+' : '') + desvio_pct.toFixed(1) + '%</td>';
+        html += '<td style="padding: 1rem; text-align: center; border: 1px solid #e2e8f0;">' + statusIcon + ' ' + statusText + '</td>';
+      }
+
       html += '</tr>';
     });
 
@@ -354,9 +369,12 @@ async function abrirDashboardOrcado() {
 // Função chamada ao inicializar (quando sbStorage está pronto)
 async function initDashboardOrcado() {
   try {
-    if (typeof sbStorage !== 'undefined' && !DASHBOARD_ORCADO.orcamento) {
-      await carregarOrcadoDoSupabase();
-      console.log('✅ Dashboard Orçado inicializado');
+    if (typeof sbStorage !== 'undefined') {
+      // Tenta carregar orçamento do Supabase (pode ser vazio, e tudo bem)
+      if (!DASHBOARD_ORCADO.orcamento) {
+        await carregarOrcadoDoSupabase().catch(() => null);
+      }
+      console.log('✅ Dashboard Orçado inicializado (orçamento: ' + (DASHBOARD_ORCADO.orcamento ? 'sim' : 'não') + ')');
       // Abre automaticamente o dashboard ao carregar
       if (document.getElementById('orcadoView')) {
         setTimeout(() => abrirDashboardOrcado(), 200);
@@ -364,6 +382,10 @@ async function initDashboardOrcado() {
     }
   } catch(e) {
     console.warn('⚠️ Erro ao inicializar dashboard orçado:', e);
+    // Mesmo com erro, tenta abrir o dashboard
+    if (document.getElementById('orcadoView')) {
+      setTimeout(() => abrirDashboardOrcado(), 500);
+    }
   }
 }
 
