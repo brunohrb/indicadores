@@ -307,26 +307,33 @@
             atualizados++;
           }
 
-          // Special: Lê linha exata "EBITDA (Ajustado)" se existir (com valores, não %)
-          const ebitdaAjItem = itemIdx['EBITDA (Ajustado)'];
-          if (ebitdaAjItem) {
-            for (let i = headerIdx + 1; i < rows.length; i++) {
-              const row = rows[i];
-              if (!row[0]) continue;
-              const nomeRaw = String(row[0]).trim();
-              if (norm(nomeRaw) === norm('EBITDA (Ajustado)')) {
-                // Verifica se é a linha com valores grandes (não percentuais)
-                const valJan = row[colMeses['jan']];
-                if (typeof valJan === 'number' && Math.abs(valJan) > 1000) {
-                  // Encontrou a linha correta, lê seus valores
-                  MESES.forEach(m => {
-                    const v = row[colMeses[m]];
-                    ebitdaAjItem[m] = typeof v === 'number' ? Math.round(v*100)/100 : 0;
-                  });
-                  ebitdaAjItem.total = Math.round(MESES.reduce((s,m)=>s+(ebitdaAjItem[m]||0),0)*100)/100;
-                  atualizados++;
-                  break;
-                }
+          // Special: Lê linha exata "EBITDA (Ajustado)" (linha 82 normalmente)
+          // Limpa e reconstrói a categoria ebitda_ajustado inteira
+          if (dadosFinanceiros.ebitda_ajustado) {
+            dadosFinanceiros.ebitda_ajustado.length = 0; // esvazia array
+          } else {
+            dadosFinanceiros.ebitda_ajustado = [];
+          }
+
+          let ebitdaAjEncontrado = false;
+          for (let i = headerIdx + 1; i < rows.length && !ebitdaAjEncontrado; i++) {
+            const row = rows[i];
+            if (!row[0]) continue;
+            const nomeRaw = String(row[0]).trim();
+            if (norm(nomeRaw) === norm('EBITDA (Ajustado)')) {
+              // Verifica se é a linha com valores grandes (não percentuais)
+              const valJan = row[colMeses['jan']];
+              if (typeof valJan === 'number' && Math.abs(valJan) > 1000) {
+                // Encontrou a linha correta, cria item
+                const item = { nome: nomeRaw };
+                MESES.forEach(m => {
+                  const v = row[colMeses[m]];
+                  item[m] = typeof v === 'number' ? Math.round(v*100)/100 : 0;
+                });
+                item.total = Math.round(MESES.reduce((s,m)=>s+(item[m]||0),0)*100)/100;
+                dadosFinanceiros.ebitda_ajustado.push(item);
+                atualizados++;
+                ebitdaAjEncontrado = true;
               }
             }
           }
