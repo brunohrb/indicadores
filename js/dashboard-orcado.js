@@ -351,7 +351,13 @@ async function abrirDashboardOrcado() {
   renderDashboardOrcado();
 }
 
-// Inicializa automaticamente ao carregar a página
-if (typeof sbStorage !== 'undefined') {
-  carregarOrcadoDoSupabase().catch(e => console.warn('⚠️ Erro ao carregar orçamento inicial:', e));
+// Função chamada ao inicializar (quando sbStorage está pronto)
+async function initDashboardOrcado() {
+  if (typeof sbStorage !== 'undefined' && !DASHBOARD_ORCADO.orcamento) {
+    await carregarOrcadoDoSupabase();
+    console.log('✅ Dashboard Orçado inicializado');
+  }
 }
+
+// Tenta inicializar após 500ms (pra garantir que sbStorage tá pronto)
+setTimeout(() => initDashboardOrcado().catch(e => console.warn('⚠️ Erro ao inicializar dashboard orçado:', e)), 500);
