@@ -353,15 +353,23 @@ async function abrirDashboardOrcado() {
 
 // Função chamada ao inicializar (quando sbStorage está pronto)
 async function initDashboardOrcado() {
-  if (typeof sbStorage !== 'undefined' && !DASHBOARD_ORCADO.orcamento) {
-    await carregarOrcadoDoSupabase();
-    console.log('✅ Dashboard Orçado inicializado');
-    // Abre automaticamente o dashboard ao carregar
-    if (document.getElementById('orcadoView')) {
-      abrirDashboardOrcado();
+  try {
+    if (typeof sbStorage !== 'undefined' && !DASHBOARD_ORCADO.orcamento) {
+      await carregarOrcadoDoSupabase();
+      console.log('✅ Dashboard Orçado inicializado');
+      // Abre automaticamente o dashboard ao carregar
+      if (document.getElementById('orcadoView')) {
+        setTimeout(() => abrirDashboardOrcado(), 200);
+      }
     }
+  } catch(e) {
+    console.warn('⚠️ Erro ao inicializar dashboard orçado:', e);
   }
 }
 
-// Tenta inicializar após 1000ms (pra garantir que sbStorage tá pronto)
-setTimeout(() => initDashboardOrcado().catch(e => console.warn('⚠️ Erro ao inicializar dashboard orçado:', e)), 1000);
+// Tenta inicializar com delay progressivo para garantir que tudo está pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => setTimeout(() => initDashboardOrcado(), 800));
+} else {
+  setTimeout(() => initDashboardOrcado(), 800);
+}
