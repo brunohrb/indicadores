@@ -1,0 +1,13 @@
+{
+  "name": "texnet-onedrive-sync",
+  "version": "1.0.0",
+  "description": "Sync XLSX do OneDrive (via Edge Function) → Supabase app_storage.consolidado_dados",
+  "main": "sync.js",
+  "scripts": {
+    "sync": "node sync.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "xlsx": "^0.18.5"
+  }
+}
