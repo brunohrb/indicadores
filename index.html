@@ -419,7 +419,8 @@
     <nav class="sidebar-nav">
       <div class="nav-item active" onclick="selectMenu(this,'dashboard')"><span class="nav-icon">💰</span><span>Dashboard</span></div>
       <div class="nav-item" onclick="selectMenu(this,'consolidado')"><span class="nav-icon">📋</span><span>Fluxo de Caixa</span></div>
-      <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📊</span><span>Diretoria (Power BI)</span></div>
+      <div class="nav-item" onclick="selectMenu(this,'dashboard-orcado')"><span class="nav-icon">📊</span><span>Realizado × Orçado</span></div>
+      <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📈</span><span>Diretoria (Power BI)</span></div>
       <div class="nav-item" onclick="abrirCoachView(this)"><span class="nav-icon">🧠</span><span>Coach IA</span></div>
       <div class="nav-item" onclick="abrirClienteIxcView(this)"><span class="nav-icon">🔎</span><span>Cliente IXC</span></div>
       <div class="nav-item" onclick="selectMenu(this,'ia-estrategica')"><span class="nav-icon">🤖</span><span>Estudo com IA</span></div>
@@ -612,7 +613,6 @@
                 <button class="tab-btn" onclick="showTab('bancos',this)">Bancos</button>
                 <button class="btn-detalhar" onclick="abrirModalTudoConsolidado()" style="margin-left:0.5rem;">📊 Ver Tudo Consolidado</button>
                 <button class="btn-detalhar" onclick="abrirModalConsolidadoAnual()" style="margin-left:0.25rem;background:linear-gradient(135deg,#7c3aed,#5b21b6);">📅 Consolidado Anual</button>
-                <button class="btn-detalhar" id="btnDashOrcado" onclick="abrirDashboardOrcado()" style="margin-left:0.25rem;background:linear-gradient(135deg,#8b5cf6,#7c3aed);">💰 Dashboard Orçado</button>
               </div>
             </div>
             <div id="tableContent"></div>
@@ -621,7 +621,7 @@
       </div>
 
       <!-- Dashboard Realizado x Orçado -->
-      <div id="orcadoView" class="view-container" style="display:none">
+      <div id="orcadoView" class="view-container">
         <!-- Conteúdo renderizado dinamicamente -->
       </div>
 
