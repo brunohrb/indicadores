@@ -50,19 +50,10 @@
       renderizarGraficos();
       initParamFormatting();
 
-      // Inicializa Dashboard Orçado
-      if (typeof initDashboardOrcado === 'function') {
-        setTimeout(() => {
-          console.log('🎯 Inicializando Dashboard Orçado...');
-          initDashboardOrcado();
-        }, 300);
-      }
-
       // Auto-fetch consolidado data from OneDrive on page load
       setTimeout(() => {
         if (typeof consolidadoAutoFetch === 'function') {
-          console.log('⏳ Iniciando auto-fetch consolidado do OneDrive...');
-          consolidadoAutoFetch().catch(e => console.warn('❌ Auto-fetch consolidado failed:', e));
+          consolidadoAutoFetch().catch(e => console.warn('Auto-fetch failed:', e));
         }
       }, 800);
     });
