@@ -354,7 +354,7 @@ function renderDashboardOrcado() {
   }
 }
 
-// Renderiza o dashboard quando a aba é selecionada
+// Renderiza o dashboard (chamado sempre que entra na aba Fluxo de Caixa)
 async function abrirDashboardOrcado() {
   // Se não tem orçamento em memória, tenta carregar do Supabase
   if (!DASHBOARD_ORCADO.orcamento) {
@@ -362,6 +362,16 @@ async function abrirDashboardOrcado() {
   }
   renderDashboardOrcado();
 }
+
+// Hook para re-renderizar quando entra na aba Consolidado
+const originalShowTab = window.showTab;
+window.showTab = function(cat, el) {
+  if (originalShowTab) originalShowTab.call(this, cat, el);
+  // Re-renderiza o dashboard ao trocar de tab
+  if (typeof renderDashboardOrcado === 'function') {
+    setTimeout(() => renderDashboardOrcado(), 100);
+  }
+};
 
 // Função chamada ao inicializar (quando sbStorage está pronto)
 async function initDashboardOrcado() {
@@ -386,33 +396,17 @@ async function initDashboardOrcado() {
   }
 }
 
-// Tenta inicializar com delay progressivo para garantir que tudo está pronto
+// Tenta inicializar com delay para garantir que tudo está pronto
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-      console.log('🎯 Iniciando Dashboard Orçado...');
-      renderDashboardOrcado(); // Renderiza imediatamente
-      initDashboardOrcado().then(() => {
-        // Se conseguiu carregar dados, abre a aba automaticamente
-        if (DASHBOARD_ORCADO.orcamento) {
-          console.log('✅ Abrindo aba Realizado × Orçado automaticamente');
-          const navItem = document.querySelector('[onclick*="dashboard-orcado"]');
-          if (navItem) navItem.click();
-        }
-      });
-    }, 200);
+      console.log('🎯 Inicializando Dashboard Orçado na aba Fluxo de Caixa...');
+      initDashboardOrcado();
+    }, 800);
   });
 } else {
   setTimeout(() => {
-    console.log('🎯 Iniciando Dashboard Orçado...');
-    renderDashboardOrcado(); // Renderiza imediatamente
-    initDashboardOrcado().then(() => {
-      // Se conseguiu carregar dados, abre a aba automaticamente
-      if (DASHBOARD_ORCADO.orcamento) {
-        console.log('✅ Abrindo aba Realizado × Orçado automaticamente');
-        const navItem = document.querySelector('[onclick*="dashboard-orcado"]');
-        if (navItem) navItem.click();
-      }
-    });
-  }, 200);
+    console.log('🎯 Inicializando Dashboard Orçado na aba Fluxo de Caixa...');
+    initDashboardOrcado();
+  }, 800);
 }
