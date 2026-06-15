@@ -384,7 +384,17 @@ async function initDashboardOrcado() {
 
 // Tenta inicializar com delay progressivo para garantir que tudo está pronto
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => setTimeout(() => initDashboardOrcado(), 800));
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      console.log('🎯 Iniciando Dashboard Orçado...');
+      renderDashboardOrcado(); // Renderiza imediatamente
+      initDashboardOrcado(); // Depois tenta carregar do Supabase
+    }, 200);
+  });
 } else {
-  setTimeout(() => initDashboardOrcado(), 800);
+  setTimeout(() => {
+    console.log('🎯 Iniciando Dashboard Orçado...');
+    renderDashboardOrcado(); // Renderiza imediatamente
+    initDashboardOrcado(); // Depois tenta carregar do Supabase
+  }, 200);
 }
