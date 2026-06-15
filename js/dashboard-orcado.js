@@ -118,5 +118,15 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
   }
 }
 
+// Hook simples: quando muda de aba, atualiza o dashboard também
+const originalShowTab = window.showTab;
+if (originalShowTab) {
+  window.showTab = function(cat, el) {
+    originalShowTab.call(this, cat, el);
+    DASHBOARD_ORCADO.categoria_selecionada = cat || 'receitas';
+    setTimeout(() => renderDashboardOrcado(), 50);
+  };
+}
+
 // INICIALIZA: renderiza quando a página carrega
 setTimeout(() => renderDashboardOrcado(), 500);
