@@ -419,7 +419,6 @@
     <nav class="sidebar-nav">
       <div class="nav-item active" onclick="selectMenu(this,'dashboard')"><span class="nav-icon">💰</span><span>Dashboard</span></div>
       <div class="nav-item" onclick="selectMenu(this,'consolidado')"><span class="nav-icon">📋</span><span>Fluxo de Caixa</span></div>
-      <div class="nav-item" onclick="selectMenu(this,'dashboard-orcado')"><span class="nav-icon">📊</span><span>Realizado × Orçado</span></div>
       <div class="nav-item" onclick="abrirDiretoriaPBIView(this)"><span class="nav-icon">📈</span><span>Diretoria (Power BI)</span></div>
       <div class="nav-item" onclick="abrirCoachView(this)"><span class="nav-icon">🧠</span><span>Coach IA</span></div>
       <div class="nav-item" onclick="abrirClienteIxcView(this)"><span class="nav-icon">🔎</span><span>Cliente IXC</span></div>
@@ -617,12 +616,12 @@
             </div>
             <div id="tableContent"></div>
           </div>
-        </div>
-      </div>
 
-      <!-- Dashboard Realizado x Orçado -->
-      <div id="orcadoView" class="view-container">
-        <!-- Conteúdo renderizado dinamicamente -->
+          <!-- Dashboard Realizado x Orçado -->
+          <div id="orcadoView" style="margin-top:2rem;">
+            <!-- Conteúdo renderizado dinamicamente -->
+          </div>
+        </div>
       </div>
 
       <!-- Comparativo View -->
