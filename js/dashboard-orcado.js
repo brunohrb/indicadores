@@ -260,20 +260,15 @@ async function carregarOrcadoDoXLSX(arquivo) {
 function renderDashboardOrcado() {
   try {
     const el = document.getElementById('orcadoView');
-    if (!el) {
-      console.warn('❌ orcadoView não encontrado no DOM');
-      return;
-    }
+    if (!el) return; // Element não existe, sai silenciosamente
 
+    // Usa os dados que JÁ EXISTEM em dadosFinanceiros (não depende de Supabase)
     const real = dadosFinanceiros;
     const orcado = DASHBOARD_ORCADO.orcamento;
     const cat = DASHBOARD_ORCADO.categoria_selecionada;
 
-    console.log('📊 Renderizando Dashboard Orçado:', { cat, temOrcado: !!orcado, temDados: !!(real && real[cat]) });
-
-    // Se não tiver dados reais, mostra mensagem
+    // Se não tiver dados reais, não renderiza nada (silenciosamente)
     if (!real || !real[cat] || real[cat].length === 0) {
-      el.innerHTML = '<div style="padding: 2rem; text-align: center; color: #94a3b8;"><div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div><p>Aguarde o sincronismo do OneDrive...</p></div>';
       return;
     }
 
@@ -373,66 +368,40 @@ function renderDashboardOrcado() {
 
 // Renderiza o dashboard (chamado sempre que entra na aba Fluxo de Caixa)
 async function abrirDashboardOrcado() {
-  // Se não tem orçamento em memória, tenta carregar do Supabase
   if (!DASHBOARD_ORCADO.orcamento) {
     await carregarOrcadoDoSupabase().catch(() => null);
   }
   renderDashboardOrcado();
 }
 
-// Hook para re-renderizar quando entra na aba Consolidado
+// Hook para re-renderizar quando muda de categoria (igual ao Detalhamento Financeiro)
 const originalShowTab = window.showTab;
 window.showTab = function(cat, el) {
   if (originalShowTab) originalShowTab.call(this, cat, el);
-  // Re-renderiza o dashboard ao trocar de tab
-  if (typeof renderDashboardOrcado === 'function') {
-    setTimeout(() => renderDashboardOrcado(), 100);
-  }
+  // Atualiza a categoria selecionada e renderiza o dashboard
+  DASHBOARD_ORCADO.categoria_selecionada = cat || 'receitas';
+  renderDashboardOrcado();
 };
 
-// Função chamada ao inicializar (quando sbStorage está pronto)
+// Função chamada ao inicializar — apenas carrega orçamento do Supabase
 async function initDashboardOrcado() {
   try {
-    console.log('🎯 initDashboardOrcado chamado');
-
-    // Tenta carregar orçamento do Supabase
+    // Tenta carregar orçamento do Supabase (se existir)
     if (typeof sbStorage !== 'undefined' && !DASHBOARD_ORCADO.orcamento) {
-      console.log('📥 Carregando orçamento do Supabase...');
-      await carregarOrcadoDoSupabase().catch(e => {
-        console.warn('⚠️ Não conseguiu carregar orçamento:', e);
-        return null;
-      });
+      await carregarOrcadoDoSupabase().catch(() => null);
     }
-
-    console.log('✅ Dashboard Orçado inicializado (orçamento: ' + (DASHBOARD_ORCADO.orcamento ? 'sim' : 'não') + ')');
-
-    // Renderiza o dashboard ao carregar
-    setTimeout(() => {
-      console.log('🖼️ Renderizando dashboard...');
-      renderDashboardOrcado();
-    }, 200);
-
+    // Renderiza imediatamente (usa dados que JÁ EXISTEM em dadosFinanceiros)
+    renderDashboardOrcado();
   } catch(e) {
-    console.error('❌ Erro ao inicializar dashboard orçado:', e);
-    // Mesmo com erro, tenta renderizar o dashboard
-    setTimeout(() => {
-      console.log('🖼️ Renderizando dashboard após erro...');
-      renderDashboardOrcado();
-    }, 500);
+    console.warn('⚠️ Erro ao inicializar dashboard:', e);
   }
 }
 
-// Tenta inicializar com delay para garantir que tudo está pronto
+// Inicializa quando o Supabase está pronto
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-      console.log('🎯 Inicializando Dashboard Orçado na aba Fluxo de Caixa...');
-      initDashboardOrcado();
-    }, 800);
+    setTimeout(() => initDashboardOrcado(), 1000);
   });
 } else {
-  setTimeout(() => {
-    console.log('🎯 Inicializando Dashboard Orçado na aba Fluxo de Caixa...');
-    initDashboardOrcado();
-  }, 800);
+  setTimeout(() => initDashboardOrcado(), 1000);
 }
