@@ -259,13 +259,21 @@ async function carregarOrcadoDoXLSX(arquivo) {
 // Renderiza dashboard visual: Real vs Orçado (NOVO - organizado por categoria)
 function renderDashboardOrcado() {
   try {
+    const el = document.getElementById('orcadoView');
+    if (!el) {
+      console.warn('❌ orcadoView não encontrado no DOM');
+      return;
+    }
+
     const real = dadosFinanceiros;
     const orcado = DASHBOARD_ORCADO.orcamento;
     const cat = DASHBOARD_ORCADO.categoria_selecionada;
 
+    console.log('📊 Renderizando Dashboard Orçado:', { cat, temOrcado: !!orcado, temDados: !!(real && real[cat]) });
+
     // Se não tiver dados reais, mostra mensagem
     if (!real || !real[cat] || real[cat].length === 0) {
-      document.getElementById('orcadoView').innerHTML = '<div style="padding: 2rem; text-align: center; color: #94a3b8;"><div style="font-size: 3rem; margin-bottom: 1rem;">📊</div><h2>Carregando dados...</h2><p>Aguarde o sincronismo do OneDrive</p></div>';
+      el.innerHTML = '<div style="padding: 2rem; text-align: center; color: #94a3b8;"><div style="font-size: 2rem; margin-bottom: 1rem;">⏳</div><p>Aguarde o sincronismo do OneDrive...</p></div>';
       return;
     }
 
@@ -347,10 +355,19 @@ function renderDashboardOrcado() {
     html += '</div>'; // fecha card
     html += '</div>'; // fecha container
 
-    document.getElementById('orcadoView').innerHTML = html;
+    const el = document.getElementById('orcadoView');
+    if (el) {
+      el.innerHTML = html;
+      console.log('✅ Dashboard Orçado renderizado com sucesso');
+    } else {
+      console.error('❌ orcadoView não encontrado ao tentar renderizar');
+    }
   } catch(e) {
     console.error('❌ ERRO em renderDashboardOrcado:', e);
-    document.getElementById('orcadoView').innerHTML = '<div style="padding: 2rem; color: #dc2626;"><h2>❌ Erro ao renderizar</h2><p>' + e.message + '</p></div>';
+    const el = document.getElementById('orcadoView');
+    if (el) {
+      el.innerHTML = '<div style="padding: 2rem; color: #dc2626;"><h2>❌ Erro ao renderizar</h2><p>' + e.message + '</p></div>';
+    }
   }
 }
 
@@ -376,23 +393,32 @@ window.showTab = function(cat, el) {
 // Função chamada ao inicializar (quando sbStorage está pronto)
 async function initDashboardOrcado() {
   try {
-    if (typeof sbStorage !== 'undefined') {
-      // Tenta carregar orçamento do Supabase (pode ser vazio, e tudo bem)
-      if (!DASHBOARD_ORCADO.orcamento) {
-        await carregarOrcadoDoSupabase().catch(() => null);
-      }
-      console.log('✅ Dashboard Orçado inicializado (orçamento: ' + (DASHBOARD_ORCADO.orcamento ? 'sim' : 'não') + ')');
-      // Renderiza o dashboard ao carregar
-      if (document.getElementById('orcadoView')) {
-        setTimeout(() => renderDashboardOrcado(), 200);
-      }
+    console.log('🎯 initDashboardOrcado chamado');
+
+    // Tenta carregar orçamento do Supabase
+    if (typeof sbStorage !== 'undefined' && !DASHBOARD_ORCADO.orcamento) {
+      console.log('📥 Carregando orçamento do Supabase...');
+      await carregarOrcadoDoSupabase().catch(e => {
+        console.warn('⚠️ Não conseguiu carregar orçamento:', e);
+        return null;
+      });
     }
+
+    console.log('✅ Dashboard Orçado inicializado (orçamento: ' + (DASHBOARD_ORCADO.orcamento ? 'sim' : 'não') + ')');
+
+    // Renderiza o dashboard ao carregar
+    setTimeout(() => {
+      console.log('🖼️ Renderizando dashboard...');
+      renderDashboardOrcado();
+    }, 200);
+
   } catch(e) {
-    console.warn('⚠️ Erro ao inicializar dashboard orçado:', e);
+    console.error('❌ Erro ao inicializar dashboard orçado:', e);
     // Mesmo com erro, tenta renderizar o dashboard
-    if (document.getElementById('orcadoView')) {
-      setTimeout(() => renderDashboardOrcado(), 500);
-    }
+    setTimeout(() => {
+      console.log('🖼️ Renderizando dashboard após erro...');
+      renderDashboardOrcado();
+    }, 500);
   }
 }
 
