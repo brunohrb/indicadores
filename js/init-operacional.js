@@ -53,9 +53,10 @@
       // Auto-fetch consolidado data from OneDrive on page load
       setTimeout(() => {
         if (typeof consolidadoAutoFetch === 'function') {
-          consolidadoAutoFetch().catch(e => console.warn('Auto-fetch consolidado failed:', e));
+          console.log('⏳ Iniciando auto-fetch consolidado do OneDrive...');
+          consolidadoAutoFetch().catch(e => console.warn('❌ Auto-fetch consolidado failed:', e));
         }
-      }, 1200);
+      }, 800);
     });
     // ==================== COMISSÃO OPERACIONAL ====================
     function renderComissaoOp(mesIdxArg, anoArg) {
