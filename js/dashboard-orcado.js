@@ -134,8 +134,12 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
       console.warn('Aviso: não conseguiu salvar orçamento no Supabase:', e);
     }
 
-    // Renderiza o dashboard automaticamente
-    setTimeout(() => renderDashboardOrcado(), 500);
+    // Renderiza o dashboard automaticamente e abre a aba
+    setTimeout(() => {
+      renderDashboardOrcado();
+      const navItem = document.querySelector('[onclick*="dashboard-orcado"]');
+      if (navItem) navItem.click();
+    }, 500);
 
     return orcamento;
   } catch(e) {
@@ -388,13 +392,27 @@ if (document.readyState === 'loading') {
     setTimeout(() => {
       console.log('🎯 Iniciando Dashboard Orçado...');
       renderDashboardOrcado(); // Renderiza imediatamente
-      initDashboardOrcado(); // Depois tenta carregar do Supabase
+      initDashboardOrcado().then(() => {
+        // Se conseguiu carregar dados, abre a aba automaticamente
+        if (DASHBOARD_ORCADO.orcamento) {
+          console.log('✅ Abrindo aba Realizado × Orçado automaticamente');
+          const navItem = document.querySelector('[onclick*="dashboard-orcado"]');
+          if (navItem) navItem.click();
+        }
+      });
     }, 200);
   });
 } else {
   setTimeout(() => {
     console.log('🎯 Iniciando Dashboard Orçado...');
     renderDashboardOrcado(); // Renderiza imediatamente
-    initDashboardOrcado(); // Depois tenta carregar do Supabase
+    initDashboardOrcado().then(() => {
+      // Se conseguiu carregar dados, abre a aba automaticamente
+      if (DASHBOARD_ORCADO.orcamento) {
+        console.log('✅ Abrindo aba Realizado × Orçado automaticamente');
+        const navItem = document.querySelector('[onclick*="dashboard-orcado"]');
+        if (navItem) navItem.click();
+      }
+    });
   }, 200);
 }
