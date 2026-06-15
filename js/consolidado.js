@@ -444,14 +444,15 @@
 
           syncMarcarFeito();
           showTab(document.querySelector('.tab-btn.active')?.textContent?.toLowerCase().trim() || 'receitas');
-          renderComissao();
-          // Re-renderiza o Dashboard Orçado após sync
-          if (typeof renderDashboardOrcado === 'function') {
-            setTimeout(() => {
-              console.log('🔄 Atualizando Dashboard Orçado após sync...');
+
+          // Re-renderiza o Dashboard Orçado DEPOIS de showTab
+          setTimeout(() => {
+            if (typeof renderDashboardOrcado === 'function') {
               renderDashboardOrcado();
-            }, 200);
-          }
+            }
+          }, 100);
+
+          renderComissao();
           syncSetProgress(null);
           syncSetStatus(
             atualizados > 0
