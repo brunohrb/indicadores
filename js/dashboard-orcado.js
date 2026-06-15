@@ -134,8 +134,8 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
       console.warn('Aviso: não conseguiu salvar orçamento no Supabase:', e);
     }
 
-    // Abre o dashboard automaticamente
-    setTimeout(() => abrirDashboardOrcado(), 500);
+    // Renderiza o dashboard automaticamente
+    setTimeout(() => renderDashboardOrcado(), 500);
 
     return orcamento;
   } catch(e) {
@@ -266,9 +266,8 @@ function renderDashboardOrcado() {
     }
 
     let html = '<div style="padding: 2rem; background: #f8fafc; min-height: 100vh;">';
-    html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">';
+    html += '<div style="margin-bottom: 2rem;">';
     html += '<h1 style="margin: 0; color: #0f3460; font-size: 2rem;">📊 Realizado × Orçado</h1>';
-    html += '<button onclick="fecharDashboardOrcado()" style="padding: 0.5rem 1rem; background: #e2e8f0; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600;">✕ Fechar</button>';
     html += '</div>';
 
     // Seletor de Categoria - ABAS GRANDES
@@ -351,18 +350,12 @@ function renderDashboardOrcado() {
   }
 }
 
-function fecharDashboardOrcado() {
-  document.getElementById('orcadoView').style.display = 'none';
-}
-
+// Renderiza o dashboard quando a aba é selecionada
 async function abrirDashboardOrcado() {
-  document.getElementById('orcadoView').style.display = 'block';
-
   // Se não tem orçamento em memória, tenta carregar do Supabase
   if (!DASHBOARD_ORCADO.orcamento) {
-    await carregarOrcadoDoSupabase();
+    await carregarOrcadoDoSupabase().catch(() => null);
   }
-
   renderDashboardOrcado();
 }
 
@@ -375,16 +368,16 @@ async function initDashboardOrcado() {
         await carregarOrcadoDoSupabase().catch(() => null);
       }
       console.log('✅ Dashboard Orçado inicializado (orçamento: ' + (DASHBOARD_ORCADO.orcamento ? 'sim' : 'não') + ')');
-      // Abre automaticamente o dashboard ao carregar
+      // Renderiza o dashboard ao carregar
       if (document.getElementById('orcadoView')) {
-        setTimeout(() => abrirDashboardOrcado(), 200);
+        setTimeout(() => renderDashboardOrcado(), 200);
       }
     }
   } catch(e) {
     console.warn('⚠️ Erro ao inicializar dashboard orçado:', e);
-    // Mesmo com erro, tenta abrir o dashboard
+    // Mesmo com erro, tenta renderizar o dashboard
     if (document.getElementById('orcadoView')) {
-      setTimeout(() => abrirDashboardOrcado(), 500);
+      setTimeout(() => renderDashboardOrcado(), 500);
     }
   }
 }
