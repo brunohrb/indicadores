@@ -113,5 +113,4 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
   }
 }
 
-// Renderiza quando a página carrega
-setTimeout(() => renderDashboardOrcado(), 1000);
+// Renderiza quando a aba é clicada (via changeView)

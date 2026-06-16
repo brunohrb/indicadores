@@ -160,7 +160,15 @@
       else if (v==='ia-estrategica') { show('iaEstrategicaView'); carregarApiKey(); }
       else if (v==='coach-ia') { show('coachView'); }
       else if (v==='cliente-ixc') { show('clienteIxcView'); }
-      else if (v==='orcado-realizado') { show('orcadoRealizadoView'); if(typeof renderDashboardOrcado==='function') renderDashboardOrcado(); }
+      else if (v==='orcado-realizado') {
+        show('orcadoRealizadoView');
+        setTimeout(() => {
+          if(typeof renderDashboardOrcado==='function' && typeof dadosFinanceiros !== 'undefined') {
+            DASHBOARD_ORCADO.categoria_selecionada = 'receitas';
+            renderDashboardOrcado();
+          }
+        }, 100);
+      }
       else if (v==='demonstrativo') {
         show('demonstrativoView');
         setTimeout(function() { if (typeof carregarDemonstrativo === 'function') carregarDemonstrativo(); }, 100);
