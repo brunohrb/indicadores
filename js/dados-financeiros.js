@@ -534,6 +534,11 @@
       document.querySelectorAll('#consolidadoView .tab-btn').forEach(b=>b.classList.remove('active'));
       if(el) el.classList.add('active');
       renderTable(cat);
+      // Renderiza o Dashboard Orçado também
+      if (typeof renderDashboardOrcado === 'function') {
+        DASHBOARD_ORCADO.categoria_selecionada = cat;
+        renderDashboardOrcado();
+      }
     }
 
     function toggleCategoria(categoria) {
