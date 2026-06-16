@@ -10,8 +10,18 @@ const DASHBOARD_ORCADO = {
 };
 
 function renderDashboardOrcado() {
+  console.log('🎯 renderDashboardOrcado chamado');
   const el = document.getElementById('orcadoView');
-  if (!el || typeof dadosFinanceiros === 'undefined') return;
+  console.log('orcadoView existe?', !!el);
+  console.log('dadosFinanceiros definido?', typeof dadosFinanceiros !== 'undefined');
+  if (!el) {
+    console.error('❌ orcadoView não encontrado!');
+    return;
+  }
+  if (typeof dadosFinanceiros === 'undefined') {
+    console.error('❌ dadosFinanceiros não definido!');
+    return;
+  }
 
   const real = dadosFinanceiros;
   const orcado = DASHBOARD_ORCADO.orcamento;
