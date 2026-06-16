@@ -117,6 +117,10 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
     }
 
     DASHBOARD_ORCADO.orcamento = orcamento;
+    // Persiste no Supabase pra carregar instantâneo ao abrir (igual o Realizado)
+    try {
+      if (typeof sbStorage !== 'undefined') await sbStorage.set('orcamento_dados', JSON.stringify(orcamento));
+    } catch(e) { console.warn('Não conseguiu salvar orçamento no Supabase:', e); }
     renderDashboardOrcado();
   } catch(e) {
     console.warn('Erro ao carregar orçamento:', e);
