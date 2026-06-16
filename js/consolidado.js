@@ -616,6 +616,14 @@
           }
         } catch(e) { console.warn('consolidado_diarios load erro:', e); }
 
+        // Carrega Orçado (aba "Orçamento") do Supabase — aparece instantâneo, sem depender do sync
+        try {
+          const savedOrc = await sbStorage.get('orcamento_dados');
+          if (savedOrc && typeof DASHBOARD_ORCADO !== 'undefined') {
+            DASHBOARD_ORCADO.orcamento = JSON.parse(savedOrc);
+          }
+        } catch(e) { console.warn('orcamento_dados load erro:', e); }
+
         // Inicializa análise Q1
         try {
           if (typeof q1_inicializar === 'function') q1_inicializar();
