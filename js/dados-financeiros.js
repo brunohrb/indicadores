@@ -151,7 +151,7 @@
 
       document.querySelectorAll('.view-container').forEach(c=>{c.classList.remove('active');c.style.display='none';});
 
-      const hideHeader = ['consolidado','comparativo','ia-estrategica','coach-ia','cliente-ixc','diretoria','comissao-financeiro','comissao-operacional','demonstrativo'];
+      const hideHeader = ['consolidado','comparativo','ia-estrategica','coach-ia','cliente-ixc','diretoria','comissao-financeiro','comissao-operacional','demonstrativo','orcado-realizado'];
       document.getElementById('mainHeader').style.display = hideHeader.includes(v) ? 'none' : 'block';
       const show = id => { const el=document.getElementById(id); el.style.display='block'; el.classList.add('active'); };
       if (v==='dashboard') { show('dashboardView'); renderizarGraficos();  }
@@ -160,6 +160,7 @@
       else if (v==='ia-estrategica') { show('iaEstrategicaView'); carregarApiKey(); }
       else if (v==='coach-ia') { show('coachView'); }
       else if (v==='cliente-ixc') { show('clienteIxcView'); }
+      else if (v==='orcado-realizado') { show('orcadoRealizadoView'); if(typeof renderDashboardOrcado==='function') renderDashboardOrcado(); }
       else if (v==='demonstrativo') {
         show('demonstrativoView');
         setTimeout(function() { if (typeof carregarDemonstrativo === 'function') carregarDemonstrativo(); }, 100);
@@ -534,11 +535,6 @@
       document.querySelectorAll('#consolidadoView .tab-btn').forEach(b=>b.classList.remove('active'));
       if(el) el.classList.add('active');
       renderTable(cat);
-      // Renderiza o Dashboard Orçado também
-      if (typeof renderDashboardOrcado === 'function') {
-        DASHBOARD_ORCADO.categoria_selecionada = cat;
-        renderDashboardOrcado();
-      }
     }
 
     function toggleCategoria(categoria) {
