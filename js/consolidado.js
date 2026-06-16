@@ -444,15 +444,15 @@
 
           syncMarcarFeito();
           showTab(document.querySelector('.tab-btn.active')?.textContent?.toLowerCase().trim() || 'receitas');
+          renderComissao();
 
-          // Re-renderiza o Dashboard Orçado DEPOIS de showTab
+          // Re-renderiza o Dashboard Orçado se estiver aberto
           setTimeout(() => {
-            if (typeof renderDashboardOrcado === 'function') {
+            if (typeof renderDashboardOrcado === 'function' && document.getElementById('orcadoRealizadoView')?.classList.contains('active')) {
               renderDashboardOrcado();
             }
           }, 100);
 
-          renderComissao();
           syncSetProgress(null);
           syncSetStatus(
             atualizados > 0
