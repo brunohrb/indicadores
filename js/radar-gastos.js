@@ -9,6 +9,22 @@ const RADAR_GASTOS = {
   anomalias: [],
 };
 
+// Mapeia abreviação ('JAN', 'FEV'...) → índice 0..11
+const RADAR_MES_ABREV = { JAN:0, FEV:1, MAR:2, ABR:3, MAI:4, JUN:5, JUL:6, AGO:7, SET:8, OUT:9, NOV:10, DEZ:11 };
+
+// Índice do mês (0..11) a partir da chave 'JAN/26'
+function _radarMesIdx(mesKey) {
+  const abrev = (mesKey.split('/')[0] || '').toUpperCase();
+  return RADAR_MES_ABREV[abrev] != null ? RADAR_MES_ABREV[abrev] : 0;
+}
+
+// Ordena cronologicamente ('JAN/26' < 'FEV/26' < ... 'DEZ/26')
+function _radarOrdemCronologica(mesKey) {
+  const [abrev, yy] = mesKey.split('/');
+  const ano = parseInt(yy) || 0;
+  return ano * 12 + _radarMesIdx(mesKey);
+}
+
 function radarGastosAnalisarMes(mesKey) {
   // mesKey: 'JAN/26', 'FEV/26', etc.
   if (!dadosDiarios || !dadosDiarios[mesKey]) return null;
@@ -77,9 +93,14 @@ function radarGastosProjetarMes(mesKey, mesIdx_ano) {
   if (!DASHBOARD_ORCADO.orcamento) return null;
 
   const mesData = dadosDiarios[mesKey];
+  const ano = parseInt('20' + (mesKey.split('/')[1] || '26')) || 2026;
   const hoje = new Date();
-  const dias_passados = Math.min(hoje.getDate(), 31);
-  const dias_totais = new Date(2026, mesIdx_ano + 1, 0).getDate();
+  const dias_totais = new Date(ano, mesIdx_ano + 1, 0).getDate();
+
+  // Se o mês analisado já terminou (ex: hoje é jun mas dado é fev),
+  // usa o mês completo. Só projeta se for o mês corrente.
+  const mesCorrente = (ano === hoje.getFullYear() && mesIdx_ano === hoje.getMonth());
+  const dias_passados = mesCorrente ? Math.min(hoje.getDate(), dias_totais) : dias_totais;
 
   const projecoes = {};
   const meses_arr = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -117,6 +138,7 @@ function radarGastosProjetarMes(mesKey, mesIdx_ano) {
       desvio_orcado_pct: orcado_val > 0 ? ((total_projetado - orcado_val) / orcado_val * 100).toFixed(1) : 0,
       dias_passados: dias_passados,
       dias_totais: dias_totais,
+      mes_completo: dias_passados >= dias_totais,
     };
   });
 
@@ -133,9 +155,11 @@ function renderRadarGastos(container) {
     return;
   }
 
-  const meses_disponiveis = Object.keys(dadosDiarios).sort();
+  const meses_disponiveis = Object.keys(dadosDiarios).sort(function(a, b) {
+    return _radarOrdemCronologica(a) - _radarOrdemCronologica(b);
+  });
   const mes_atual = meses_disponiveis[meses_disponiveis.length - 1];
-  const mesIdx = parseInt(mes_atual.split('/')[0].match(/\d+/)[0]) - 1 || 0;
+  const mesIdx = _radarMesIdx(mes_atual);
 
   const analise = radarGastosAnalisarMes(mes_atual);
   const projecoes = radarGastosProjetarMes(mes_atual, mesIdx);
@@ -146,26 +170,38 @@ function renderRadarGastos(container) {
 
   // Seção Projeções
   if (projecoes) {
+    const algumCompleto = projecoes.custos && projecoes.custos.mes_completo;
+    const tituloSecao = algumCompleto ? '📊 Realizado do mês vs Orçado' : '📈 Projeção até fim do mês';
     html += '<div style="background:#f8fafc;border-radius:6px;padding:1rem;margin-bottom:1.5rem;border:1px solid #cbd5e1;">';
-    html += '<h4 style="margin:0 0 0.8rem 0;color:#0f3460;">📈 Projeção até fim do mês</h4>';
+    html += '<h4 style="margin:0 0 0.8rem 0;color:#0f3460;">' + tituloSecao + '</h4>';
 
     ['custos', 'despesas_operacionais'].forEach(function(cat) {
       const p = projecoes[cat];
       const cat_label = cat === 'custos' ? 'Custos' : 'Despesas';
       const cor_status = p.desvio_orcado_pct < 0 ? '#22c55e' : (p.desvio_orcado_pct < 10 ? '#eab308' : '#ef4444');
+      const fmt = v => new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(v);
 
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">';
       html += '<div><strong>' + cat_label + '</strong></div>';
       html += '<div style="text-align:right;">';
       html += '<span style="font-weight:bold;color:' + cor_status + ';">' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '%</span>';
       html += ' vs orçado</div>';
-      html += '<div style="font-size:0.85rem;color:#666;">Atualmente: ' + new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(p.total_atual) + '</div>';
-      html += '<div style="font-size:0.85rem;color:#666;">Projetado: ' + new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(p.total_projetado) + '</div>';
-      html += '<div style="font-size:0.85rem;color:#666;">Orçado: ' + new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(p.orcado) + '</div>';
-      html += '<div style="font-size:0.8rem;color:#999;margin-top:0.4rem;">(' + p.dias_passados + ' de ' + p.dias_totais + ' dias)</div>';
+      if (p.mes_completo) {
+        html += '<div style="font-size:0.85rem;color:#666;">Realizado: ' + fmt(p.total_atual) + '</div>';
+        html += '<div style="font-size:0.85rem;color:#666;">Orçado: ' + fmt(p.orcado) + '</div>';
+      } else {
+        html += '<div style="font-size:0.85rem;color:#666;">Até agora: ' + fmt(p.total_atual) + '</div>';
+        html += '<div style="font-size:0.85rem;color:#666;">Projetado: ' + fmt(p.total_projetado) + '</div>';
+        html += '<div style="font-size:0.85rem;color:#666;">Orçado: ' + fmt(p.orcado) + '</div>';
+        html += '<div style="font-size:0.8rem;color:#999;margin-top:0.4rem;">(' + p.dias_passados + ' de ' + p.dias_totais + ' dias)</div>';
+      }
       html += '</div>';
     });
 
+    html += '</div>';
+  } else {
+    html += '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:0.8rem;margin-bottom:1.5rem;color:#92400e;font-size:0.85rem;">';
+    html += 'ℹ️ Orçado não carregado — mostrando só as anomalias. A projeção vs orçado aparece quando o orçamento de 2026 estiver disponível.';
     html += '</div>';
   }
 
@@ -226,7 +262,7 @@ function renderRadarGastos(container) {
 
 async function radarGastosExplicarComClaude(mesKey) {
   const analise = radarGastosAnalisarMes(mesKey);
-  const projecoes = radarGastosProjetarMes(mesKey, 0);
+  const projecoes = radarGastosProjetarMes(mesKey, _radarMesIdx(mesKey));
 
   if (!analise) {
     alert('Dados não encontrados para ' + mesKey);
