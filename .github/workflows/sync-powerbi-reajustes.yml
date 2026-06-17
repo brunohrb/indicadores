@@ -11,6 +11,11 @@ on:
         description: 'YYYY-MM, lista, "last:N", ou "since:YYYY-MM". Vazio = last:3.'
         required: false
         default: ''
+      force:
+        description: 'Sobrescrever meses FECHADOS (mantém fechados, só atualiza valor)'
+        type: boolean
+        required: false
+        default: false
   schedule:
     # Mesma frequência dos outros (15x/dia)
     - cron: '0 11,12,13,14,15,16,17,18,19,20,21,22,2,6,10 * * *'
@@ -35,12 +40,14 @@ jobs:
           SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
           SB_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc
         run: |
+          FORCE=""
+          if [ "${{ github.event.inputs.force }}" = "true" ]; then FORCE="--force"; fi
           if [ -n "${{ github.event.inputs.mes }}" ]; then
-            node sync-reajustes.js --mes=${{ github.event.inputs.mes }}
+            node sync-reajustes.js --mes=${{ github.event.inputs.mes }} $FORCE
           elif [ -n "${{ github.event.inputs.meses }}" ]; then
-            node sync-reajustes.js --meses=${{ github.event.inputs.meses }}
+            node sync-reajustes.js --meses=${{ github.event.inputs.meses }} $FORCE
           else
-            node sync-reajustes.js --meses=last:3
+            node sync-reajustes.js --meses=last:3 $FORCE
           fi
 
       - name: Notificar WhatsApp (falha)
