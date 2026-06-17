@@ -25,25 +25,20 @@ function erro(e){return e.response?.data?.error?.['pbi.error']?.code||e.response
 
 (async()=>{
   const tk=await token();
-  log('=== (M) MEDIDA [Valor Recebido Total] por MÊS DE PAGAMENTO + tipo (2026, Pago) ===');
-  try{
-    const rows=await q(tk,`EVALUATE SUMMARIZECOLUMNS('dCalendario Pagamento'[NumeroMes Pgto], 'dFilial'[Tipo_Pessoa], FILTER(ALL('dCalendario Pagamento'[Ano Pgto]),'dCalendario Pagamento'[Ano Pgto]=2026), FILTER('fReajustes','fReajustes'[Status_Reajuste]="Pago"), "v", [Valor Recebido Total])`);
-    rows.sort((a,b)=>(a['dCalendario Pagamento[NumeroMes Pgto]']-b['dCalendario Pagamento[NumeroMes Pgto]']));
-    rows.forEach(r=>log(`   mes ${r['dCalendario Pagamento[NumeroMes Pgto]']} | ${r['dFilial[Tipo_Pessoa]']} | ${r['[v]']}`));
-  }catch(e){log('   ERRO (M): '+erro(e));}
+  log('Alvo (linha real do relatorio, PF): jan 47.75, fev 893.23, mar 3738.67, abr 2995.68, mai 4394.24, jun 2357.29');
 
-  log('\n=== (C) CALCULATE([Valor Recebido Total]) filtro direto mês pgto + tipo — MAIO e JUNHO ===');
-  for(const mes of [5,6]){ for(const tp of ['PF','PJ']){
+  log('\n=== (S) SUM(Valor_Reajustado) Pago, por MINX + tipo — SEM filtro de ano do reajuste ===');
+  for(const mes of [1,2,3,4,5,6]){ for(const tp of ['PF','PJ']){
     try{
-      const r=await q(tk,`EVALUATE ROW("v", CALCULATE([Valor Recebido Total], 'dCalendario Pagamento'[Ano Pgto]=2026, 'dCalendario Pagamento'[NumeroMes Pgto]=${mes}, 'dFilial'[Tipo_Pessoa]="${tp}"))`);
+      const r=await q(tk,`EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes','fReajustes'[Status_Reajuste]="Pago" && YEAR('fReajustes'[Data_Pagamento_MINX])=2026 && MONTH('fReajustes'[Data_Pagamento_MINX])=${mes}), 'dFilial'[Tipo_Pessoa]="${tp}"))`);
       log(`   mes ${mes} ${tp}: ${r[0]?.['[v]']}`);
     }catch(e){log(`   mes ${mes} ${tp}: ERRO ${erro(e)}`);}
   }}
 
-  log('\n=== (S) SUM(Valor_Reajustado) por Data_Pagamento_MINX + dFilial[Tipo_Pessoa] (fórmula atual) ===');
+  log('\n=== (S2) IGUAL, MAS COM YEAR(Data_Reajuste)=2026 ===');
   for(const mes of [1,2,3,4,5,6]){ for(const tp of ['PF','PJ']){
     try{
-      const r=await q(tk,`EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes','fReajustes'[Status_Reajuste]="Pago" && YEAR('fReajustes'[Data_Pagamento_MINX])=2026 && MONTH('fReajustes'[Data_Pagamento_MINX])=${mes}), 'dFilial'[Tipo_Pessoa]="${tp}"))`);
+      const r=await q(tk,`EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes','fReajustes'[Status_Reajuste]="Pago" && YEAR('fReajustes'[Data_Reajuste])=2026 && YEAR('fReajustes'[Data_Pagamento_MINX])=2026 && MONTH('fReajustes'[Data_Pagamento_MINX])=${mes}), 'dFilial'[Tipo_Pessoa]="${tp}"))`);
       log(`   mes ${mes} ${tp}: ${r[0]?.['[v]']}`);
     }catch(e){log(`   mes ${mes} ${tp}: ERRO ${erro(e)}`);}
   }}
