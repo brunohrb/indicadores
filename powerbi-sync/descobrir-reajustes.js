@@ -98,35 +98,33 @@ async function rodar() {
   }
   log('');
 
-  // 4. Testar a medida nos datasets candidatos do workspace Diretoria
-  log('--- 4. TESTE DA MEDIDA NOS DATASETS CANDIDATOS (workspace Diretoria) ---');
+  // 4. Fotografar colunas de fReajustes e dCalendario Pagamento (dataset e97a6d33)
+  log('--- 4. COLUNAS DAS TABELAS (dataset Dashboard de Reajustes e97a6d33) ---');
   const WS_DIRETORIA = 'e8de7e89-a44d-4c9b-aebf-ca7e658e1bdb';
-  const CANDIDATOS = [
-    ['Analitico Recebidos Reajuste', '5a5d3b72-bed6-4470-831d-5c5846b71c95'],
-    ['Dashboard de Reajustes (1)', '3698b253-6488-4109-b0b3-5864021456f3'],
-    ['Analitico Reajuste', '378db1da-0dd4-4d46-ab69-4739a8c1c140'],
-    ['Dashboard de Reajustes', 'e97a6d33-6761-49f3-8869-3635fb107219'],
-  ];
-  const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
-  for (const [nome, ds] of CANDIDATOS) {
-    log(`\n   === ${nome}  (${ds}) ===`);
-    const testes = [
-      ['[Valor Recebido Total] (existe? totalzão)',
-        `EVALUATE ROW("v", [Valor Recebido Total])`],
-      ['Valor Recebido Total — junho (dCalendario Pagamento)',
-        `EVALUATE ROW("v", CALCULATE([Valor Recebido Total], 'dCalendario Pagamento'[Ano Pgto] = 2026, 'dCalendario Pagamento'[NumeroMes Pgto] = 6))`],
-      ['Valor Recebido Total — junho + PF (filial)',
-        `EVALUATE ROW("v", CALCULATE([Valor Recebido Total], 'dCalendario Pagamento'[Ano Pgto] = 2026, 'dCalendario Pagamento'[NumeroMes Pgto] = 6, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF})))`],
-    ];
-    for (const [t, dax] of testes) {
-      try {
-        const row = await executeQuery(token, WS_DIRETORIA, ds, dax);
-        log(`      ✓ ${t}: ${row['[v]']}`);
-      } catch (e) {
-        log(`      ✗ ${t}: ${erroDe(e)}`);
-      }
+  const DS = 'e97a6d33-6761-49f3-8869-3635fb107219';
+
+  async function dump(label, dax) {
+    log(`\n   === ${label} ===`);
+    try {
+      const url = `https://api.powerbi.com/v1.0/myorg/groups/${WS_DIRETORIA}/datasets/${DS}/executeQueries`;
+      const { data } = await axios.post(
+        url,
+        { queries: [{ query: dax }], serializerSettings: { includeNulls: true } },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 60000 }
+      );
+      const rows = data.results?.[0]?.tables?.[0]?.rows || [];
+      if (!rows.length) { log('      (sem linhas)'); return; }
+      log(`      COLUNAS: ${Object.keys(rows[0]).join(' | ')}`);
+      rows.forEach((r, i) => log(`      linha${i}: ${JSON.stringify(r)}`));
+    } catch (e) {
+      log(`      ERRO: ${erroDe(e)} ${JSON.stringify(e.response?.data?.error?.['pbi.error']?.details || '')}`);
     }
   }
+
+  // 3 linhas de cada tabela pra ver nomes de colunas + valores de exemplo
+  await dump("fReajustes (3 linhas)", `EVALUATE TOPN(3, 'fReajustes')`);
+  await dump("dCalendario Pagamento (3 linhas)", `EVALUATE TOPN(3, 'dCalendario Pagamento')`);
+
   log('\n========================================');
   log('  FIM');
   log('========================================');
