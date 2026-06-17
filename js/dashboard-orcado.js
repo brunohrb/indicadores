@@ -3,23 +3,44 @@
 const DASHBOARD_ORCADO = {
   orcamento: null,
   categoria_selecionada: 'receitas',
+  aba_ativa: 'comparativo',
   meses: ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'],
   meses_label: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
   categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda', 'ebitda_ajustado'],
   categorias_label: { receitas: 'Receitas', impostos: 'Impostos', custos: 'Custos', despesas: 'Despesas', ebitda: 'EBITDA', ebitda_ajustado: 'EBITDA Ajustado' },
 };
 
+function _orcadoGetTabsHeader() {
+  let html = '<div style="margin-bottom:1rem;border-bottom:1px solid #e2e8f0;display:flex;gap:0.5rem;">';
+  html += '<button onclick="DASHBOARD_ORCADO.aba_ativa=\'comparativo\';renderDashboardOrcado()" style="padding:0.8rem 1.2rem;background:' + (DASHBOARD_ORCADO.aba_ativa !== 'radar' ? '#8b5cf6' : '#e2e8f0') + ';color:' + (DASHBOARD_ORCADO.aba_ativa !== 'radar' ? 'white' : '#666') + ';border:none;border-radius:6px 6px 0 0;cursor:pointer;font-weight:600;">📊 Orçado × Realizado</button>';
+  html += '<button onclick="DASHBOARD_ORCADO.aba_ativa=\'radar\';renderDashboardOrcado()" style="padding:0.8rem 1.2rem;background:' + (DASHBOARD_ORCADO.aba_ativa === 'radar' ? '#8b5cf6' : '#e2e8f0') + ';color:' + (DASHBOARD_ORCADO.aba_ativa === 'radar' ? 'white' : '#666') + ';border:none;border-radius:6px 6px 0 0;cursor:pointer;font-weight:600;">🎯 Radar de Gastos</button>';
+  html += '</div>';
+  return html;
+}
+
 function renderDashboardOrcado() {
   const el = document.getElementById('orcadoView');
   if (!el || typeof dadosFinanceiros === 'undefined') return;
 
+  let html = _orcadoGetTabsHeader();
+
+  if (DASHBOARD_ORCADO.aba_ativa === 'radar') {
+    el.innerHTML = html;
+    setTimeout(() => renderRadarGastos(), 100);
+    return;
+  }
+
+  // Aba Comparativo
   const real = dadosFinanceiros;
   const orcado = DASHBOARD_ORCADO.orcamento;
   const cat = DASHBOARD_ORCADO.categoria_selecionada;
 
-  if (!real[cat] || real[cat].length === 0) return;
+  if (!real[cat] || real[cat].length === 0) {
+    el.innerHTML = html + '<div style="padding:1rem;color:#999;">Dados não disponíveis.</div>';
+    return;
+  }
 
-  let html = '<div style="background:white;border-radius:8px;padding:1.5rem;border:1px solid #e2e8f0;">';
+  html += '<div style="background:white;border-radius:8px;padding:1.5rem;border:1px solid #e2e8f0;">';
   html += '<div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">';
 
   DASHBOARD_ORCADO.categorias.forEach(function(c) {

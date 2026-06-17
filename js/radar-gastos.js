@@ -1,0 +1,288 @@
+// ==================== RADAR DE GASTOS (DIÁRIOS) ====================
+// Detecção matemática de anomalias em gastos diários
+// Sem tokens Claude: apenas detecção + projeção.
+// Explicação com Claude: sob demanda (botão opcional).
+
+const RADAR_GASTOS = {
+  meses_atuais: [],
+  categoria_filtro: null,
+  anomalias: [],
+};
+
+function radarGastosAnalisarMes(mesKey) {
+  // mesKey: 'JAN/26', 'FEV/26', etc.
+  if (!dadosDiarios || !dadosDiarios[mesKey]) return null;
+
+  const mesData = dadosDiarios[mesKey];
+  const analise = {
+    mes: mesKey,
+    custos_anomalias: [],
+    despesas_anomalias: [],
+    projecoes: {},
+    timestamp: new Date().toISOString(),
+  };
+
+  // Processa custos + despesas operacionais
+  ['custos', 'despesas_operacionais'].forEach(function(cat) {
+    const items = mesData[cat] || [];
+    const anomalias = [];
+
+    items.forEach(function(item) {
+      const valores_array = Object.keys(item.valores)
+        .filter(k => k.startsWith('dia_'))
+        .map(k => parseFloat(item.valores[k]) || 0)
+        .filter(v => v !== 0); // Ignora zeros
+
+      if (valores_array.length === 0) return;
+
+      // Cálculo simples de anomalia: >2 desvios padrão acima da média
+      const media = valores_array.reduce((a,b)=>a+b,0) / valores_array.length;
+      const variancia = valores_array.reduce((a,v)=>a + Math.pow(v-media,2), 0) / valores_array.length;
+      const desvio_padrao = Math.sqrt(variancia);
+
+      // Identifica picos: dias com valor > media + 2*desvio
+      const limiar = media + (2 * desvio_padrao);
+      const dias_pico = [];
+
+      Object.keys(item.valores).forEach(function(dia_key) {
+        const val = parseFloat(item.valores[dia_key]) || 0;
+        if (val > limiar && val > media * 1.5) {
+          const dia_num = parseInt(dia_key.replace('dia_',''));
+          dias_pico.push({ dia: dia_num, valor: val, desvio_pct: ((val - media) / media * 100).toFixed(0) });
+        }
+      });
+
+      if (dias_pico.length > 0) {
+        anomalias.push({
+          nome: item.nome,
+          media: media,
+          desvio_padrao: desvio_padrao,
+          dias_pico: dias_pico,
+          total_mes: item.total,
+          impacto_valor: dias_pico.reduce((s,d)=>s+d.valor,0),
+        });
+      }
+    });
+
+    if (cat === 'custos') analise.custos_anomalias = anomalias;
+    else analise.despesas_anomalias = anomalias;
+  });
+
+  return analise;
+}
+
+function radarGastosProjetarMes(mesKey, mesIdx_ano) {
+  // Projeta o mês inteiro baseado nos dias já passados
+  if (!dadosDiarios || !dadosDiarios[mesKey]) return null;
+  if (!DASHBOARD_ORCADO.orcamento) return null;
+
+  const mesData = dadosDiarios[mesKey];
+  const hoje = new Date();
+  const dias_passados = Math.min(hoje.getDate(), 31);
+  const dias_totais = new Date(2026, mesIdx_ano + 1, 0).getDate();
+
+  const projecoes = {};
+  const meses_arr = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const mes_key_lower = meses_arr[mesIdx_ano];
+
+  const orcado_custos = (DASHBOARD_ORCADO.orcamento.custos || {})[mes_key_lower] || 0;
+  const orcado_despesas = (DASHBOARD_ORCADO.orcamento.despesas || {})[mes_key_lower] || 0;
+
+  ['custos', 'despesas_operacionais'].forEach(function(cat) {
+    const items = mesData[cat] || [];
+    let total_atual = 0;
+    let total_projetado = 0;
+
+    items.forEach(function(item) {
+      let soma_atual = 0;
+      for (let i = 1; i <= dias_passados; i++) {
+        soma_atual += parseFloat(item.valores['dia_' + i]) || 0;
+      }
+      total_atual += soma_atual;
+
+      if (dias_passados > 0) {
+        const media_diaria = soma_atual / dias_passados;
+        const projecao = media_diaria * dias_totais;
+        total_projetado += projecao;
+      }
+    });
+
+    const cat_key = cat === 'custos' ? 'custos' : 'despesas';
+    const orcado_val = cat_key === 'custos' ? orcado_custos : orcado_despesas;
+
+    projecoes[cat] = {
+      total_atual: total_atual,
+      total_projetado: total_projetado,
+      orcado: orcado_val,
+      desvio_orcado_pct: orcado_val > 0 ? ((total_projetado - orcado_val) / orcado_val * 100).toFixed(1) : 0,
+      dias_passados: dias_passados,
+      dias_totais: dias_totais,
+    };
+  });
+
+  return projecoes;
+}
+
+function renderRadarGastos() {
+  const el = document.getElementById('orcadoView');
+  if (!el) return;
+
+  if (!dadosDiarios || Object.keys(dadosDiarios).length === 0) {
+    el.innerHTML = '<div style="padding:1rem;color:#666;">Dados diários não carregados.</div>';
+    return;
+  }
+
+  const meses_disponiveis = Object.keys(dadosDiarios).sort();
+  const mes_atual = meses_disponiveis[meses_disponiveis.length - 1];
+  const mesIdx = parseInt(mes_atual.split('/')[0].match(/\d+/)[0]) - 1 || 0;
+
+  const analise = radarGastosAnalisarMes(mes_atual);
+  const projecoes = radarGastosProjetarMes(mes_atual, mesIdx);
+
+  let html = '<div style="background:white;border-radius:8px;padding:1.5rem;border:1px solid #e2e8f0;">';
+  html += '<h3 style="margin:0 0 1rem 0;color:#0f3460;font-size:1.1rem;">📊 Radar de Gastos - Anomalias Diárias</h3>';
+  html += '<p style="margin:0 0 1rem 0;color:#666;font-size:0.9rem;">Análise de ' + mes_atual + ' - Picos detectados automaticamente</p>';
+
+  // Seção Projeções
+  if (projecoes) {
+    html += '<div style="background:#f8fafc;border-radius:6px;padding:1rem;margin-bottom:1.5rem;border:1px solid #cbd5e1;">';
+    html += '<h4 style="margin:0 0 0.8rem 0;color:#0f3460;">📈 Projeção até fim do mês</h4>';
+
+    ['custos', 'despesas_operacionais'].forEach(function(cat) {
+      const p = projecoes[cat];
+      const cat_label = cat === 'custos' ? 'Custos' : 'Despesas';
+      const cor_status = p.desvio_orcado_pct < 0 ? '#22c55e' : (p.desvio_orcado_pct < 10 ? '#eab308' : '#ef4444');
+
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">';
+      html += '<div><strong>' + cat_label + '</strong></div>';
+      html += '<div style="text-align:right;">';
+      html += '<span style="font-weight:bold;color:' + cor_status + ';">' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '%</span>';
+      html += ' vs orçado</div>';
+      html += '<div style="font-size:0.85rem;color:#666;">Atualmente: ' + new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(p.total_atual) + '</div>';
+      html += '<div style="font-size:0.85rem;color:#666;">Projetado: ' + new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(p.total_projetado) + '</div>';
+      html += '<div style="font-size:0.85rem;color:#666;">Orçado: ' + new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(p.orcado) + '</div>';
+      html += '<div style="font-size:0.8rem;color:#999;margin-top:0.4rem;">(' + p.dias_passados + ' de ' + p.dias_totais + ' dias)</div>';
+      html += '</div>';
+    });
+
+    html += '</div>';
+  }
+
+  // Seção Anomalias
+  const total_anomalias = (analise.custos_anomalias || []).length + (analise.despesas_anomalias || []).length;
+  if (total_anomalias > 0) {
+    html += '<div style="margin-bottom:1.5rem;">';
+    html += '<h4 style="margin:0 0 0.8rem 0;color:#dc2626;">⚠️ Anomalias Detectadas (' + total_anomalias + ')</h4>';
+
+    [
+      { cat: 'custos_anomalias', label: 'Custos' },
+      { cat: 'despesas_anomalias', label: 'Despesas' }
+    ].forEach(function(section) {
+      const anomalias = analise[section.cat] || [];
+      if (anomalias.length === 0) return;
+
+      html += '<div style="margin-bottom:1rem;">';
+      html += '<h5 style="margin:0.5rem 0;color:#7c3aed;font-size:0.9rem;">▸ ' + section.label + '</h5>';
+
+      anomalias.forEach(function(anom) {
+        const impacto_pct = ((anom.impacto_valor / anom.total_mes) * 100).toFixed(0);
+        html += '<div style="background:#fef2f2;border-left:3px solid #dc2626;padding:0.8rem;margin-bottom:0.6rem;border-radius:4px;">';
+        html += '<div style="font-weight:600;color:#1f2937;margin-bottom:0.3rem;">' + anom.nome + '</div>';
+        html += '<div style="font-size:0.85rem;color:#666;">';
+        html += anom.dias_pico.length + ' pico' + (anom.dias_pico.length > 1 ? 's' : '') + ' | ';
+        html += 'Impacto: ' + new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(anom.impacto_valor) + ' (' + impacto_pct + '%)';
+        html += '</div>';
+
+        html += '<div style="font-size:0.8rem;color:#999;margin-top:0.4rem;">';
+        anom.dias_pico.slice(0, 3).forEach(function(pico) {
+          html += '<span style="display:inline-block;background:#fff3f0;padding:0.2rem 0.6rem;margin-right:0.4rem;border-radius:3px;">Dia ' + pico.dia + ': +' + pico.desvio_pct + '%</span>';
+        });
+        if (anom.dias_pico.length > 3) html += '<span>+' + (anom.dias_pico.length - 3) + ' mais</span>';
+        html += '</div>';
+        html += '</div>';
+      });
+
+      html += '</div>';
+    });
+
+    html += '</div>';
+  } else {
+    html += '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:1rem;color:#166534;text-align:center;">';
+    html += '✅ Nenhuma anomalia detectada em ' + mes_atual + '. Gastos dentro do esperado.';
+    html += '</div>';
+  }
+
+  // Botão Claude (opcional)
+  html += '<div style="margin-top:1.5rem;border-top:1px solid #e2e8f0;padding-top:1rem;">';
+  html += '<button onclick="radarGastosExplicarComClaude(\'' + mes_atual + '\')" style="padding:0.6rem 1.2rem;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:0.9rem;">';
+  html += '🧠 Explicar com Claude (sob demanda)</button>';
+  html += '<span style="font-size:0.8rem;color:#666;margin-left:1rem;">Análise textual detalhada das anomalias</span>';
+  html += '</div>';
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+async function radarGastosExplicarComClaude(mesKey) {
+  const analise = radarGastosAnalisarMes(mesKey);
+  const projecoes = radarGastosProjetarMes(mesKey, 0);
+
+  if (!analise) {
+    alert('Dados não encontrados para ' + mesKey);
+    return;
+  }
+
+  // Constrói prompt para Claude
+  const prompt = `Você é um analista financeiro. Analise as anomalias de gastos detectadas para ${mesKey}:
+
+CUSTOS - Anomalias:
+${analise.custos_anomalias.map(a => `- ${a.nome}: ${a.dias_pico.length} picos, impacto R$ ${a.impacto_valor.toFixed(2)} (${((a.impacto_valor / a.total_mes) * 100).toFixed(0)}% do mês)`).join('\n') || 'Nenhuma'}
+
+DESPESAS - Anomalias:
+${analise.despesas_anomalias.map(a => `- ${a.nome}: ${a.dias_pico.length} picos, impacto R$ ${a.impacto_valor.toFixed(2)} (${((a.impacto_valor / a.total_mes) * 100).toFixed(0)}% do mês)`).join('\n') || 'Nenhuma'}
+
+Forneça uma análise concisa (2-3 parágrafos) sobre:
+1. Quais são os principais impulsionadores de custos anormais?
+2. Qual é o risco de estouro do orçamento?
+3. Quais ações recomenda para o restante do mês?`;
+
+  // Mostra modal de carregamento
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
+  modal.innerHTML = `<div style="background:white;border-radius:8px;padding:2rem;max-width:600px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 25px rgba(0,0,0,0.15);">
+    <h3 style="margin:0 0 1rem 0;">🧠 Análise Claude</h3>
+    <div style="color:#666;font-size:0.9rem;margin-bottom:1rem;">Processando...</div>
+    <div id="claudeOutput" style="min-height:100px;"></div>
+    <button onclick="this.parentElement.parentElement.remove()" style="margin-top:1rem;padding:0.6rem 1.2rem;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;">Fechar</button>
+  </div>`;
+  document.body.appendChild(modal);
+
+  const outputDiv = modal.querySelector('#claudeOutput');
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'sk-ant-' + (window.ANTHROPIC_API_KEY || ''),
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-1-20250805',
+        max_tokens: 500,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const explicacao = data.content[0]?.text || 'Sem resposta';
+
+    outputDiv.innerHTML = '<div style="white-space:pre-wrap;line-height:1.6;color:#333;">' + explicacao.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+  } catch (e) {
+    outputDiv.innerHTML = '<div style="color:#dc2626;"><strong>Erro:</strong> ' + e.message + '</div><p style="font-size:0.85rem;color:#666;">Certifique-se de que a chave da API do Claude está configurada corretamente.</p>';
+  }
+}
