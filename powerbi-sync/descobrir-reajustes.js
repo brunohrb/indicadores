@@ -152,6 +152,10 @@ async function rodar() {
   await testar('TOTAL junho (MINX, Pago, todas filiais)',
     `EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', ${filtroJunMinxPago})))`);
 
+  // 9. QUEBRA POR tipo_pessoa do cliente (jun-MINX-Pago) — esperado F=2357.29, J=656.55
+  await dump('QUEBRA POR tipo_pessoa (jun-MINX-Pago)',
+    `EVALUATE SUMMARIZECOLUMNS('dCliente'[tipo_pessoa], FILTER('fReajustes', ${filtroJunMinxPago}), "soma", SUM('fReajustes'[Valor_Reajustado]))`);
+
   log('\n========================================');
   log('  FIM');
   log('========================================');
