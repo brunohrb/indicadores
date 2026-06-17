@@ -121,9 +121,32 @@ async function rodar() {
     }
   }
 
-  // 3 linhas de cada tabela pra ver nomes de colunas + valores de exemplo
-  await dump("fReajustes (3 linhas)", `EVALUATE TOPN(3, 'fReajustes')`);
-  await dump("dCalendario Pagamento (3 linhas)", `EVALUATE TOPN(3, 'dCalendario Pagamento')`);
+  // 5. ACHAR O FILTRO QUE BATE 2.357,29 (PF) / 656,55 (PJ) em junho/2026
+  log('\n--- 5. SOMA DE Valor_Reajustado (Pago) POR DATA DE PAGAMENTO — junho/2026 ---');
+  const PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
+  const PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39}';
+  function somaPorData(col, filiais) {
+    return `EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', 'fReajustes'[Status_Reajuste] = "Pago" && YEAR('fReajustes'[${col}]) = 2026 && MONTH('fReajustes'[${col}]) = 6 && 'fReajustes'[filial_id] IN ${filiais})))`;
+  }
+  async function testar(label, dax) {
+    try {
+      const url = `https://api.powerbi.com/v1.0/myorg/groups/${WS_DIRETORIA}/datasets/${DS}/executeQueries`;
+      const { data } = await axios.post(url,
+        { queries: [{ query: dax }], serializerSettings: { includeNulls: true } },
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, timeout: 60000 });
+      const v = data.results?.[0]?.tables?.[0]?.rows?.[0]?.['[v]'];
+      log(`   ${label}: ${v}`);
+    } catch (e) { log(`   ${label}: ERRO ${erroDe(e)}`); }
+  }
+  log('   >>> Procurando: PF deve dar ~2357.29, PJ ~656.55 <<<');
+  await testar('Data_Pagamento     PF', somaPorData('Data_Pagamento', PF));
+  await testar('Data_Pagamento     PJ', somaPorData('Data_Pagamento', PJ));
+  await testar('Data_Pagamento_MINX PF', somaPorData('Data_Pagamento_MINX', PF));
+  await testar('Data_Pagamento_MINX PJ', somaPorData('Data_Pagamento_MINX', PJ));
+  // sem status, caso o card nao filtre Pago
+  log('   (sem filtro de Status, so pra comparar)');
+  await testar('Data_Pagamento PF (sem Status)',
+    `EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', YEAR('fReajustes'[Data_Pagamento]) = 2026 && MONTH('fReajustes'[Data_Pagamento]) = 6 && 'fReajustes'[filial_id] IN ${PF})))`);
 
   log('\n========================================');
   log('  FIM');
