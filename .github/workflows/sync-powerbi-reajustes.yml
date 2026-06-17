@@ -30,8 +30,8 @@ jobs:
           PBI_TENANT_ID: b6f5c3aa-17cb-4bce-8eb6-8b30b93166e8
           PBI_CLIENT_ID: 750dc66f-367e-4461-9a69-3dd216f0b69d
           PBI_CLIENT_SECRET: ${{ secrets.PBI_CLIENT_SECRET }}
-          PBI_WORKSPACE_REAJUSTES: 336675a7-6eed-4857-9a5e-7472c77092e1
-          PBI_DATASET_REAJUSTES: d8981a6f-5dae-448e-a2ad-a1427f9717c8
+          PBI_WORKSPACE_REAJUSTES: e8de7e89-a44d-4c9b-aebf-ca7e658e1bdb
+          PBI_DATASET_REAJUSTES: e97a6d33-6761-49f3-8869-3635fb107219
           SB_URL: https://xuwwgprchhfshrqdhuqn.supabase.co
           SB_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc
         run: |
