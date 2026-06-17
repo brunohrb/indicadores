@@ -4,6 +4,33 @@
     // SHARE_URL em supabase/functions/fluxo-caixa-download/index.ts e redeploy.
     const ONEDRIVE_XLSX_URL = SB_URL + '/functions/v1/fluxo-caixa-download';
 
+    // Extrai o bloco "Geração de Caixa / Saldos" (da linha "Geração de Caixa" até
+    // "Sald Final", inclusive). Cada linha vira {nome, jan..dez, total}. Usado tanto
+    // pelo parser do navegador quanto (replicado) pelo robô em onedrive-sync/sync.js.
+    function parseCaixaBlock(rows, headerIdx, colMeses, norm, MESES) {
+      const out = [];
+      let started = false;
+      for (let i = headerIdx + 1; i < rows.length; i++) {
+        const row = rows[i] || [];
+        const nomeRaw = typeof row[0] === 'string' ? row[0].trim() : '';
+        if (!nomeRaw) continue;
+        const n = norm(nomeRaw);
+        if (!started) {
+          if (n === 'geracao de caixa') started = true;
+          else continue;
+        }
+        const item = { nome: nomeRaw };
+        MESES.forEach(m => {
+          const v = row[colMeses[m]];
+          item[m] = typeof v === 'number' ? Math.round(v * 100) / 100 : 0;
+        });
+        item.total = Math.round(MESES.reduce((s, m) => s + (item[m] || 0), 0) * 100) / 100;
+        out.push(item);
+        if (n === 'sald final' || n === 'saldo final') break;
+      }
+      return out;
+    }
+
     // Mapeamento: nome no CSV → chave em dadosFinanceiros + categoria
     const CSV_MAP = {
       // RECEITAS
@@ -428,6 +455,11 @@
           }
           await sbStorage.set('consolidado_diarios', JSON.stringify(dadosDiariosNovo));
 
+          // ===== Seção "Geração de Caixa / Saldos" (linhas ~104-129 da Anual Real) =====
+          // Bloco heterogêneo: Geração de Caixa, acumuladas, Saldo Inicial, 20 contas
+          // bancárias e Saldo Final. São saldos pontuais — NÃO somar a categoria.
+          dadosFinanceiros.caixa = parseCaixaBlock(rows, headerIdx, colMeses, norm, MESES);
+
           syncSetProgress(90, 'Salvando no Supabase...');
           await sbStorage.set('consolidado_dados', JSON.stringify(dadosFinanceiros));
           await sbStorage.set('consolidado_versao', DADOS_VERSION);
@@ -615,6 +647,14 @@
             Object.assign(dadosDiarios, parsedDiarios);
           }
         } catch(e) { console.warn('consolidado_diarios load erro:', e); }
+
+        // Carrega Orçado (aba "Orçamento") do Supabase — aparece instantâneo, sem depender do sync
+        try {
+          const savedOrc = await sbStorage.get('orcamento_dados');
+          if (savedOrc && typeof DASHBOARD_ORCADO !== 'undefined') {
+            DASHBOARD_ORCADO.orcamento = JSON.parse(savedOrc);
+          }
+        } catch(e) { console.warn('orcamento_dados load erro:', e); }
 
         // Inicializa análise Q1
         try {

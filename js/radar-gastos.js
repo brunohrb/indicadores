@@ -123,8 +123,9 @@ function radarGastosProjetarMes(mesKey, mesIdx_ano) {
   return projecoes;
 }
 
-function renderRadarGastos() {
-  const el = document.getElementById('orcadoView');
+function renderRadarGastos(container) {
+  // Se vier um container (da aba), escreve nele; senão usa #orcadoView direto
+  const el = container || document.getElementById('orcadoView');
   if (!el) return;
 
   if (!dadosDiarios || Object.keys(dadosDiarios).length === 0) {
