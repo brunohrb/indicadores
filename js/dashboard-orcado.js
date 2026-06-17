@@ -3,6 +3,7 @@
 const DASHBOARD_ORCADO = {
   orcamento: null,
   categoria_selecionada: 'receitas',
+  aba_ativa: 'comparativo', // 'comparativo' | 'radar'
   ano: 2026,            // 2026 (tem orçado) | 2025 | 2024 (só realizado)
   visao: 'mensal',      // 'mensal' | 'trimestral'
   mesFiltro: 'todos',   // 'todos' | 0..11
@@ -14,6 +15,15 @@ const DASHBOARD_ORCADO = {
   categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda', 'ebitda_ajustado'],
   categorias_label: { receitas: 'Receitas', impostos: 'Impostos', custos: 'Custos', despesas: 'Despesas', ebitda: 'EBITDA', ebitda_ajustado: 'EBITDA Ajustado' },
 };
+
+// Cabeçalho com as 2 abas: Orçado × Realizado | Radar de Gastos
+function _orcadoGetTabsHeader() {
+  let html = '<div style="margin-bottom:1rem;border-bottom:1px solid #e2e8f0;display:flex;gap:0.5rem;">';
+  html += '<button onclick="DASHBOARD_ORCADO.aba_ativa=\'comparativo\';renderDashboardOrcado()" style="padding:0.8rem 1.2rem;background:' + (DASHBOARD_ORCADO.aba_ativa !== 'radar' ? '#8b5cf6' : '#e2e8f0') + ';color:' + (DASHBOARD_ORCADO.aba_ativa !== 'radar' ? 'white' : '#666') + ';border:none;border-radius:6px 6px 0 0;cursor:pointer;font-weight:600;">📊 Orçado × Realizado</button>';
+  html += '<button onclick="DASHBOARD_ORCADO.aba_ativa=\'radar\';renderDashboardOrcado()" style="padding:0.8rem 1.2rem;background:' + (DASHBOARD_ORCADO.aba_ativa === 'radar' ? '#8b5cf6' : '#e2e8f0') + ';color:' + (DASHBOARD_ORCADO.aba_ativa === 'radar' ? 'white' : '#666') + ';border:none;border-radius:6px 6px 0 0;cursor:pointer;font-weight:600;">🎯 Radar de Gastos</button>';
+  html += '</div>';
+  return html;
+}
 
 // Dataset de realizado conforme o ano selecionado
 function _orcadoDatasetAno() {
@@ -35,6 +45,21 @@ function renderDashboardOrcado() {
   const el = document.getElementById('orcadoView');
   if (!el || typeof dadosFinanceiros === 'undefined') return;
 
+  // Cabeçalho de abas sempre no topo
+  let html = _orcadoGetTabsHeader();
+
+  // Aba Radar: delega pro radar-gastos.js (ele escreve dentro de #orcadoView)
+  if (DASHBOARD_ORCADO.aba_ativa === 'radar') {
+    el.innerHTML = html;
+    if (typeof renderRadarGastos === 'function') {
+      const wrap = document.createElement('div');
+      el.appendChild(wrap);
+      renderRadarGastos(wrap);
+    }
+    return;
+  }
+
+  // ---------- Aba Comparativo (Orçado × Realizado) ----------
   const real = _orcadoDatasetAno();
   // Orçado só existe para 2026
   const orcado = DASHBOARD_ORCADO.ano === 2026 ? DASHBOARD_ORCADO.orcamento : null;
@@ -42,7 +67,7 @@ function renderDashboardOrcado() {
   const temOrcado = !!(orcado && orcado[cat]);
   const fc = v => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
-  let html = '<div style="background:white;border-radius:8px;padding:1.5rem;border:1px solid #e2e8f0;">';
+  html += '<div style="background:white;border-radius:8px;padding:1.5rem;border:1px solid #e2e8f0;">';
 
   // ---------- BARRA DE FILTROS ----------
   html += '<div style="display:flex;gap:1rem;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;padding-bottom:1rem;border-bottom:1px solid #e2e8f0;">';
