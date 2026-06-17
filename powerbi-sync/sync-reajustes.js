@@ -66,22 +66,19 @@ async function executarDAX(token, dax, tentativa = 1) {
 async function dormir(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function daxDeCard(mesNum, ano) {
-  // "Valor Recebido" do Dashboard de Reajustes = medida [Valor Recebido Total],
-  // filtrada pela data de PAGAMENTO (tabela 'dCalendario Pagamento'), não pela
-  // data do reajuste. Colunas: [Ano Pgto] + [NumeroMes Pgto].
-  const filtroMes = `'dCalendario Pagamento'[Ano Pgto] = ${ano}, 'dCalendario Pagamento'[NumeroMes Pgto] = ${mesNum}`;
-  // Listas de filial_id confirmadas (mesmas usadas no sync Diretoria)
-  const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
-  const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39}';
+  // "Valor Recebido" do Dashboard de Reajustes = SUM('fReajustes'[Valor_Reajustado])
+  // dos reajustes PAGOS, pelo MÊS DE RECEBIMENTO (coluna 'fReajustes'[Data_Pagamento_MINX],
+  // a data do 1º título pago), classificados em PF/PJ por 'dFilial'[Tipo_Pessoa].
+  // (Confirmado via diagnóstico: bate o card do relatório — ex. jun/2026 PJ = 691,75.)
+  const filtroRecebido = `'fReajustes'[Status_Reajuste] = "Pago" && YEAR('fReajustes'[Data_Pagamento_MINX]) = ${ano} && MONTH('fReajustes'[Data_Pagamento_MINX]) = ${mesNum}`;
 
   return [
-    // [Valor Recebido Total] do mês de pagamento. Segmentado por filial_id.
     { card: 'Reajuste Contratos PF',
-      dax: `CALCULATE([Valor Recebido Total], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF}))` },
+      dax: `CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', ${filtroRecebido}), 'dFilial'[Tipo_Pessoa] = "PF")` },
     { card: 'Reajuste Contratos PJ',
-      dax: `CALCULATE([Valor Recebido Total], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PJ}))` },
+      dax: `CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', ${filtroRecebido}), 'dFilial'[Tipo_Pessoa] = "PJ")` },
     { card: 'Reajuste Valor Aplicado Total',
-      dax: `CALCULATE([Valor Recebido Total], ${filtroMes})` },
+      dax: `CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', ${filtroRecebido}))` },
   ];
 }
 
