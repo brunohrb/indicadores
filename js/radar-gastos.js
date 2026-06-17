@@ -145,6 +145,17 @@ function radarGastosProjetarMes(mesKey, mesIdx_ano) {
   return projecoes;
 }
 
+// Soma de custos+despesas do mês (pra saber se tem dado real)
+function _radarMesTemDados(mesKey) {
+  const m = dadosDiarios[mesKey];
+  if (!m) return false;
+  let soma = 0;
+  ['custos', 'despesas_operacionais'].forEach(function(cat) {
+    (m[cat] || []).forEach(function(item) { soma += Math.abs(item.total || 0); });
+  });
+  return soma > 0;
+}
+
 function renderRadarGastos(container) {
   // Se vier um container (da aba), escreve nele; senão usa #orcadoView direto
   const el = container || document.getElementById('orcadoView');
@@ -155,11 +166,16 @@ function renderRadarGastos(container) {
     return;
   }
 
-  const meses_disponiveis = Object.keys(dadosDiarios).sort(function(a, b) {
+  // Ordena cronologicamente e pega o ÚLTIMO mês COM dados reais (ignora meses futuros zerados)
+  const meses_ordenados = Object.keys(dadosDiarios).sort(function(a, b) {
     return _radarOrdemCronologica(a) - _radarOrdemCronologica(b);
   });
-  const mes_atual = meses_disponiveis[meses_disponiveis.length - 1];
+  const meses_com_dados = meses_ordenados.filter(_radarMesTemDados);
+  const mes_atual = meses_com_dados.length ? meses_com_dados[meses_com_dados.length - 1] : meses_ordenados[meses_ordenados.length - 1];
   const mesIdx = _radarMesIdx(mes_atual);
+
+  // Seletor de mês (caso queira olhar outro mês)
+  RADAR_GASTOS.meses_atuais = meses_com_dados;
 
   const analise = radarGastosAnalisarMes(mes_atual);
   const projecoes = radarGastosProjetarMes(mes_atual, mesIdx);
@@ -269,57 +285,102 @@ async function radarGastosExplicarComClaude(mesKey) {
     return;
   }
 
-  // Constrói prompt para Claude
-  const prompt = `Você é um analista financeiro. Analise as anomalias de gastos detectadas para ${mesKey}:
+  // Monta resumo das projeções (se houver orçado)
+  let projTxt = 'Orçado não carregado.';
+  if (projecoes) {
+    const fmt = v => 'R$ ' + (v || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    projTxt = ['custos', 'despesas_operacionais'].map(function(cat) {
+      const p = projecoes[cat];
+      const label = cat === 'custos' ? 'Custos' : 'Despesas';
+      const base = p.mes_completo ? ('realizado ' + fmt(p.total_atual)) : ('projetado ' + fmt(p.total_projetado) + ' (parcial ' + fmt(p.total_atual) + ')');
+      return '- ' + label + ': ' + base + ' vs orçado ' + fmt(p.orcado) + ' → ' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '%';
+    }).join('\n');
+  }
 
-CUSTOS - Anomalias:
-${analise.custos_anomalias.map(a => `- ${a.nome}: ${a.dias_pico.length} picos, impacto R$ ${a.impacto_valor.toFixed(2)} (${((a.impacto_valor / a.total_mes) * 100).toFixed(0)}% do mês)`).join('\n') || 'Nenhuma'}
+  // Constrói prompt para Claude
+  const prompt = `Você é um analista financeiro da TEXNET. Analise as anomalias de gastos diários detectadas para ${mesKey} e responda em português, direto ao ponto.
+
+PROJEÇÃO vs ORÇADO:
+${projTxt}
+
+CUSTOS - Anomalias (picos diários acima do normal):
+${analise.custos_anomalias.map(a => `- ${a.nome}: ${a.dias_pico.length} pico(s), impacto R$ ${a.impacto_valor.toFixed(2)} (${((a.impacto_valor / a.total_mes) * 100).toFixed(0)}% do total do mês); dias: ${a.dias_pico.map(d => 'dia ' + d.dia + ' (+' + d.desvio_pct + '%)').join(', ')}`).join('\n') || 'Nenhuma'}
 
 DESPESAS - Anomalias:
-${analise.despesas_anomalias.map(a => `- ${a.nome}: ${a.dias_pico.length} picos, impacto R$ ${a.impacto_valor.toFixed(2)} (${((a.impacto_valor / a.total_mes) * 100).toFixed(0)}% do mês)`).join('\n') || 'Nenhuma'}
+${analise.despesas_anomalias.map(a => `- ${a.nome}: ${a.dias_pico.length} pico(s), impacto R$ ${a.impacto_valor.toFixed(2)} (${((a.impacto_valor / a.total_mes) * 100).toFixed(0)}% do total do mês); dias: ${a.dias_pico.map(d => 'dia ' + d.dia + ' (+' + d.desvio_pct + '%)').join(', ')}`).join('\n') || 'Nenhuma'}
 
-Forneça uma análise concisa (2-3 parágrafos) sobre:
-1. Quais são os principais impulsionadores de custos anormais?
-2. Qual é o risco de estouro do orçamento?
-3. Quais ações recomenda para o restante do mês?`;
+Forneça uma análise concisa (2-3 parágrafos curtos) sobre:
+1. Principais impulsionadores de gastos anormais;
+2. Risco de estouro do orçamento;
+3. Ações recomendadas. NÃO use ferramentas/tools — analise apenas os dados acima.`;
 
   // Mostra modal de carregamento
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:10000;';
   modal.innerHTML = `<div style="background:white;border-radius:8px;padding:2rem;max-width:600px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 25px rgba(0,0,0,0.15);">
-    <h3 style="margin:0 0 1rem 0;">🧠 Análise Claude</h3>
-    <div style="color:#666;font-size:0.9rem;margin-bottom:1rem;">Processando...</div>
-    <div id="claudeOutput" style="min-height:100px;"></div>
+    <h3 style="margin:0 0 1rem 0;">🧠 Análise Claude — ${mesKey}</h3>
+    <div id="claudeStatus" style="color:#666;font-size:0.9rem;margin-bottom:1rem;">Processando…</div>
+    <div id="claudeOutput" style="min-height:100px;line-height:1.6;color:#333;"></div>
     <button onclick="this.parentElement.parentElement.remove()" style="margin-top:1rem;padding:0.6rem 1.2rem;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;">Fechar</button>
   </div>`;
   document.body.appendChild(modal);
 
   const outputDiv = modal.querySelector('#claudeOutput');
+  const statusDiv = modal.querySelector('#claudeStatus');
 
+  // Reutiliza a Edge Function coach-ia (já deployada, já tem ANTHROPIC_API_KEY).
+  // Responde via SSE com eventos {type:'text'|'tool'|'done'|'error'}.
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    if (typeof SB_URL === 'undefined' || typeof SB_KEY === 'undefined') {
+      throw new Error('Configuração do Supabase não encontrada (SB_URL/SB_KEY).');
+    }
+    const res = await fetch(SB_URL + '/functions/v1/coach-ia', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': 'sk-ant-' + (window.ANTHROPIC_API_KEY || ''),
-        'anthropic-version': '2023-06-01',
+        'Authorization': 'Bearer ' + SB_KEY,
+        'apikey': SB_KEY,
       },
-      body: JSON.stringify({
-        model: 'claude-opus-4-1-20250805',
-        max_tokens: 500,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
     });
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+    if (!res.ok || !res.body) {
+      const raw = await res.text().catch(() => '');
+      throw new Error('Servidor respondeu ' + res.status + (raw ? ': ' + raw.slice(0, 200) : ''));
     }
 
-    const data = await response.json();
-    const explicacao = data.content[0]?.text || 'Sem resposta';
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '', acumulado = '';
 
-    outputDiv.innerHTML = '<div style="white-space:pre-wrap;line-height:1.6;color:#333;">' + explicacao.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const partes = buf.split('\n\n');
+      buf = partes.pop() || '';
+      for (const bloco of partes) {
+        const linha = bloco.split('\n').find(l => l.startsWith('data:'));
+        if (!linha) continue;
+        const json = linha.slice(5).trim();
+        if (!json) continue;
+        let ev;
+        try { ev = JSON.parse(json); } catch { continue; }
+        if (ev.type === 'text') {
+          acumulado += ev.text;
+          statusDiv.style.display = 'none';
+          outputDiv.innerHTML = (typeof iaMarkdown === 'function') ? iaMarkdown(acumulado) : acumulado.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        } else if (ev.type === 'tool') {
+          statusDiv.textContent = '🔎 Consultando dados…';
+        } else if (ev.type === 'error') {
+          throw new Error(String(ev.error || 'erro no servidor'));
+        }
+      }
+    }
+
+    if (!acumulado) outputDiv.innerHTML = '<span style="color:#94a3b8">Sem resposta.</span>';
   } catch (e) {
-    outputDiv.innerHTML = '<div style="color:#dc2626;"><strong>Erro:</strong> ' + e.message + '</div><p style="font-size:0.85rem;color:#666;">Certifique-se de que a chave da API do Claude está configurada corretamente.</p>';
+    statusDiv.style.display = 'none';
+    outputDiv.innerHTML = '<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:0.8rem;"><strong>Erro:</strong> ' + String(e.message || e).replace(/</g,'&lt;') + '</div>';
   }
 }
