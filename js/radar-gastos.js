@@ -87,63 +87,131 @@ function radarGastosAnalisarMes(mesKey) {
   return analise;
 }
 
+// Gasto acumulado por dia (array índice 1..31) de uma categoria num mês
+function _radarAcumuladoPorDia(mesKey, cat, ateDia) {
+  const m = dadosDiarios[mesKey];
+  if (!m) return [];
+  const items = m[cat] || [];
+  const lim = ateDia || 31;
+  const acum = [0]; // índice 0 não usado
+  let soma = 0;
+  for (let d = 1; d <= lim; d++) {
+    items.forEach(function(item) { soma += parseFloat(item.valores['dia_' + d]) || 0; });
+    acum[d] = soma;
+  }
+  return acum;
+}
+
+// Total do mês de uma categoria
+function _radarTotalMes(mesKey, cat) {
+  const m = dadosDiarios[mesKey];
+  if (!m) return 0;
+  return (m[cat] || []).reduce(function(s, item) { return s + (item.total || 0); }, 0);
+}
+
+// Constrói a REFERÊNCIA HISTÓRICA da categoria a partir dos meses ANTERIORES
+// com dados. Retorna, por dia: o acumulado médio (R$) e a fração média do mês
+// já gasta até aquele dia. Como os meses passados já contêm folha/impostos nos
+// mesmos dias, a curva embute esses solavancos.
+function radarGastosReferenciaHistorica(mesAtualKey, cat) {
+  const ordemAtual = _radarOrdemCronologica(mesAtualKey);
+  const mesesRef = Object.keys(dadosDiarios)
+    .filter(function(k) { return k !== mesAtualKey && _radarOrdemCronologica(k) < ordemAtual && _radarMesTemDados(k); })
+    .sort(function(a, b) { return _radarOrdemCronologica(a) - _radarOrdemCronologica(b); });
+
+  if (mesesRef.length === 0) return null;
+
+  const somaCumul = {};   // dia -> soma dos acumulados (R$)
+  const contCumul = {};   // dia -> nº de meses com aquele dia
+  const somaFrac = {};    // dia -> soma das frações
+  const contFrac = {};
+
+  mesesRef.forEach(function(mk) {
+    const idx = _radarMesIdx(mk);
+    const ano = parseInt('20' + (mk.split('/')[1] || '26')) || 2026;
+    const diasMes = new Date(ano, idx + 1, 0).getDate();
+    const total = _radarTotalMes(mk, cat);
+    const acum = _radarAcumuladoPorDia(mk, cat, diasMes);
+    for (let d = 1; d <= diasMes; d++) {
+      somaCumul[d] = (somaCumul[d] || 0) + acum[d];
+      contCumul[d] = (contCumul[d] || 0) + 1;
+      if (total > 0) {
+        somaFrac[d] = (somaFrac[d] || 0) + (acum[d] / total);
+        contFrac[d] = (contFrac[d] || 0) + 1;
+      }
+    }
+  });
+
+  const avgCumul = {}, avgFrac = {};
+  Object.keys(somaCumul).forEach(function(d) { avgCumul[d] = somaCumul[d] / contCumul[d]; });
+  Object.keys(somaFrac).forEach(function(d) { avgFrac[d] = somaFrac[d] / contFrac[d]; });
+
+  return { avgCumul: avgCumul, avgFrac: avgFrac, nMeses: mesesRef.length, meses: mesesRef };
+}
+
 function radarGastosProjetarMes(mesKey, mesIdx_ano) {
-  // Projeta o mês inteiro baseado nos dias já passados
   if (!dadosDiarios || !dadosDiarios[mesKey]) return null;
   if (!DASHBOARD_ORCADO.orcamento) return null;
 
-  const mesData = dadosDiarios[mesKey];
   const ano = parseInt('20' + (mesKey.split('/')[1] || '26')) || 2026;
   const hoje = new Date();
   const dias_totais = new Date(ano, mesIdx_ano + 1, 0).getDate();
 
-  // Se o mês analisado já terminou (ex: hoje é jun mas dado é fev),
-  // usa o mês completo. Só projeta se for o mês corrente.
+  // Só projeta se for o mês corrente; mês encerrado mostra realizado completo.
   const mesCorrente = (ano === hoje.getFullYear() && mesIdx_ano === hoje.getMonth());
   const dias_passados = mesCorrente ? Math.min(hoje.getDate(), dias_totais) : dias_totais;
 
   const projecoes = {};
   const meses_arr = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   const mes_key_lower = meses_arr[mesIdx_ano];
-
   const orcado_custos = (DASHBOARD_ORCADO.orcamento.custos || {})[mes_key_lower] || 0;
   const orcado_despesas = (DASHBOARD_ORCADO.orcamento.despesas || {})[mes_key_lower] || 0;
 
   ['custos', 'despesas_operacionais'].forEach(function(cat) {
-    const items = mesData[cat] || [];
-    let total_atual = 0;
-    let total_projetado = 0;
+    const acum = _radarAcumuladoPorDia(mesKey, cat, dias_passados);
+    const total_atual = acum[dias_passados] || 0;
+    const mes_completo = dias_passados >= dias_totais;
 
-    items.forEach(function(item) {
-      let soma_atual = 0;
-      for (let i = 1; i <= dias_passados; i++) {
-        soma_atual += parseFloat(item.valores['dia_' + i]) || 0;
-      }
-      total_atual += soma_atual;
+    const ref = radarGastosReferenciaHistorica(mesKey, cat);
+    let normal_ate_hoje = null, ritmo_pct = null, total_projetado = total_atual, base_projecao = 'realizado';
 
-      if (dias_passados > 0) {
-        const media_diaria = soma_atual / dias_passados;
-        const projecao = media_diaria * dias_totais;
-        total_projetado += projecao;
+    if (!mes_completo && ref) {
+      // Ritmo vs normal (R$ acumulado médio no mesmo dia)
+      const nrm = ref.avgCumul[dias_passados];
+      if (nrm != null && nrm > 0) {
+        normal_ate_hoje = nrm;
+        ritmo_pct = ((total_atual - nrm) / nrm * 100);
       }
-    });
+      // Estimativa de fechamento pela CURVA histórica
+      const frac = ref.avgFrac[dias_passados];
+      if (frac != null && frac > 0.02) {
+        total_projetado = total_atual / frac;
+        base_projecao = 'curva';
+      }
+    }
 
     const cat_key = cat === 'custos' ? 'custos' : 'despesas';
     const orcado_val = cat_key === 'custos' ? orcado_custos : orcado_despesas;
+    const valor_vs_orcado = mes_completo ? total_atual : total_projetado;
 
     projecoes[cat] = {
       total_atual: total_atual,
       total_projetado: total_projetado,
+      base_projecao: base_projecao,          // 'curva' | 'realizado'
+      normal_ate_hoje: normal_ate_hoje,       // R$ médio dos meses anteriores no mesmo dia
+      ritmo_pct: ritmo_pct,                   // +/- % vs ritmo normal
+      ref_nMeses: ref ? ref.nMeses : 0,
       orcado: orcado_val,
-      desvio_orcado_pct: orcado_val > 0 ? ((total_projetado - orcado_val) / orcado_val * 100).toFixed(1) : 0,
+      desvio_orcado_pct: orcado_val > 0 ? ((valor_vs_orcado - orcado_val) / orcado_val * 100).toFixed(1) : 0,
       dias_passados: dias_passados,
       dias_totais: dias_totais,
-      mes_completo: dias_passados >= dias_totais,
+      mes_completo: mes_completo,
     };
   });
 
   return projecoes;
 }
+
 
 // Soma de custos+despesas do mês (pra saber se tem dado real)
 function _radarMesTemDados(mesKey) {
@@ -187,33 +255,57 @@ function renderRadarGastos(container) {
   // Seção Projeções
   if (projecoes) {
     const algumCompleto = projecoes.custos && projecoes.custos.mes_completo;
-    const tituloSecao = algumCompleto ? '📊 Realizado do mês vs Orçado' : '📈 Projeção até fim do mês';
+    const tituloSecao = algumCompleto ? '📊 Realizado do mês vs Orçado' : '📈 Ritmo do mês (vs seu padrão histórico)';
     html += '<div style="background:#f8fafc;border-radius:6px;padding:1rem;margin-bottom:1.5rem;border:1px solid #cbd5e1;">';
     html += '<h4 style="margin:0 0 0.8rem 0;color:#0f3460;">' + tituloSecao + '</h4>';
 
     ['custos', 'despesas_operacionais'].forEach(function(cat) {
       const p = projecoes[cat];
       const cat_label = cat === 'custos' ? 'Custos' : 'Despesas';
-      const cor_status = p.desvio_orcado_pct < 0 ? '#22c55e' : (p.desvio_orcado_pct < 10 ? '#eab308' : '#ef4444');
       const fmt = v => new Intl.NumberFormat('pt-BR', {style:'currency',currency:'BRL'}).format(v);
 
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">';
-      html += '<div><strong>' + cat_label + '</strong></div>';
-      html += '<div style="text-align:right;">';
-      html += '<span style="font-weight:bold;color:' + cor_status + ';">' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '%</span>';
-      html += ' vs orçado</div>';
+      html += '<div style="border-top:1px solid #e2e8f0;padding-top:0.7rem;margin-bottom:0.7rem;">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:0.3rem;">';
+      html += '<strong style="font-size:0.95rem;">' + cat_label + '</strong>';
+
       if (p.mes_completo) {
-        html += '<div style="font-size:0.85rem;color:#666;">Realizado: ' + fmt(p.total_atual) + '</div>';
-        html += '<div style="font-size:0.85rem;color:#666;">Orçado: ' + fmt(p.orcado) + '</div>';
+        const cor = p.desvio_orcado_pct < 0 ? '#22c55e' : (p.desvio_orcado_pct < 10 ? '#eab308' : '#ef4444');
+        html += '<span style="font-weight:bold;color:' + cor + ';">' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '% vs orçado</span>';
+        html += '</div>';
+        html += '<div style="font-size:0.85rem;color:#666;">Realizado: ' + fmt(p.total_atual) + ' &nbsp;·&nbsp; Orçado: ' + fmt(p.orcado) + '</div>';
       } else {
-        html += '<div style="font-size:0.85rem;color:#666;">Até agora: ' + fmt(p.total_atual) + '</div>';
-        html += '<div style="font-size:0.85rem;color:#666;">Projetado: ' + fmt(p.total_projetado) + '</div>';
-        html += '<div style="font-size:0.85rem;color:#666;">Orçado: ' + fmt(p.orcado) + '</div>';
-        html += '<div style="font-size:0.8rem;color:#999;margin-top:0.4rem;">(' + p.dias_passados + ' de ' + p.dias_totais + ' dias)</div>';
+        // Cabeçalho: RITMO vs normal (foco principal — robusto a folha/imposto)
+        if (p.ritmo_pct != null) {
+          const corR = p.ritmo_pct <= 0 ? '#22c55e' : (p.ritmo_pct <= 10 ? '#eab308' : '#ef4444');
+          html += '<span style="font-weight:bold;color:' + corR + ';">' + (p.ritmo_pct >= 0 ? '+' : '') + p.ritmo_pct.toFixed(1) + '% vs seu ritmo normal</span>';
+        } else {
+          html += '<span style="font-size:0.8rem;color:#999;">sem histórico p/ comparar</span>';
+        }
+        html += '</div>';
+
+        // Linha 1: gasto até hoje vs normal no mesmo dia
+        html += '<div style="font-size:0.85rem;color:#666;">';
+        html += 'Gasto até dia ' + p.dias_passados + ': <strong>' + fmt(p.total_atual) + '</strong>';
+        if (p.normal_ate_hoje != null) {
+          html += ' &nbsp;·&nbsp; normal p/ este dia: ' + fmt(p.normal_ate_hoje);
+        }
+        html += '</div>';
+
+        // Linha 2: estimativa de fechamento pela curva + desvio vs orçado
+        if (p.base_projecao === 'curva') {
+          const corO = p.desvio_orcado_pct < 0 ? '#22c55e' : (p.desvio_orcado_pct < 10 ? '#eab308' : '#ef4444');
+          html += '<div style="font-size:0.85rem;color:#666;margin-top:0.2rem;">';
+          html += 'Estimativa de fechamento: <strong>' + fmt(p.total_projetado) + '</strong>';
+          html += ' &nbsp;·&nbsp; orçado ' + fmt(p.orcado) + ' &nbsp;·&nbsp; ';
+          html += '<span style="font-weight:bold;color:' + corO + ';">' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '%</span>';
+          html += '</div>';
+          html += '<div style="font-size:0.72rem;color:#94a3b8;margin-top:0.2rem;">Estimativa baseada na curva de ' + p.ref_nMeses + ' mês(es) anteriores (já inclui folha, impostos etc.)</div>';
+        }
       }
       html += '</div>';
     });
 
+    html += '<div style="font-size:0.72rem;color:#94a3b8;margin-top:0.3rem;">' + (algumCompleto ? '' : '🟢 abaixo / 🟡 levemente acima / 🔴 bem acima do esperado para esta altura do mês') + '</div>';
     html += '</div>';
   } else {
     html += '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:0.8rem;margin-bottom:1.5rem;color:#92400e;font-size:0.85rem;">';
@@ -292,8 +384,13 @@ async function radarGastosExplicarComClaude(mesKey) {
     projTxt = ['custos', 'despesas_operacionais'].map(function(cat) {
       const p = projecoes[cat];
       const label = cat === 'custos' ? 'Custos' : 'Despesas';
-      const base = p.mes_completo ? ('realizado ' + fmt(p.total_atual)) : ('projetado ' + fmt(p.total_projetado) + ' (parcial ' + fmt(p.total_atual) + ')');
-      return '- ' + label + ': ' + base + ' vs orçado ' + fmt(p.orcado) + ' → ' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '%';
+      if (p.mes_completo) {
+        return '- ' + label + ': realizado ' + fmt(p.total_atual) + ' vs orçado ' + fmt(p.orcado) + ' → ' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '%';
+      }
+      let s = '- ' + label + ': gasto até dia ' + p.dias_passados + ' = ' + fmt(p.total_atual);
+      if (p.normal_ate_hoje != null) s += ' (normal p/ este dia: ' + fmt(p.normal_ate_hoje) + ', ritmo ' + (p.ritmo_pct >= 0 ? '+' : '') + p.ritmo_pct.toFixed(1) + '%)';
+      if (p.base_projecao === 'curva') s += '; estimativa de fechamento pela curva histórica = ' + fmt(p.total_projetado) + ' vs orçado ' + fmt(p.orcado) + ' (' + (p.desvio_orcado_pct >= 0 ? '+' : '') + p.desvio_orcado_pct + '%)';
+      return s;
     }).join('\n');
   }
 
