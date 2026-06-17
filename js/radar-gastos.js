@@ -168,8 +168,16 @@ function radarGastosProjetarMes(mesKey, mesIdx_ano) {
   const orcado_despesas = (DASHBOARD_ORCADO.orcamento.despesas || {})[mes_key_lower] || 0;
 
   ['custos', 'despesas_operacionais'].forEach(function(cat) {
+    const cat_key = cat === 'custos' ? 'custos' : 'despesas';
+
+    // ÂNCORA: usa o realizado MENSAL (dadosFinanceiros) — fonte confiável.
+    // O detalhamento diário do mês corrente costuma ficar atrasado, então
+    // somar o diário subestima. O diário serve só p/ curva histórica e picos.
+    const realizadoMensal = _radarRealizadoMensal(cat_key, mes_key_lower);
     const acum = _radarAcumuladoPorDia(mesKey, cat, dias_passados);
-    const total_atual = acum[dias_passados] || 0;
+    const total_diario = acum[dias_passados] || 0;
+    const total_atual = (realizadoMensal != null && realizadoMensal > total_diario) ? realizadoMensal : total_diario;
+    const usou_mensal = total_atual === realizadoMensal && realizadoMensal > total_diario;
     const mes_completo = dias_passados >= dias_totais;
 
     const ref = radarGastosReferenciaHistorica(mesKey, cat);
@@ -190,14 +198,15 @@ function radarGastosProjetarMes(mesKey, mesIdx_ano) {
       }
     }
 
-    const cat_key = cat === 'custos' ? 'custos' : 'despesas';
     const orcado_val = cat_key === 'custos' ? orcado_custos : orcado_despesas;
     const valor_vs_orcado = mes_completo ? total_atual : total_projetado;
 
     projecoes[cat] = {
       total_atual: total_atual,
+      total_diario: total_diario,             // soma do detalhe diário (pode estar atrasado)
+      usou_mensal: usou_mensal,               // true se ancorou no realizado mensal
       total_projetado: total_projetado,
-      base_projecao: base_projecao,          // 'curva' | 'realizado'
+      base_projecao: base_projecao,           // 'curva' | 'realizado'
       normal_ate_hoje: normal_ate_hoje,       // R$ médio dos meses anteriores no mesmo dia
       ritmo_pct: ritmo_pct,                   // +/- % vs ritmo normal
       ref_nMeses: ref ? ref.nMeses : 0,
@@ -210,6 +219,15 @@ function radarGastosProjetarMes(mesKey, mesIdx_ano) {
   });
 
   return projecoes;
+}
+
+// Realizado MENSAL de uma categoria (soma os itens de dadosFinanceiros no mês).
+// cat_consol: 'custos' | 'despesas'. mesAbrev: 'jan'..'dez'.
+function _radarRealizadoMensal(cat_consol, mesAbrev) {
+  if (typeof dadosFinanceiros === 'undefined' || !dadosFinanceiros[cat_consol]) return null;
+  return dadosFinanceiros[cat_consol].reduce(function(s, item) {
+    return s + (parseFloat(item[mesAbrev]) || 0);
+  }, 0);
 }
 
 
@@ -283,11 +301,11 @@ function renderRadarGastos(container) {
         }
         html += '</div>';
 
-        // Linha 1: gasto até hoje vs normal no mesmo dia
+        // Linha 1: realizado do mês vs normal a esta altura
         html += '<div style="font-size:0.85rem;color:#666;">';
-        html += 'Gasto até dia ' + p.dias_passados + ': <strong>' + fmt(p.total_atual) + '</strong>';
+        html += 'Realizado do mês: <strong>' + fmt(p.total_atual) + '</strong>';
         if (p.normal_ate_hoje != null) {
-          html += ' &nbsp;·&nbsp; normal p/ este dia: ' + fmt(p.normal_ate_hoje);
+          html += ' &nbsp;·&nbsp; normal p/ esta altura (dia ' + p.dias_passados + '): ' + fmt(p.normal_ate_hoje);
         }
         html += '</div>';
 
