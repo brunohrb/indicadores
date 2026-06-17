@@ -153,6 +153,19 @@ NÃO existem: `fFinanceiro`, `dPlanos`.
 - Para filtrar por filial sem perder isso, use `FILTER('dContratos', ID_Filial IN FILIAIS_PF)` em vez de `dContratos[ID_Filial] IN FILIAIS_PF` direto. (O FILTER cria filtro de linha, não sobrescreve o CALCULATE interno.)
 - INFO.MEASURES (listar medidas via DAX) está BLOQUEADO pra service principal — não dá pra descobrir as medidas via API.
 
+## Aba "Orçado × Realizado" + Seção "Caixa / Saldos" (jun/2026)
+
+### Orçado × Realizado (`js/dashboard-orcado.js`)
+- Aba própria no menu (`orcado-realizado` no `<select id="viewType">` E nav-item). Render só ao clicar (`changeView`).
+- Compara **Realizado** (`dadosFinanceiros` / `dadosFinanceiros2025/2024`) × **Orçado** (aba "Orçamento" do XLSX, linhas: receitas:4, impostos:16, custos:26, despesas:46, ebitda:67, ebitda_ajustado:76).
+- Filtros: **Ano** (2026 com orçado / 2025 / 2024 só realizado), **Visão Mensal|Trimestral** (tri soma 3 meses), **Mês** ou **Trimestre**. Linha TOTAL no rodapé. Status: ✅±10% 🟡±20% 🔴>20% (abs).
+- **Orçado persiste no Supabase** (`orcamento_dados`) — salvo no sync (browser) e lido no `consolidadoInicializar`. Robô servidor (`sync.js`) NÃO atualiza orçado (só browser auto-fetch) — usuário OK com isso.
+
+### Caixa / Saldos (aba dentro do Fluxo de Caixa)
+- Lê linhas **104-129** da aba "Anual Real - 2026": Geração de Caixa (=EBITDA+Ajustes de Caixa), G-Caixa Acumulada, Sldo Acumulado, Saldo Inicial, **20 contas bancárias** (saldo pontual, NÃO somar), Sald Final (=soma das contas).
+- `parseCaixaBlock()` em `js/consolidado.js` (e replicado em `onedrive-sync/sync.js`) extrai o bloco → `dadosFinanceiros.caixa` (array {nome, jan..dez, total}). Robô servidor TAMBÉM popula (preserva a chave pois faz `JSON.stringify(dados)` inteiro).
+- Render dedicado em `renderTable` (`categoria==='caixa'`): resumos destacados, "CONTAS BANCÁRIAS" agrupadas, Saldo Final verde, coluna "Atual (último mês com dado)". Botão aba: "💰 Caixa / Saldos" (`showTab('caixa')`). Só Jan-Jun têm dados (resto zerado).
+
 ## Fluxo de Caixa — Análise Q1 + Orçamento (jun/2026)
 
 **Nova feature**: painel lateral "Análise Q1" na aba Fluxo de Caixa. Mostra:
