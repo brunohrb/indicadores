@@ -152,9 +152,28 @@ async function rodar() {
   await testar('TOTAL junho (MINX, Pago, todas filiais)',
     `EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', ${filtroJunMinxPago})))`);
 
-  // 9. QUEBRA POR tipo_pessoa do cliente (jun-MINX-Pago) — esperado F=2357.29, J=656.55
-  await dump('QUEBRA POR tipo_pessoa (jun-MINX-Pago)',
-    `EVALUATE SUMMARIZECOLUMNS('dCliente'[tipo_pessoa], FILTER('fReajustes', ${filtroJunMinxPago}), "soma", SUM('fReajustes'[Valor_Reajustado]))`);
+  // 10. ACHAR a coluna "Tipo_Pessoa" (PF/PJ/Outros) usada pelo slicer
+  log('\n--- 10. PROCURAR coluna Tipo_Pessoa (PF/PJ/Outros) ---');
+  // (a) listar todas as colunas que contenham "tipo" no nome
+  await dump('Colunas com "tipo" (INFO.VIEW.COLUMNS)',
+    `EVALUATE FILTER(INFO.VIEW.COLUMNS(), SEARCH("tipo", [Column], 1, 0) > 0)`);
+  // (b) listar todas as tabelas do modelo
+  await dump('Tabelas do modelo (INFO.VIEW.TABLES)',
+    `EVALUATE SELECTCOLUMNS(INFO.VIEW.TABLES(), "Tabela", [Name])`);
+
+  // 11. Tentar quebra por Tipo_Pessoa em tabelas candidatas (jun-MINX-Pago)
+  log('\n--- 11. QUEBRA POR Tipo_Pessoa EM TABELAS CANDIDATAS ---');
+  const candCols = [
+    "'fReajustes'[Tipo_Pessoa]",
+    "'dCliente'[Tipo_Pessoa]",
+    "'dCliente_contrato'[Tipo_Pessoa]",
+    "'dContratos'[Tipo_Pessoa]",
+    "'dFilial'[Tipo_Pessoa]",
+  ];
+  for (const col of candCols) {
+    await dump(`por ${col}`,
+      `EVALUATE SUMMARIZECOLUMNS(${col}, FILTER('fReajustes', ${filtroJunMinxPago}), "soma", SUM('fReajustes'[Valor_Reajustado]))`);
+  }
 
   log('\n========================================');
   log('  FIM');
