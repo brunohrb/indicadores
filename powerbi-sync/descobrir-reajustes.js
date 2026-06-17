@@ -98,25 +98,32 @@ async function rodar() {
   }
   log('');
 
-  // 4. Testar a medida no dataset do relatório
-  if (datasetDoRelatorio) {
-    log('--- 4. TESTE DA MEDIDA NO DATASET DO RELATÓRIO ---');
-    const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
+  // 4. Testar a medida nos datasets candidatos do workspace Diretoria
+  log('--- 4. TESTE DA MEDIDA NOS DATASETS CANDIDATOS (workspace Diretoria) ---');
+  const WS_DIRETORIA = 'e8de7e89-a44d-4c9b-aebf-ca7e658e1bdb';
+  const CANDIDATOS = [
+    ['Analitico Recebidos Reajuste', '5a5d3b72-bed6-4470-831d-5c5846b71c95'],
+    ['Dashboard de Reajustes (1)', '3698b253-6488-4109-b0b3-5864021456f3'],
+    ['Analitico Reajuste', '378db1da-0dd4-4d46-ab69-4739a8c1c140'],
+    ['Dashboard de Reajustes', 'e97a6d33-6761-49f3-8869-3635fb107219'],
+  ];
+  const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
+  for (const [nome, ds] of CANDIDATOS) {
+    log(`\n   === ${nome}  (${ds}) ===`);
     const testes = [
-      ['Valor Recebido Total + dCalendario Pagamento (PF)',
-        `EVALUATE ROW("v", CALCULATE([Valor Recebido Total], 'dCalendario Pagamento'[Ano Pgto] = 2026, 'dCalendario Pagamento'[NumeroMes Pgto] = 6, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF})))`],
-      ['Valor Recebido Total (sem filtro, total junho)',
-        `EVALUATE ROW("v", CALCULATE([Valor Recebido Total], 'dCalendario Pagamento'[Ano Pgto] = 2026, 'dCalendario Pagamento'[NumeroMes Pgto] = 6))`],
-      ['Valor Recebido Total (totalzão, sem mês)',
+      ['[Valor Recebido Total] (existe? totalzão)',
         `EVALUATE ROW("v", [Valor Recebido Total])`],
+      ['Valor Recebido Total — junho (dCalendario Pagamento)',
+        `EVALUATE ROW("v", CALCULATE([Valor Recebido Total], 'dCalendario Pagamento'[Ano Pgto] = 2026, 'dCalendario Pagamento'[NumeroMes Pgto] = 6))`],
+      ['Valor Recebido Total — junho + PF (filial)',
+        `EVALUATE ROW("v", CALCULATE([Valor Recebido Total], 'dCalendario Pagamento'[Ano Pgto] = 2026, 'dCalendario Pagamento'[NumeroMes Pgto] = 6, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF})))`],
     ];
-    for (const [nome, dax] of testes) {
+    for (const [t, dax] of testes) {
       try {
-        const row = await executeQuery(token, REPORT_WORKSPACE, datasetDoRelatorio, dax);
-        const v = row['[v]'];
-        log(`   ✓ ${nome}: ${v}`);
+        const row = await executeQuery(token, WS_DIRETORIA, ds, dax);
+        log(`      ✓ ${t}: ${row['[v]']}`);
       } catch (e) {
-        log(`   ✗ ${nome}: ${erroDe(e)}`);
+        log(`      ✗ ${t}: ${erroDe(e)}`);
       }
     }
   }
