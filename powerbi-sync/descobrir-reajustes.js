@@ -138,15 +138,19 @@ async function rodar() {
       log(`   ${label}: ${v}`);
     } catch (e) { log(`   ${label}: ERRO ${erroDe(e)}`); }
   }
-  log('   >>> Procurando: PF deve dar ~2357.29, PJ ~656.55 <<<');
-  await testar('Data_Pagamento     PF', somaPorData('Data_Pagamento', PF));
-  await testar('Data_Pagamento     PJ', somaPorData('Data_Pagamento', PJ));
-  await testar('Data_Pagamento_MINX PF', somaPorData('Data_Pagamento_MINX', PF));
-  await testar('Data_Pagamento_MINX PJ', somaPorData('Data_Pagamento_MINX', PJ));
-  // sem status, caso o card nao filtre Pago
-  log('   (sem filtro de Status, so pra comparar)');
-  await testar('Data_Pagamento PF (sem Status)',
-    `EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', YEAR('fReajustes'[Data_Pagamento]) = 2026 && MONTH('fReajustes'[Data_Pagamento]) = 6 && 'fReajustes'[filial_id] IN ${PF})))`);
+  log('   >>> Alvo: PF ~2357.29, PJ ~656.55 — data certa = Data_Pagamento_MINX <<<');
+
+  // 6. Quebra por filial_id (junho-MINX-Pago) pra reconstruir o conjunto PF/PJ exato
+  const filtroJunMinxPago = `'fReajustes'[Status_Reajuste] = "Pago" && YEAR('fReajustes'[Data_Pagamento_MINX]) = 2026 && MONTH('fReajustes'[Data_Pagamento_MINX]) = 6`;
+  await dump('QUEBRA POR FILIAL (jun-MINX-Pago)',
+    `EVALUATE SUMMARIZECOLUMNS('fReajustes'[filial_id], FILTER('fReajustes', ${filtroJunMinxPago}), "soma", SUM('fReajustes'[Valor_Reajustado]))`);
+
+  // 7. Colunas da dCliente (pra ver se ha tipo_pessoa) + quebra por tipo do cliente
+  await dump('dCliente (3 linhas)', `EVALUATE TOPN(3, 'dCliente')`);
+
+  // 8. Total geral junho-MINX-Pago (sem split) pra referencia
+  await testar('TOTAL junho (MINX, Pago, todas filiais)',
+    `EVALUATE ROW("v", CALCULATE(SUM('fReajustes'[Valor_Reajustado]), FILTER('fReajustes', ${filtroJunMinxPago})))`);
 
   log('\n========================================');
   log('  FIM');
