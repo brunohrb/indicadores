@@ -174,9 +174,12 @@ async function rodar() {
   let valoresMaisRecente = null;
   let mesMaisRecente = null;
 
+  const FORCE = process.argv.includes('--force');
+  if (FORCE) log('Modo --force: meses fechados serão SOBRESCRITOS (mas seguem fechados).', 'warn');
+
   for (let i = 0; i < meses.length; i++) {
     const mesAno = meses[i];
-    if (mesesFechados.includes(mesAno)) {
+    if (mesesFechados.includes(mesAno) && !FORCE) {
       log(`Mês ${mesAno} já está FECHADO — pulando.`, 'warn');
       continue;
     }
