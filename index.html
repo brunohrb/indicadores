@@ -611,7 +611,7 @@
                 <button class="tab-btn" onclick="showTab('despesas',this)">Despesas Operac.</button>
                 <button class="tab-btn" onclick="showTab('ebitda',this)">EBITDA</button>
                 <button class="tab-btn" onclick="showTab('ajustes',this)">Ajustes de Caixa</button>
-                <button class="tab-btn" onclick="showTab('bancos',this)">Bancos</button>
+                <button class="tab-btn" onclick="showTab('caixa',this)">💰 Caixa / Saldos</button>
                 <button class="btn-detalhar" onclick="abrirModalTudoConsolidado()" style="margin-left:0.5rem;">📊 Ver Tudo Consolidado</button>
                 <button class="btn-detalhar" onclick="abrirModalConsolidadoAnual()" style="margin-left:0.25rem;background:linear-gradient(135deg,#7c3aed,#5b21b6);">📅 Consolidado Anual</button>
               </div>
@@ -2400,12 +2400,12 @@ document.addEventListener('click', function() {
   <script src="js/config.js?v=5"></script>
   <!-- IXC Dados — deve carregar ANTES do init-operacional (que chama renderizarGraficos) -->
   <script src="js/ixc-dados.js?v=5"></script>
-  <script src="js/dados-financeiros.js?v=4"></script>
+  <script src="js/dados-financeiros.js?v=5"></script>
   <script src="js/charts.js?v=4"></script>
   <script src="js/diretoria.js"></script>
   <script src="js/comissao-financeiro.js"></script>
   <script src="js/fechar-mes.js"></script>
-  <script src="js/consolidado.js?v=2"></script>
+  <script src="js/consolidado.js?v=3"></script>
   <script src="js/analise-q1.js?v=1"></script>
   <script src="js/dashboard-orcado.js?v=3"></script>
   <script src="js/init-operacional.js?v=4"></script>

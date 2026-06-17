@@ -31,6 +31,32 @@ const AJUSTES_NAMES = new Set(['investimento','compra de veiculos',
   'invest. tecnico e administrativo','aq. de provedor','empr/finac/parcel',
   'investimentos pop','emprestimos para giro','reneg. debitos','socios ou retiradas']);
 
+// Extrai o bloco "Geração de Caixa / Saldos" (Geração de Caixa → Sald Final).
+// Espelha js/consolidado.js > parseCaixaBlock.
+function parseCaixaBlock(rows, headerIdx, colMeses) {
+  const out = [];
+  let started = false;
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const row = rows[i] || [];
+    const nomeRaw = typeof row[0] === 'string' ? row[0].trim() : '';
+    if (!nomeRaw) continue;
+    const n = norm(nomeRaw);
+    if (!started) {
+      if (n === 'geracao de caixa') started = true;
+      else continue;
+    }
+    const item = { nome: nomeRaw };
+    MESES.forEach(m => {
+      const v = row[colMeses[m]];
+      item[m] = typeof v === 'number' ? Math.round(v * 100) / 100 : 0;
+    });
+    item.total = Math.round(MESES.reduce((s, m) => s + (item[m] || 0), 0) * 100) / 100;
+    out.push(item);
+    if (n === 'sald final' || n === 'saldo final') break;
+  }
+  return out;
+}
+
 async function main() {
   console.log('[1/4] Lendo consolidado_dados atual do Supabase...');
   const { data: row, error: errRead } = await sb
@@ -140,6 +166,10 @@ async function main() {
   }
 
   console.log('  ✓ ' + atualizados + ' itens atualizados');
+
+  // ===== Seção "Geração de Caixa / Saldos" (linhas ~104-129 da Anual Real) =====
+  dados.caixa = parseCaixaBlock(rows, headerIdx, colMeses);
+  console.log('  ✓ Caixa/Saldos: ' + dados.caixa.length + ' linhas');
 
   console.log('[4/4] Salvando consolidado_dados no Supabase...');
   const { error: errSet } = await sb.from('app_storage').upsert({
