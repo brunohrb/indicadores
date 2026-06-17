@@ -655,6 +655,61 @@
           </tr>
         `;
       }
+      /* ===================== CAIXA / SALDOS ===================== */
+      else if (categoria === 'caixa') {
+        const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+        const mesesLabel = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+        const itens = dadosFluxoAtual.caixa || [];
+        const _norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+        // Linhas de resumo/saldo (destaque); o resto são contas bancárias
+        const RESUMO = new Set(['geracao de caixa','g-caixa acumulada','sldo acumulado','saldo acumulado','saldo inicial']);
+        const isFinal = nome => { const n=_norm(nome); return n==='sald final'||n==='saldo final'; };
+        const isResumo = nome => RESUMO.has(_norm(nome));
+
+        if (itens.length === 0) {
+          document.getElementById('tableContent').innerHTML =
+            '<div style="padding:2rem;text-align:center;color:#64748b;">Sem dados de Caixa ainda. Rode o <strong>🔄 Sync OneDrive</strong> uma vez para carregar.</div>';
+          return;
+        }
+
+        // Último mês com dados (Saldo Final != 0)
+        const final = itens.find(i => isFinal(i.nome));
+        let ultIdx = 0;
+        if (final) meses.forEach((m,idx) => { if (Math.abs(final[m]||0) > 0.005) ultIdx = idx; });
+        const ultLabel = mesesLabel[ultIdx];
+
+        let h = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">';
+        h += '<thead><tr style="background:#0f3460;color:#fff;"><th style="padding:0.6rem 0.8rem;text-align:left;position:sticky;left:0;background:#0f3460;">Caixa / Saldo</th>';
+        mesesLabel.forEach(l => { h += '<th style="padding:0.6rem;text-align:right;">'+l+'</th>'; });
+        h += '<th style="padding:0.6rem;text-align:right;background:#1e3a8a;">Atual ('+ultLabel+')</th></tr></thead><tbody>';
+
+        let bancosHeaderPosto = false;
+        itens.forEach(item => {
+          const resumo = isResumo(item.nome), fin = isFinal(item.nome);
+          // Cabeçalho "CONTAS BANCÁRIAS" antes da 1ª conta (após os resumos)
+          if (!resumo && !fin && !bancosHeaderPosto) {
+            h += '<tr style="background:#e0f2fe;font-weight:700;"><td colspan="14" style="padding:0.5rem 0.8rem;color:#0f3460;letter-spacing:0.03em;">CONTAS BANCÁRIAS</td></tr>';
+            bancosHeaderPosto = true;
+          }
+          let bg='#fff', fw='400', cor='#1e293b';
+          if (resumo) { bg='#f1f5f9'; fw='700'; cor='#0f3460'; }
+          if (fin)    { bg='#dcfce7'; fw='700'; cor='#166534'; }
+          h += '<tr style="background:'+bg+';border-bottom:1px solid #e2e8f0;">';
+          h += '<td style="padding:0.5rem 0.8rem;font-weight:'+fw+';color:'+cor+';position:sticky;left:0;background:'+bg+';">'+(resumo||fin?'':'&nbsp;&nbsp;')+item.nome+'</td>';
+          meses.forEach(m => {
+            const v = item[m] || 0;
+            h += '<td style="padding:0.5rem 0.6rem;text-align:right;font-weight:'+fw+';color:'+(v<0?'#b91c1c':cor)+';">'+(v===0?'<span style="color:#cbd5e1">—</span>':formatCurrency(v))+'</td>';
+          });
+          const va = item[meses[ultIdx]] || 0;
+          h += '<td style="padding:0.5rem 0.6rem;text-align:right;font-weight:700;background:#eff6ff;color:'+(va<0?'#b91c1c':cor)+';">'+(va===0?'—':formatCurrency(va))+'</td>';
+          h += '</tr>';
+        });
+        h += '</tbody></table>';
+        const tc = document.getElementById('tableContent');
+        tc.innerHTML = h;
+        _tableCache.set(_cacheKey, h);
+        return;
+      }
       /* ===================== OUTRAS CATEGORIAS ===================== */
       else {
         const meses = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
