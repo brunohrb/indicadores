@@ -66,20 +66,22 @@ async function executarDAX(token, dax, tentativa = 1) {
 async function dormir(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function daxDeCard(mesNum, ano) {
-  // Usa [Valor Recebido] em vez de [Reajuste - Valor Aplicado]
-  const filtroMes = `'dCalendário'[Ano] = ${ano}, 'dCalendário'[NumeroMes] = ${mesNum}`;
+  // "Valor Recebido" do Dashboard de Reajustes = medida [Valor Recebido Total],
+  // filtrada pela data de PAGAMENTO (tabela 'dCalendario Pagamento'), não pela
+  // data do reajuste. Colunas: [Ano Pgto] + [NumeroMes Pgto].
+  const filtroMes = `'dCalendario Pagamento'[Ano Pgto] = ${ano}, 'dCalendario Pagamento'[NumeroMes Pgto] = ${mesNum}`;
   // Listas de filial_id confirmadas (mesmas usadas no sync Diretoria)
   const FILIAIS_PF = '{1, 2, 3, 5, 10, 20, 22, 26, 27, 28, 29, 43, 45, 47}';
   const FILIAIS_PJ = '{12, 13, 14, 16, 17, 18, 19, 21, 31, 33, 35, 37, 39}';
 
   return [
-    // [Valor Recebido] do próprio mês. Valor segmentado por filial_id.
+    // [Valor Recebido Total] do mês de pagamento. Segmentado por filial_id.
     { card: 'Reajuste Contratos PF',
-      dax: `CALCULATE([Valor Recebido], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF}))` },
+      dax: `CALCULATE([Valor Recebido Total], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PF}))` },
     { card: 'Reajuste Contratos PJ',
-      dax: `CALCULATE([Valor Recebido], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PJ}))` },
+      dax: `CALCULATE([Valor Recebido Total], ${filtroMes}, FILTER('fReajustes', 'fReajustes'[filial_id] IN ${FILIAIS_PJ}))` },
     { card: 'Reajuste Valor Aplicado Total',
-      dax: `CALCULATE([Valor Recebido], ${filtroMes})` },
+      dax: `CALCULATE([Valor Recebido Total], ${filtroMes})` },
   ];
 }
 
