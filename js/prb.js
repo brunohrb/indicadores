@@ -301,17 +301,24 @@ window.prbLock = function() {
 };
 
 // ── Exportar para Supabase (consolidado_dados) ────────────────────
+// Lê EXATAMENTE a mesma fonte que prbCalc() — dadosFinanceiros em memória
 window.exportarConsolidadoDados = async function() {
   const ano = document.getElementById('prbAnoFiltro')?.value ?? '2026';
-  const d = prbData(ano);
-  if (!d) { alert('Sem dados para exportar.'); return; }
+  const d = prbData(ano);  // Retorna dadosFinanceiros (a mesma fonte que PRB usa!)
+  if (!d) { alert('Sem dados disponíveis. Carregue o XLSX primeiro.'); return; }
 
   const btn = event?.target;
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Exportando...'; }
 
   try {
+    // Log antes de enviar (debug)
+    console.log('[exportar] Gravando consolidado_dados de ano', ano);
+    console.log('[exportar] Receitas:', d.receitas?.length, 'itens');
+    console.log('[exportar] Faturamento jan:', d.receitas?.reduce((s,r)=>s+(r.jan||0),0));
+
     await sbStorage.set('consolidado_dados', JSON.stringify(d));
-    await sbStorage.set('consolidado_versao', '2026-v12');
+    await sbStorage.set('consolidado_versao', '2026-v13');
+
     if (btn) {
       btn.textContent = '✅ Exportado!';
       setTimeout(() => {
@@ -319,9 +326,10 @@ window.exportarConsolidadoDados = async function() {
         btn.textContent = '📤 Exportar para PRB';
       }, 2000);
     }
-    alert('✅ consolidado_dados atualizado no Supabase com os 12 meses completos!');
+    console.log('[exportar] Sucesso! consolidado_dados atualizado.');
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '📤 Exportar para PRB'; }
+    console.error('[exportar] Erro:', e);
     alert('❌ Erro ao exportar: ' + e.message);
   }
 };
