@@ -21,7 +21,7 @@
     const sbStorage = {
       async get(key) {
         try {
-          const { data, error } = await sb.from('app_storage').select('value').eq('key', key).maybeSingle();
+          const { data, error } = await sb.from('indicadores_app_storage').select('value').eq('key', key).maybeSingle();
           if (error) { sbLog(`GET "${key}" erro: ${error.message}`, 'erro'); throw error; }
           return data ? data.value : null;
         } catch(e) {
@@ -31,7 +31,7 @@
       },
       async set(key, value) {
         try {
-          const { error } = await sb.from('app_storage').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+          const { error } = await sb.from('indicadores_app_storage').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
           if (error) { sbLog(`SET "${key}" erro: ${error.message}`, 'erro'); throw error; }
           sbLog(`SET "${key}" ✓`, 'ok');
         } catch(e) {
@@ -41,7 +41,7 @@
       },
       async remove(key) {
         try {
-          const { error } = await sb.from('app_storage').delete().eq('key', key);
+          const { error } = await sb.from('indicadores_app_storage').delete().eq('key', key);
           if (error) { sbLog(`DEL "${key}" erro: ${error.message}`, 'erro'); throw error; }
         } catch(e) {
           sbLog(`DEL "${key}" falhou: ${e.message}`, 'warn');
@@ -52,9 +52,9 @@
       async testar() {
         sbLog('Testando conexão...', 'info');
         try {
-          const { data, error } = await sb.from('app_storage').select('key').limit(1);
+          const { data, error } = await sb.from('indicadores_app_storage').select('key').limit(1);
           if (error) { sbLog(`Tabela não acessível: ${error.message}`, 'erro'); return false; }
-          sbLog('Conexão OK! Tabela app_storage acessível ✓', 'ok');
+          sbLog('Conexão OK! Tabela indicadores_app_storage acessível ✓', 'ok');
           return true;
         } catch(e) { sbLog(`Falha de conexão: ${e.message}`, 'erro'); return false; }
       }
