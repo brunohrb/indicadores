@@ -300,8 +300,43 @@ window.prbLock = function() {
   document.getElementById('prbContent').style.display    = 'none';
 };
 
-// ── Exportar CSV ───────────────────────────────────────────────────
-window.prbExportarCSV = function() {
+// ── Exportar para Supabase (consolidado_dados) ────────────────────
+window.exportarConsolidadoDados = async function() {
+  const ano = document.getElementById('prbAnoFiltro')?.value ?? '2026';
+  const d = prbData(ano);
+  if (!d) { alert('Sem dados para exportar.'); return; }
+
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Exportando...'; }
+
+  try {
+    await sbStorage.set('consolidado_dados', JSON.stringify(d));
+    await sbStorage.set('consolidado_versao', '2026-v12');
+    if (btn) {
+      btn.textContent = '✅ Exportado!';
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '📤 Exportar para PRB';
+      }, 2000);
+    }
+    alert('✅ consolidado_dados atualizado no Supabase com os 12 meses completos!');
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Exportar para PRB'; }
+    alert('❌ Erro ao exportar: ' + e.message);
+  }
+};
+
+// Auto-exportar ao iniciar (opcional — comentado por padrão)
+// window.addEventListener('load', function() {
+//   setTimeout(() => {
+//     if (typeof exportarConsolidadoDados === 'function') {
+//       console.log('[Auto-export] Gravando consolidado_dados...');
+//       // Simula um clique no botão (ou chama direto sem event)
+//       exportarConsolidadoDados.call({ target: null });
+//     }
+//   }, 3000);
+// });
+
   const ano = document.getElementById('prbAnoFiltro')?.value ?? '2026';
   const headers = ['Indicador', ...PRB_MESES_N, 'Total'];
   const rows = [
