@@ -31,11 +31,26 @@
       },
       async set(key, value) {
         try {
+          // Log MD5 do valor (auditoria)
+          const hash = await new Promise((resolve) => {
+            const blob = new Blob([value]);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const arr = new Uint8Array(reader.result);
+              const md5hex = Array.from(arr).map(b => ('0' + b.toString(16)).slice(-2)).join('').slice(0, 8);
+              resolve(md5hex);
+            };
+            reader.readAsArrayBuffer(blob);
+          });
+          console.log(`[sbStorage.set] "${key}" hash=${hash} size=${value.length}`);
+
           const { error } = await sb.from('indicadores_app_storage').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
           if (error) { sbLog(`SET "${key}" erro: ${error.message}`, 'erro'); throw error; }
-          sbLog(`SET "${key}" ✓`, 'ok');
+          sbLog(`SET "${key}" ✓ (${value.length} bytes)`, 'ok');
+          console.log(`[sbStorage.set] "${key}" gravado com sucesso`);
         } catch(e) {
           sbLog(`SET "${key}" falhou: ${e.message} — usando localStorage`, 'warn');
+          console.error(`[sbStorage.set] "${key}" erro:`, e);
           localStorage.setItem(key, value);
         }
       },

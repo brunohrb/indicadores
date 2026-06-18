@@ -334,16 +334,30 @@ window.exportarConsolidadoDados = async function() {
   }
 };
 
-// Auto-exportar ao iniciar (opcional — comentado por padrão)
-// window.addEventListener('load', function() {
-//   setTimeout(() => {
-//     if (typeof exportarConsolidadoDados === 'function') {
-//       console.log('[Auto-export] Gravando consolidado_dados...');
-//       // Simula um clique no botão (ou chama direto sem event)
-//       exportarConsolidadoDados.call({ target: null });
-//     }
-//   }, 3000);
-// });
+// ── Auto-exportar sem depender do botão (chamado por consolidadoInicializar) ──
+window.exportarConsolidadoDadosAuto = async function() {
+  const ano = '2026';  // sempre 2026 para auto-export
+  const d = prbData(ano);
+  if (!d) {
+    console.warn('[auto-export] Sem dados disponíveis — será chamado novamente quando XLSX carregar');
+    return;
+  }
+
+  try {
+    const jsonStr = JSON.stringify(d);
+    console.log('[auto-export] Gravando consolidado_dados...');
+    console.log('[auto-export] Tamanho:', jsonStr.length, 'bytes');
+    console.log('[auto-export] Receitas:', d.receitas?.length, 'itens');
+    console.log('[auto-export] Faturamento jan:', d.receitas?.reduce((s,r)=>s+(r.jan||0),0));
+
+    await sbStorage.set('consolidado_dados', jsonStr);
+    await sbStorage.set('consolidado_versao', '2026-v14');
+
+    console.log('[auto-export] ✅ Sucesso! consolidado_dados atualizado automaticamente.');
+  } catch(e) {
+    console.error('[auto-export] ❌ Erro ao exportar:', e);
+  }
+};
 
   const ano = document.getElementById('prbAnoFiltro')?.value ?? '2026';
   const headers = ['Indicador', ...PRB_MESES_N, 'Total'];
