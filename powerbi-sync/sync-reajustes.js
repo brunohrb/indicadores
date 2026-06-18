@@ -69,8 +69,9 @@ function daxDeCard(mesNum, ano) {
   // "Valor Recebido" do Dashboard de Reajustes = SUM('fReajustes'[Valor_Reajustado])
   // dos reajustes PAGOS, pelo MÊS DE RECEBIMENTO (coluna 'fReajustes'[Data_Pagamento_MINX],
   // a data do 1º título pago), classificados em PF/PJ por 'dFilial'[Tipo_Pessoa].
-  // (Confirmado via diagnóstico: bate o card do relatório — ex. jun/2026 PJ = 691,75.)
-  const filtroRecebido = `'fReajustes'[Status_Reajuste] = "Pago" && YEAR('fReajustes'[Data_Pagamento_MINX]) = ${ano} && MONTH('fReajustes'[Data_Pagamento_MINX]) = ${mesNum}`;
+  // Filtro de ano também sobre Data_Reajuste pra excluir reajustes de anos anteriores pagos neste ano.
+  // (Confirmado via diagnóstico v9: bate exatamente — ex. jan 47.75, fev 893.23, etc.)
+  const filtroRecebido = `'fReajustes'[Status_Reajuste] = "Pago" && YEAR('fReajustes'[Data_Reajuste]) = ${ano} && YEAR('fReajustes'[Data_Pagamento_MINX]) = ${ano} && MONTH('fReajustes'[Data_Pagamento_MINX]) = ${mesNum}`;
 
   return [
     { card: 'Reajuste Contratos PF',
