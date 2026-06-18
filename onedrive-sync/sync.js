@@ -18,6 +18,104 @@ const sb = createClient(SB_URL, SB_KEY);
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim();
 
+// CSV_MAP espelha o mapeamento do navegador em js/consolidado.js
+const CSV_MAP = {
+  'link pessoa física':        { cat:'receitas', nome:'Link Pessoa Física' },
+  'link pf':                   { cat:'receitas', nome:'Link Pessoa Física' },
+  'link pessoa jurídica':      { cat:'receitas', nome:'Link Pessoa Jurídica' },
+  'link pj':                   { cat:'receitas', nome:'Link Pessoa Jurídica' },
+  'juros/multa':               { cat:'receitas', nome:'Juros/Multa' },
+  'juros':                     { cat:'receitas', nome:'Juros/Multa' },
+  'taxa de instalação':        { cat:'receitas', nome:'Taxa de instalação' },
+  'eventos':                   { cat:'receitas', nome:'Eventos' },
+  'multa fidelidade':          { cat:'receitas', nome:'Multa fidelidade e equipamento' },
+  'multa fidelidade e equipamento': { cat:'receitas', nome:'Multa fidelidade e equipamento' },
+  'rendimentos financeiros':   { cat:'receitas', nome:'Rendimentos financeiros' },
+  'ativos imobilizados': { cat:'receitas', nome:'V. Ativos imobilizados' },
+  'vendas canceladas e estornos': { cat:'receitas', nome:'Vendas canceladas e estornos' },
+  'vendas canceladas':         { cat:'receitas', nome:'Vendas canceladas e estornos' },
+  'icms':                      { cat:'impostos', nome:'ICMS' },
+  'cofins':                    { cat:'impostos', nome:'COFINS' },
+  'pis':                       { cat:'impostos', nome:'PIS' },
+  'irpj':                      { cat:'impostos', nome:'IRPJ' },
+  'csll':                      { cat:'impostos', nome:'CSLL' },
+  'iss':                       { cat:'impostos', nome:'ISS' },
+  'iss retido':                { cat:'impostos', nome:'ISS Retido' },
+  'simples nacional':          { cat:'impostos', nome:'Simples Nacional' },
+  'fust/funttel':              { cat:'impostos', nome:'FUST/FUNTTEL' },
+  'fust':                      { cat:'impostos', nome:'FUST/FUNTTEL' },
+  'kit instalação':            { cat:'custos', nome:'Kit Instalação' },
+  'materiais de rede':         { cat:'custos', nome:'Materiais de Rede' },
+  'links de dados':            { cat:'custos', nome:'Links de Dados / Voip' },
+  'links de dados / voip':     { cat:'custos', nome:'Links de Dados / Voip' },
+  'vtal':                      { cat:'custos', nome:'Vtal' },
+  'alugueis de postes':        { cat:'custos', nome:'Alugueis de Postes' },
+  'alugueis de torre':         { cat:'custos', nome:'Alugueis de Torre e POP' },
+  'alugueis de torre e pop':   { cat:'custos', nome:'Alugueis de Torre e POP' },
+  'custo com sva':             { cat:'custos', nome:'Custo com SVA' },
+  'energia / pop':             { cat:'custos', nome:'Energia / POP' },
+  'manutencao pop':            { cat:'custos', nome:'Manutenção POP' },
+  'comissões de vendas':       { cat:'custos', nome:'Comissões de vendas' },
+  'combustível técnico':       { cat:'custos', nome:'Combustivel técnico' },
+  'manut. veículo':            { cat:'custos', nome:'Manut. Veículo' },
+  'manutenção veículo':        { cat:'custos', nome:'Manut. Veículo' },
+  'folha - direta':            { cat:'custos', nome:'Folha - Direta' },
+  'folha direta':              { cat:'custos', nome:'Folha - Direta' },
+  'telefonia':                 { cat:'custos', nome:'Telefonia' },
+  'man. equipamento':          { cat:'custos', nome:'Man. Equipamento' },
+  'ferramentas':               { cat:'custos', nome:'Ferramentas' },
+  'moveis e equipamentos escritório ti': { cat:'custos', nome:'Moveis e equipamentos escritório TI' },
+  'tercerização de serv. (instalações)': { cat:'custos', nome:'Tercerização de Serv. (Instalações)' },
+  'custos lastmile':           { cat:'custos', nome:'Custos Lastmile' },
+  'marketing':                 { cat:'despesas', nome:'Marketing' },
+  'serv. terceiros':           { cat:'despesas', nome:'Serv. Terceiros, jurídicos e consultorias' },
+  'serviços terceiros':        { cat:'despesas', nome:'Serv. Terceiros, jurídicos e consultorias' },
+  'viagens/estadia':           { cat:'despesas', nome:'Viagens/Estadia' },
+  'segurança trabalho/ epi':   { cat:'despesas', nome:'Segurança Trabalho/ EPI' },
+  'aluguel de escritório':     { cat:'despesas', nome:'Desp. Aluguel de escritório' },
+  'desp. aluguel':             { cat:'despesas', nome:'Desp. Aluguel de escritório' },
+  'desp. reformas empresa':    { cat:'despesas', nome:'Desp. Reformas empresa' },
+  'material de uso, consumo e papelaria': { cat:'despesas', nome:'Material de uso, consumo e papelaria' },
+  'combustivel adm':           { cat:'despesas', nome:'Combustivel Adm' },
+  'despesas e taxas com veiculos': { cat:'despesas', nome:'Despesas e taxas com Veiculos' },
+  'despesas tributárias/ taxas legais': { cat:'despesas', nome:'Despesas Tributárias/ Taxas legais' },
+  'despesas judiciais':        { cat:'despesas', nome:'Despesas Judiciais' },
+  'treinamentos':              { cat:'despesas', nome:'Treinamentos' },
+  'pró-labore':                { cat:'despesas', nome:'Pró-Labore' },
+  'pro-labore':                { cat:'despesas', nome:'Pró-Labore' },
+  'sistema':                   { cat:'despesas', nome:'Sistema' },
+  'taxas boleto':              { cat:'despesas', nome:'Taxas Boleto' },
+  'enérgia elétrica escritório': { cat:'despesas', nome:'Enérgia Elétrica escritório' },
+  'despesas diversas / estacionamento': { cat:'despesas', nome:'Despesas Diversas / Estacionamento' },
+  'tarifas bancárias':         { cat:'despesas', nome:'Tarifas bancárias' },
+  'tarifas bancarias':         { cat:'despesas', nome:'Tarifas bancárias' },
+  'ebitda':                    { cat:'ebitda', nome:'EBITDA' },
+  'irpj (previsão)':           { cat:'ebitda_ajustado', nome:'IRPJ (Previsão)' },
+  'cssl (previsão)':           { cat:'ebitda_ajustado', nome:'CSSL (Previsão)' },
+  'trimestral':                { cat:'ebitda_ajustado', nome:'Trimestral' },
+  'compra de provedor':        { cat:'ebitda_ajustado', nome:'Compra de Provedor' },
+  'credito icms':              { cat:'ebitda_ajustado', nome:'Credito ICMS' },
+  'ajuste (mark/equip)':       { cat:'ebitda_ajustado', nome:'Ajuste (Mark/Equip)' },
+  'datora':                    { cat:'ebitda_ajustado', nome:'Datora' },
+  'inclusão 2':                { cat:'ebitda_ajustado', nome:'Inclusão 2' },
+  'inclusão 3':                { cat:'ebitda_ajustado', nome:'Inclusão 3' },
+  'inclusão 4':                { cat:'ebitda_ajustado', nome:'Inclusão 4' },
+  'inclusão 5':                { cat:'ebitda_ajustado', nome:'Inclusão 5' },
+  'ajuste (postes)':           { cat:'ebitda_ajustado', nome:'Ajuste (Postes)' },
+  'ajuste vtal fora':          { cat:'ebitda_ajustado', nome:'Ajuste Vtal Fora' },
+  'ajuste vtal':               { cat:'ebitda_ajustado', nome:'Ajuste Vtal Fora' },
+  'ebitda (ajustado)':         { cat:'ebitda_ajustado', nome:'EBITDA (Ajustado)' },
+  'compra de veículos':        { cat:'ajustes', nome:'Compra de veículos' },
+  'invest. técnico e administrativo': { cat:'ajustes', nome:'Invest. técnico e administrativo' },
+  'aq. de provedor':           { cat:'ajustes', nome:'Aq. de provedor' },
+  'parcel. impostos':          { cat:'ajustes', nome:'Parcel. Impostos' },
+  'investimentos pop':         { cat:'ajustes', nome:'Investimentos POP' },
+  'empréstimos para giro':     { cat:'ajustes', nome:'Empréstimos para giro' },
+  'reneg. débitos':            { cat:'ajustes', nome:'Reneg. Débitos' },
+  'sócios ou retiradas':       { cat:'ajustes', nome:'Sócios ou Retiradas' },
+  'retiradas':                 { cat:'ajustes', nome:'Sócios ou Retiradas' }
+};
+
 const SECTIONS = {
   'receitas':'receitas', 'impostos':'impostos', 'custos':'custos',
   'despesas operac.':'despesas', 'despesas financ.':'despesas', 'ebitda':'ebitda_section'
@@ -58,14 +156,103 @@ function parseCaixaBlock(rows, headerIdx, colMeses) {
 }
 
 async function main() {
-  console.log('[1/4] Lendo consolidado_dados atual do Supabase...');
-  const { data: row, error: errRead } = await sb
-    .from('app_storage').select('value').eq('key', 'consolidado_dados').maybeSingle();
-  if (errRead) throw errRead;
-  if (!row || !row.value) {
-    throw new Error('consolidado_dados não existe no Supabase. Use o botão "Sync OneDrive" no dashboard pelo menos 1x antes pra criar a estrutura.');
-  }
-  const dados = JSON.parse(row.value);
+  console.log('[1/4] Reconstruindo estrutura consolidado_dados...');
+  // Inicializa estrutura COMPLETA do zero (não depende de dados anteriores)
+  const dados = {
+    receitas: [
+      { nome:"Link Pessoa Física",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Link Pessoa Jurídica",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Juros/Multa",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Taxa de instalação",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Eventos",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Multa fidelidade e equipamento",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Rendimentos financeiros",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"V. Ativos imobilizados",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Vendas canceladas e estornos",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 }
+    ],
+    impostos: [
+      { nome:"ICMS",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"COFINS",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"PIS",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"IRPJ",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"CSLL",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"ISS",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"ISS Retido",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Simples Nacional",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"FUST/FUNTTEL",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 }
+    ],
+    custos: [
+      { nome:"Kit Instalação",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Materiais de Rede",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Links de Dados / Voip",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Vtal",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Alugueis de Postes",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Alugueis de Torre e POP",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Custo com SVA",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Energia / POP",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Manutenção POP",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Comissões de vendas",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Combustivel técnico",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Manut. Veículo",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Folha - Direta",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Telefonia",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Man. Equipamento",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Ferramentas",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Moveis e equipamentos escritório TI",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Tercerização de Serv. (Instalações)",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Custos Lastmile",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 }
+    ],
+    despesas: [
+      { nome:"Marketing",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Serv. Terceiros, jurídicos e consultorias",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Viagens/Estadia",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Segurança Trabalho/ EPI",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Desp. Aluguel de escritório",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Desp. Reformas empresa",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Material de uso, consumo e papelaria",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Combustivel Adm",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Despesas e taxas com Veiculos",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Despesas Tributárias/ Taxas legais",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Despesas Judiciais",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Treinamentos",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Pró-Labore",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Sistema",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Taxas Boleto",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Enérgia Elétrica escritório",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Despesas Diversas / Estacionamento",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Tarifas bancárias",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 }
+    ],
+    ebitda: [
+      { nome:"EBITDA",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 }
+    ],
+    ebitda_ajustado: [
+      { nome:"IRPJ (Previsão)",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"CSSL (Previsão)",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Trimestral",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Compra de Provedor",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Credito ICMS",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Ajuste (Mark/Equip)",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Datora",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Inclusão 2",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Inclusão 3",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Inclusão 4",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Inclusão 5",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Ajuste (Postes)",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Ajuste Vtal Fora",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"EBITDA (Ajustado)",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 }
+    ],
+    ajustes: [
+      { nome:"Compra de veículos",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Invest. técnico e administrativo",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Aq. de provedor",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Parcel. Impostos",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Investimentos POP",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Empréstimos para giro",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Reneg. Débitos",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 },
+      { nome:"Sócios ou Retiradas",jan:0,fev:0,mar:0,abr:0,mai:0,jun:0,jul:0,ago:0,set:0,out:0,nov:0,dez:0,total:0 }
+    ],
+    caixa: []
+  };
 
   console.log('[2/4] Baixando XLSX da Edge Function...');
   const resp = await fetch(EDGE_URL, { headers: { 'apikey': SB_KEY } });
@@ -129,7 +316,11 @@ async function main() {
       }
     }
 
-    const item = itemIdx[nomeRaw];
+    // Procura pelo CSV_MAP primeiro (normalizado)
+    const mapKey = norm(nomeRaw);
+    const mapped = CSV_MAP[mapKey];
+    const nomeCanonico = mapped ? mapped.nome : nomeRaw;
+    const item = itemIdx[nomeCanonico];
     if (!item) continue;
 
     MESES.forEach(m => {
@@ -155,7 +346,11 @@ async function main() {
     if (n === 'ajustes de caixa' || n === 'saidas') { inSaidas = true; continue; }
     if (n === 'entradas' || n === 'geracao de caixa') { inSaidas = false; continue; }
     if (!inSaidas || !AJUSTES_NAMES.has(n)) continue;
-    const item = itemIdx[String(r[0]).trim()];
+    const nomeAjuste = String(r[0]).trim();
+    const mapKeyAjuste = norm(nomeAjuste);
+    const mappedAjuste = CSV_MAP[mapKeyAjuste];
+    const nomeCanonicoAjuste = mappedAjuste ? mappedAjuste.nome : nomeAjuste;
+    const item = itemIdx[nomeCanonicoAjuste];
     if (!item) continue;
     MESES.forEach(m => {
       const v = r[colMeses[m]];
