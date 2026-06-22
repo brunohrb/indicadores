@@ -21,7 +21,7 @@
     const sbStorage = {
       async get(key) {
         try {
-          const { data, error } = await sb.from('app_storage').select('value').eq('key', key).maybeSingle();
+          const { data, error } = await sb.from('indicadores_app_storage').select('value').eq('key', key).maybeSingle();
           if (error) { sbLog(`GET "${key}" erro: ${error.message}`, 'erro'); throw error; }
           return data ? data.value : null;
         } catch(e) {
@@ -31,17 +31,32 @@
       },
       async set(key, value) {
         try {
-          const { error } = await sb.from('app_storage').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+          // Log MD5 do valor (auditoria)
+          const hash = await new Promise((resolve) => {
+            const blob = new Blob([value]);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const arr = new Uint8Array(reader.result);
+              const md5hex = Array.from(arr).map(b => ('0' + b.toString(16)).slice(-2)).join('').slice(0, 8);
+              resolve(md5hex);
+            };
+            reader.readAsArrayBuffer(blob);
+          });
+          console.log(`[sbStorage.set] "${key}" hash=${hash} size=${value.length}`);
+
+          const { error } = await sb.from('indicadores_app_storage').upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
           if (error) { sbLog(`SET "${key}" erro: ${error.message}`, 'erro'); throw error; }
-          sbLog(`SET "${key}" ✓`, 'ok');
+          sbLog(`SET "${key}" ✓ (${value.length} bytes)`, 'ok');
+          console.log(`[sbStorage.set] "${key}" gravado com sucesso`);
         } catch(e) {
           sbLog(`SET "${key}" falhou: ${e.message} — usando localStorage`, 'warn');
+          console.error(`[sbStorage.set] "${key}" erro:`, e);
           localStorage.setItem(key, value);
         }
       },
       async remove(key) {
         try {
-          const { error } = await sb.from('app_storage').delete().eq('key', key);
+          const { error } = await sb.from('indicadores_app_storage').delete().eq('key', key);
           if (error) { sbLog(`DEL "${key}" erro: ${error.message}`, 'erro'); throw error; }
         } catch(e) {
           sbLog(`DEL "${key}" falhou: ${e.message}`, 'warn');
@@ -52,9 +67,9 @@
       async testar() {
         sbLog('Testando conexão...', 'info');
         try {
-          const { data, error } = await sb.from('app_storage').select('key').limit(1);
+          const { data, error } = await sb.from('indicadores_app_storage').select('key').limit(1);
           if (error) { sbLog(`Tabela não acessível: ${error.message}`, 'erro'); return false; }
-          sbLog('Conexão OK! Tabela app_storage acessível ✓', 'ok');
+          sbLog('Conexão OK! Tabela indicadores_app_storage acessível ✓', 'ok');
           return true;
         } catch(e) { sbLog(`Falha de conexão: ${e.message}`, 'erro'); return false; }
       }

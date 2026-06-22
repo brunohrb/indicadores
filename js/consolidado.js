@@ -478,6 +478,14 @@
           showTab(document.querySelector('.tab-btn.active')?.textContent?.toLowerCase().trim() || 'receitas');
           renderComissao();
 
+          // 🔄 AUTO-EXPORT: grava consolidado_dados AUTOMATICAMENTE após carregar XLSX
+          if (typeof exportarConsolidadoDadosAuto === 'function') {
+            setTimeout(() => {
+              console.log('[consolidado] AUTO-EXPORT: gravando consolidado_dados após carregar XLSX');
+              exportarConsolidadoDadosAuto();
+            }, 500);
+          }
+
           // Re-renderiza o Dashboard Orçado se estiver aberto
           setTimeout(() => {
             if (typeof renderDashboardOrcado === 'function' && document.getElementById('orcadoRealizadoView')?.classList.contains('active')) {
@@ -609,7 +617,7 @@
     }
 
     // Auto-fetch na primeira visita do dia
-    const DADOS_VERSION = '2026-v10'; // Incrementar sempre que os dados hardcoded mudarem
+    const DADOS_VERSION = '2026-v14'; // Incrementar sempre que os dados hardcoded mudarem
 
     async function consolidadoInicializar() {
       syncAtualizarStatusUI();
