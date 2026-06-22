@@ -3729,14 +3729,14 @@ window.prbExportarCSV=function(){
       {l:'📈 EBITDA',v:c.ebitda,sub:'Margem: '+_dreFP(c.margE),color:c.ebitda>=0?'#4ade80':'#f87171',w:c.rec?Math.abs(c.ebitda)/c.rec*100:0,hi:true}
     ];
     el.innerHTML=kpis.map(function(k){
-      var bg=k.hi?'linear-gradient(135deg,rgba(74,222,128,.08),rgba(16,185,129,.04))':'#0f172a';
-      return '<div style="background:'+bg+';border:1px solid '+k.color+'30;border-top:2px solid '+k.color+';border-radius:10px;padding:.9rem 1.1rem">'+
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.35rem">'+
-        '<span style="font-size:.66rem;color:#64748b;text-transform:uppercase;letter-spacing:.08em">'+k.l+'</span></div>'+
-        '<div style="font-size:1.2rem;font-weight:800;color:'+k.color+';margin-bottom:.2rem">'+_dreFC(k.v)+'</div>'+
-        '<div style="font-size:.66rem;color:#475569">'+k.sub+'</div>'+
-        '<div style="height:3px;background:#1e293b;border-radius:2px;margin-top:.65rem">'+
-        '<div style="height:100%;border-radius:2px;background:'+k.color+';width:'+Math.min(100,Math.max(0,k.w||0)).toFixed(1)+'%;opacity:.7"></div></div></div>';
+      var bg=k.hi?'linear-gradient(135deg,rgba(74,222,128,.12),rgba(16,185,129,.06))':'rgba(15,23,42,0.6)';
+      return '<div style="background:'+bg+';border:1.5px solid '+k.color+'50;border-top:3px solid '+k.color+';border-radius:12px;padding:1.2rem 1.4rem;backdrop-filter:blur(8px)">'+
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem">'+
+        '<span style="font-size:.75rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.1em;font-weight:700">'+k.l+'</span></div>'+
+        '<div style="font-size:1.4rem;font-weight:900;color:'+k.color+';margin-bottom:.35rem;font-family: \'Courier New\', monospace">'+_dreFC(k.v)+'</div>'+
+        '<div style="font-size:.8rem;color:#64748b;font-weight:500">'+k.sub+'</div>'+
+        '<div style="height:4px;background:#0f172a;border-radius:3px;margin-top:.85rem">'+
+        '<div style="height:100%;border-radius:3px;background:'+k.color+';width:'+Math.min(100,Math.max(0,k.w||0)).toFixed(1)+'%;opacity:.8;box-shadow:0 0 8px '+k.color+'60"></div></div></div>';
     }).join('');
   }
 
@@ -3758,16 +3758,16 @@ window.prbExportarCSV=function(){
       var hasSub=!!ln.sub;
       var bold=ln.isSub||ln.isRes;
       html+='<div id="dreLn_'+ln.id+'" onclick="'+(hasSub?'_dreTglRow("'+ln.id+'")':'')+'" style="'+
-        'padding:.85rem 1.5rem;background:rgba('+(ln.color.replace('#','').match(/../g).map(function(h){return parseInt(h,16)}).join(','))+',0.04);'+
-        'border-left:3px solid '+ln.color+'33;border-bottom:1px solid #0f172a;'+
+        'padding:1.1rem 1.5rem;background:rgba('+(ln.color.replace('#','').match(/../g).map(function(h){return parseInt(h,16)}).join(','))+',0.06);'+
+        'border-left:4px solid '+ln.color+';border-bottom:1px solid #0f172a;'+
         (hasSub?'cursor:pointer;':'')+'display:flex;align-items:center;gap:.6rem">'+
-        '<span id="dreArrow_'+ln.id+'" style="font-size:.6rem;color:#475569;width:12px;flex-shrink:0;transition:transform .2s">'+(hasSub?'▶':'')+'</span>'+
+        '<span id="dreArrow_'+ln.id+'" style="font-size:.75rem;color:'+ln.color+';width:14px;flex-shrink:0;transition:transform .2s;font-weight:700">'+(hasSub?'▼':'')+'</span>'+
         '<div style="flex:1">'+
-        '<div style="display:flex;justify-content:space-between;align-items:center;'+((!ln.isSub&&!ln.isRes)?'margin-bottom:3px':'')+'">'+
-        '<span style="font-size:'+(bold?.88:.82)+'rem;font-weight:'+(bold?700:400)+';color:'+ln.color+';letter-spacing:.01em">'+ln.l+'</span>'+
-        '<div style="display:flex;gap:1.25rem;align-items:center">'+
-        '<span style="font-size:.68rem;color:#334155">'+_dreFP(Math.abs(ln.pct))+'</span>'+
-        '<span style="font-size:'+(bold?.95:.86)+'rem;font-weight:700;color:'+ln.color+';min-width:135px;text-align:right;font-family:\'Courier New\',monospace">'+_dreFCFull(ln.v)+'</span>'+
+        '<div style="display:flex;justify-content:space-between;align-items:center;'+((!ln.isSub&&!ln.isRes)?'margin-bottom:4px':'')+'">'+
+        '<span style="font-size:'+(bold?'1.02':'0.95')+'rem;font-weight:'+(bold?800:600)+';color:'+ln.color+';letter-spacing:.02em;text-transform:'+(bold?'uppercase':'none')+';font-family:-apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif">'+ln.l+'</span>'+
+        '<div style="display:flex;gap:1.5rem;align-items:center">'+
+        '<span style="font-size:.75rem;color:#94a3b8;font-weight:600">'+_dreFP(Math.abs(ln.pct))+'</span>'+
+        '<span style="font-size:'+(bold?'1.1':'1.0')+'rem;font-weight:800;color:'+ln.color+';min-width:150px;text-align:right;font-family:\'Courier New\', monospace;letter-spacing:.01em">'+_dreFCFull(ln.v)+'</span>'+
         '</div></div>'+
         ((!ln.isSub&&!ln.isRes)?'<div style="height:2px;background:#0f172a;border-radius:1px"><div style="height:100%;border-radius:1px;background:'+ln.color+';width:'+bar+'%;opacity:.45"></div></div>':'')+
         '</div></div>';
@@ -3778,21 +3778,21 @@ window.prbExportarCSV=function(){
           return{nome:s.nome,val:sv};
         }).filter(function(s){return s.val!==0;}).sort(function(a,b){return Math.abs(b.val)-Math.abs(a.val);});
         subItems.forEach(function(s,j){
-          html+='<div id="dreSub_'+ln.id+'_'+j+'" class="dreSub" style="display:none;padding:.5rem 1.5rem .5rem 3.5rem;background:#050d1a;border-bottom:1px solid #0a1020">'+
+          html+='<div id="dreSub_'+ln.id+'_'+j+'" class="dreSub" style="display:none;padding:.7rem 1.5rem .7rem 3.5rem;background:rgba('+(ln.color.replace('#','').match(/../g).map(function(h){return parseInt(h,16)}).join(','))+',0.02);border-bottom:1px solid #0f172a;border-left:4px solid '+ln.color+'40">'+
             '<div style="display:flex;justify-content:space-between;align-items:center">'+
-            '<span style="font-size:.75rem;color:#64748b">'+s.nome+'</span>'+
-            '<span style="font-size:.75rem;color:#94a3b8;font-family:\'Courier New\',monospace">'+_dreFCFull(Math.abs(s.val))+
-            ' <span style="color:#334155;font-size:.66rem">'+_dreFP(c.rec>0?Math.abs(s.val)/c.rec:0)+'</span></span>'+
+            '<span style="font-size:.85rem;color:#cbd5e1;font-weight:500;font-family:-apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif">'+s.nome+'</span>'+
+            '<span style="font-size:.85rem;color:'+ln.color+';font-weight:700;font-family:\'Courier New\',monospace">'+_dreFCFull(Math.abs(s.val))+
+            ' <span style="color:#94a3b8;font-size:.75rem;font-weight:600">'+_dreFP(c.rec>0?Math.abs(s.val)/c.rec:0)+'</span></span>'+
             '</div></div>';
         });
       }
       // EBITDA summary bar
       if(ln.isRes){
-        html+='<div style="padding:.55rem 1.5rem;background:rgba(74,222,128,.04);border-top:1px solid rgba(74,222,128,.15)">'+
-          '<div style="display:flex;justify-content:space-around;font-size:.68rem;color:#64748b">'+
-          '<span>Marg. Líquida: <b style="color:#4ade80">'+_dreFP(c.margE)+'</b></span>'+
-          '<span>Marg. Bruta: <b style="color:#22d3ee">'+_dreFP(c.margB)+'</b></span>'+
-          '<span>Carga Trib.: <b style="color:#f87171">'+_dreFP(c.tribPct)+'</b></span>'+
+        html+='<div style="padding:.85rem 1.5rem;background:linear-gradient(135deg,rgba(74,222,128,.1),rgba(34,211,238,.06));border-top:2px solid rgba(74,222,128,.3);border-radius:0 0 6px 6px">'+
+          '<div style="display:flex;justify-content:space-around;gap:1rem;font-size:.82rem;font-weight:600">'+
+          '<span style="text-align:center"><div style="color:#94a3b8;margin-bottom:2px">Margem Líquida</div><b style="color:#4ade80;font-size:1.1rem">'+_dreFP(c.margE)+'</b></span>'+
+          '<span style="text-align:center;border-left:2px solid #0f172a;border-right:2px solid #0f172a;padding:0 1rem"><div style="color:#94a3b8;margin-bottom:2px">Margem Bruta</div><b style="color:#22d3ee;font-size:1.1rem">'+_dreFP(c.margB)+'</b></span>'+
+          '<span style="text-align:center"><div style="color:#94a3b8;margin-bottom:2px">Carga Trib.</div><b style="color:#f87171;font-size:1.1rem">'+_dreFP(c.tribPct)+'</b></span>'+
           '</div></div>';
       }
     });
@@ -3829,12 +3829,12 @@ window.prbExportarCSV=function(){
     ];
     el.innerHTML=items.map(function(w){
       var pct=c.rec>0?Math.min(100,Math.abs(w.v)/c.rec*100).toFixed(1):0;
-      return '<div style="margin-bottom:.45rem">'+
-        '<div style="display:flex;justify-content:space-between;margin-bottom:2px">'+
-        '<span style="font-size:.68rem;color:'+(w.bold?w.c:'#64748b')+';font-weight:'+(w.bold?700:400)+'">'+w.l+'</span>'+
-        '<span style="font-size:.68rem;color:'+w.c+';font-weight:700">'+_dreFC(w.v)+'</span></div>'+
-        '<div style="height:'+(w.bold?6:3)+'px;background:#0f172a;border-radius:3px">'+
-        '<div style="height:100%;border-radius:3px;background:'+w.c+';width:'+pct+'%;'+(w.bold?'box-shadow:0 0 6px '+w.c+'60':'')+'"></div></div></div>';
+      return '<div style="margin-bottom:.65rem">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:4px;align-items:baseline">'+
+        '<span style="font-size:.82rem;color:'+(w.bold?w.c:'#94a3b8')+';font-weight:'+(w.bold?800:600)+';font-family:-apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif">'+w.l+'</span>'+
+        '<span style="font-size:.9rem;color:'+w.c+';font-weight:900;font-family: \'Courier New\', monospace">'+_dreFC(w.v)+'</span></div>'+
+        '<div style="height:'+(w.bold?7:4)+'px;background:#0f172a;border-radius:4px;overflow:hidden">'+
+        '<div style="height:100%;border-radius:4px;background:'+w.c+';width:'+pct+'%;'+(w.bold?'box-shadow:0 0 10px '+w.c+'80;opacity:1':'opacity:0.7')+'"></div></div></div>';
     }).join('');
   }
 
