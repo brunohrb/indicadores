@@ -162,12 +162,12 @@ function renderDashboardOrcado() {
       const isReceita = (cat === 'receitas' || cat === 'ebitda' || cat === 'ebitda_ajustado');
 
       if (isReceita) {
-        // RECEITAS: ≥90% do orçado = ✅ BATEU, <90% = 🔴 NÃO BATEU
-        if (desvio >= -10) { bgColor = '#d1fae5'; status = '✅'; }
+        // RECEITAS: deve ganhar >= 95% do orçado para BATER (desvio >= -5%)
+        if (desvio >= -5) { bgColor = '#d1fae5'; status = '✅'; }
         else { bgColor = '#fee2e2'; status = '🔴'; }
       } else {
-        // CUSTOS/DESPESAS: ≤110% do orçado = ✅ BATEU, >110% = 🔴 NÃO BATEU
-        if (desvio <= 10) { bgColor = '#d1fae5'; status = '✅'; }
+        // CUSTOS/DESPESAS: deve gastar <= 105% do orçado para BATER (desvio <= +5%)
+        if (desvio <= 5) { bgColor = '#d1fae5'; status = '✅'; }
         else { bgColor = '#fee2e2'; status = '🔴'; }
       }
     }
