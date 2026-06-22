@@ -159,9 +159,17 @@ function renderDashboardOrcado() {
 
     let bgColor = '#ffffff', status = '';
     if (temOrcado && orcad > 0) {
-      if (Math.abs(desvio) <= 10) { bgColor = '#d1fae5'; status = '✅'; }
-      else if (Math.abs(desvio) <= 20) { bgColor = '#fed7aa'; status = '🟡'; }
-      else { bgColor = '#fee2e2'; status = '🔴'; }
+      const isReceita = (cat === 'receitas' || cat === 'ebitda' || cat === 'ebitda_ajustado');
+
+      if (isReceita) {
+        // RECEITAS: realizado >= orçado = ✅ BATEU, < = 🔴 NÃO BATEU
+        if (desvio >= 0) { bgColor = '#d1fae5'; status = '✅'; }
+        else { bgColor = '#fee2e2'; status = '🔴'; }
+      } else {
+        // CUSTOS/DESPESAS: realizado <= orçado = ✅ BATEU, > = 🔴 NÃO BATEU
+        if (desvio <= 0) { bgColor = '#d1fae5'; status = '✅'; }
+        else { bgColor = '#fee2e2'; status = '🔴'; }
+      }
     }
 
     html += '<tr style="background:' + bgColor + ';border-bottom:1px solid #e2e8f0;"><td style="padding:0.8rem;border:1px solid #e2e8f0;font-weight:600;">' + linha.label + '</td>';
