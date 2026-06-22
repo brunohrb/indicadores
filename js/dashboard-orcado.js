@@ -159,20 +159,16 @@ function renderDashboardOrcado() {
 
     let bgColor = '#ffffff', status = '';
     if (temOrcado && orcad > 0) {
-      // RECEITAS/EBITDA: realizado >= orçado é BOM (desvio >= 0%)
-      // CUSTOS/DESPESAS: realizado <= orçado é BOM (desvio <= 0%)
       const isReceita = (cat === 'receitas' || cat === 'ebitda' || cat === 'ebitda_ajustado');
 
       if (isReceita) {
-        // Para RECEITAS: positivo é bom, negativo é ruim
-        if (desvio >= 0) { bgColor = '#d1fae5'; status = '✅'; }                    // Ganhou >= orçado
-        else if (desvio >= -10) { bgColor = '#fed7aa'; status = '🟡'; }            // Ganhou 90-100% do orçado
-        else { bgColor = '#fee2e2'; status = '🔴'; }                               // Ganhou < 90% do orçado
+        // RECEITAS: ≥90% do orçado = ✅ BATEU, <90% = 🔴 NÃO BATEU
+        if (desvio >= -10) { bgColor = '#d1fae5'; status = '✅'; }
+        else { bgColor = '#fee2e2'; status = '🔴'; }
       } else {
-        // Para CUSTOS/DESPESAS/IMPOSTOS: negativo (gastar menos) é bom
-        if (desvio <= 0) { bgColor = '#d1fae5'; status = '✅'; }                   // Gastou <= orçado
-        else if (desvio <= 10) { bgColor = '#fed7aa'; status = '🟡'; }             // Gastou 100-110% do orçado
-        else { bgColor = '#fee2e2'; status = '🔴'; }                               // Gastou > 110% do orçado
+        // CUSTOS/DESPESAS: ≤110% do orçado = ✅ BATEU, >110% = 🔴 NÃO BATEU
+        if (desvio <= 10) { bgColor = '#d1fae5'; status = '✅'; }
+        else { bgColor = '#fee2e2'; status = '🔴'; }
       }
     }
 
