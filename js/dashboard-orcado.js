@@ -159,8 +159,13 @@ function renderDashboardOrcado() {
 
     let bgColor = '#ffffff', status = '';
     if (temOrcado && orcad > 0) {
-      if (Math.abs(desvio) <= 10) { bgColor = '#d1fae5'; status = '✅'; }
-      else if (Math.abs(desvio) <= 20) { bgColor = '#fed7aa'; status = '🟡'; }
+      // Para receitas e ebitda: ganhar MAIS é bom (desvio positivo é bom)
+      // Para custos/despesas: gastar MENOS é bom (desvio negativo é bom)
+      const isReceita = (cat === 'receitas' || cat === 'ebitda' || cat === 'ebitda_ajustado');
+      const desvioAjustado = isReceita ? desvio : -desvio; // inverte lógica para custos/despesas
+
+      if (desvioAjustado >= -10) { bgColor = '#d1fae5'; status = '✅'; }
+      else if (desvioAjustado >= -20) { bgColor = '#fed7aa'; status = '🟡'; }
       else { bgColor = '#fee2e2'; status = '🔴'; }
     }
 
