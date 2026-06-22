@@ -617,7 +617,7 @@
     }
 
     // Auto-fetch na primeira visita do dia
-    const DADOS_VERSION = '2026-v10'; // Incrementar sempre que os dados hardcoded mudarem
+    const DADOS_VERSION = '2026-v14'; // Incrementar sempre que os dados hardcoded mudarem
 
     async function consolidadoInicializar() {
       syncAtualizarStatusUI();
