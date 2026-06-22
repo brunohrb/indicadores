@@ -3602,10 +3602,7 @@ window.prbExportarCSV=function(){
 
   function _dreFC(v){
     if(v==null||isNaN(v))return'—';
-    var a=Math.abs(v);
-    if(a>=1e6)return(v<0?'-':'')+'R$ '+(a/1e6).toFixed(2).replace('.',',')+'M';
-    if(a>=1e3)return(v<0?'-':'')+'R$ '+(a/1e3).toFixed(1).replace('.',',')+'k';
-    return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return(v<0?'-':'')+'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   }
   function _dreFCFull(v){
     if(v==null||isNaN(v))return'—';
