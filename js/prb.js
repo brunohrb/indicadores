@@ -351,7 +351,7 @@ window.exportarConsolidadoDadosAuto = async function() {
     console.log('[auto-export] Faturamento jan:', d.receitas?.reduce((s,r)=>s+(r.jan||0),0));
 
     await sbStorage.set('consolidado_dados', jsonStr);
-    await sbStorage.set('consolidado_versao', '2026-v14');
+    await sbStorage.set('consolidado_versao', '2026-v10');
 
     console.log('[auto-export] ✅ Sucesso! consolidado_dados atualizado automaticamente.');
   } catch(e) {
