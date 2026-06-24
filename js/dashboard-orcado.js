@@ -44,8 +44,18 @@ function _orcadoRealMes(real, cat, mesIdx) {
   return (real[cat] || []).reduce(function(s, item) { return s + (item[mes] || 0); }, 0);
 }
 function _orcadoOrcMes(orcado, cat, mesIdx) {
+  if (!orcado || !orcado[cat]) return 0;
   const mes = DASHBOARD_ORCADO.meses[mesIdx];
-  return (orcado && orcado[cat] && orcado[cat][mes]) || 0;
+  // Estrutura nested: orcado[cat][itemNome][mes] = valor
+  // Soma todos os itens deste mês
+  let total = 0;
+  for (const itemNome in orcado[cat]) {
+    const item = orcado[cat][itemNome];
+    if (item && typeof item === 'object' && item[mes]) {
+      total += item[mes];
+    }
+  }
+  return total;
 }
 
 function renderDashboardOrcado() {
@@ -131,7 +141,7 @@ function renderDashboardOrcado() {
   // ---------- TABELA ----------
   const col1 = DASHBOARD_ORCADO.visao === 'mensal' ? 'Mês' : 'Trimestre';
   html += '<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">';
-  html += '<thead style="background:#f1f5f9;"><tr><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">' + col1 + '</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Realizado</th>';
+  html += '<thead style="background:#f1f5f9;"><tr><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;width:2%;">▼</th><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">' + col1 + '</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Realizado</th>';
   if (temOrcado) {
     html += '<th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Orçado</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Desvio %</th><th style="padding:0.8rem;text-align:center;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Status</th>';
   }
@@ -180,10 +190,11 @@ function renderDashboardOrcado() {
     }
 
     const expandido = DASHBOARD_ORCADO.linhasExpandidas[linha.chave];
-    const seta = expandido ? '▼' : '▶';
+    const seta = '<span style="cursor:pointer;user-select:none;font-size:0.75rem;" onclick="_orcadoToggleLinha(\'' + linha.chave + '\')">' + (expandido ? '▼' : '▶') + '</span>';
 
     html += '<tr style="background:' + bgColor + ';border-bottom:1px solid #e2e8f0;cursor:pointer;" onclick="_orcadoToggleLinha(\'' + linha.chave + '\')">';
-    html += '<td style="padding:0.8rem;border:1px solid #e2e8f0;font-weight:600;"><span style="margin-right:0.5rem;font-size:0.7rem;">' + seta + '</span>' + linha.label + '</td>';
+    html += '<td style="padding:0.8rem;border:1px solid #e2e8f0;text-align:center;">' + seta + '</td>';
+    html += '<td style="padding:0.8rem;border:1px solid #e2e8f0;font-weight:600;">' + linha.label + '</td>';
     html += '<td style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;">' + fc(realizado) + '</td>';
     if (temOrcado) {
       html += '<td style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;">' + fc(orcad) + '</td>';
@@ -222,7 +233,8 @@ function renderDashboardOrcado() {
           }
         }
 
-        html += '<tr style="background:' + itemBgColor + ';border-bottom:1px solid #e2e8f0;"><td style="padding:0.5rem 0.8rem;border:1px solid #e2e8f0;font-size:0.85rem;padding-left:2rem;color:#475569;">' + item.nome + '</td>';
+        html += '<tr style="background:' + itemBgColor + ';border-bottom:1px solid #e2e8f0;"><td style="padding:0.5rem 0.8rem;border:1px solid #e2e8f0;"></td>';
+        html += '<td style="padding:0.5rem 0.8rem;border:1px solid #e2e8f0;font-size:0.85rem;padding-left:2.5rem;color:#475569;">└ ' + item.nome + '</td>';
         html += '<td style="padding:0.5rem 0.8rem;text-align:right;border:1px solid #e2e8f0;font-size:0.85rem;">' + fc(itemRealizado) + '</td>';
         if (temOrcado) {
           html += '<td style="padding:0.5rem 0.8rem;text-align:right;border:1px solid #e2e8f0;font-size:0.85rem;">' + fc(itemOrcad) + '</td>';
@@ -255,105 +267,129 @@ function renderDashboardOrcado() {
 // Carrega orçamento do XLSX quando sync roda
 async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
   try {
+    console.log('[carregarOrcado] Iniciando parser...');
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
-    const sheet = wb.Sheets['Orçamento'];
-    if (!sheet) return console.error('[orcado] Aba "Orçamento" não encontrada');
+    console.log('[carregarOrcado] 📋 Abas disponíveis:', wb.SheetNames);
 
-    const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: 0 });
-    console.log('[orcado] Parse iniciado:', data.length, 'linhas');
+    // Procura pela aba de orçamento (tenta vários nomes possíveis)
+    let sheetName = null;
+    const possibleNames = ['Orçamento', 'Orcamento', 'orcamento', 'Planejado', 'Orçado', 'Budget', 'Orçado 2026'];
 
-    // Mostra os primeiros 10 itens da coluna A pra debug
-    console.log('[orcado] Primeiros 10 itens da planilha:');
-    for (let i = 0; i < Math.min(10, data.length); i++) {
-      console.log(`  L${i}: ${data[i]?.[0] || '(vazio)'}`);
+    for (const name of possibleNames) {
+      if (wb.Sheets[name]) {
+        sheetName = name;
+        break;
+      }
     }
 
-    // Detectar colunas de mês: B-D=jan/fev/mar, E-G=abr/mai/jun, H-J=jul/ago/set, K-M=out/nov/dez
-    const colMeses = {
-      jan: 1, fev: 2, mar: 3,      // Coluna B, C, D (índice 1, 2, 3)
-      abr: 4, mai: 5, jun: 6,      // Coluna E, F, G (índice 4, 5, 6)
-      jul: 7, ago: 8, set: 9,      // Coluna H, I, J (índice 7, 8, 9)
-      out: 10, nov: 11, dez: 12    // Coluna K, L, M (índice 10, 11, 12)
-    };
-    console.log('[orcado] Mapeamento de meses:', Object.entries(colMeses).map(([m,i]) => `${m}=${i}`).join(', '));
+    if (!sheetName) {
+      console.error('[carregarOrcado] ❌ Nenhuma aba de orçamento encontrada!');
+      console.error('[carregarOrcado] Abas encontradas:', wb.SheetNames);
+      return;
+    }
 
-    const orcamento = { receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}, ebitda_ajustado: {} };
-    const real = _orcadoDatasetAno();
+    console.log('[carregarOrcado] ✅ Aba encontrada:', sheetName);
+    const sheet = wb.Sheets[sheetName];
 
-    const normalize = s => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
-    const similar = (a, b) => {
-      const minLen = Math.min(a.length, b.length);
-      return a.substring(0, minLen) === b.substring(0, minLen) && minLen > 3;
-    };
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: 0 });
+    const headerRow = data[3];
+    const colMeses = {};
+    const mesesMap = { jan: ['jan'], fev: ['fev'], mar: ['mar'], abr: ['abr'], mai: ['mai'], jun: ['jun'], jul: ['jul'], ago: ['ago'], set: ['set'], out: ['out'], nov: ['nov'], dez: ['dez'] };
 
-    // Procurar cada categoria
-    for (const cat of Object.keys(orcamento)) {
-      const items = real[cat] || [];
-      console.log(`[orcado] Categoria "${cat}": ${items.length} itens`);
-      orcamento[cat] = {};
-
-      for (const item of items) {
-        orcamento[cat][item.nome] = {};
-        const itemNorm = normalize(item.nome);
-        let encontrou = false;
-
-        for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
-          const row = data[rowIdx];
-          if (!row || !row[0]) continue;
-
-          const cellVal = (row[0] || '').toString().trim();
-          const cellNorm = normalize(cellVal);
-          const matches = cellNorm === itemNorm || similar(cellNorm, itemNorm);
-
-          if (matches && cellVal.length > 0) {
-            console.log(`  ✓ "${item.nome}" encontrado em L${rowIdx} como "${cellVal}"`);
-            
-            for (const [mes, colIdx] of Object.entries(colMeses)) {
-              const val = row[colIdx];
-              if (val === undefined || val === null) {
-                console.log(`    - ${mes} (col ${colIdx}): vazio`);
-                continue;
-              }
-
-              let valNum = 0;
-              if (typeof val === 'number') {
-                valNum = val;
-              } else if (typeof val === 'string') {
-                if (val.startsWith('=')) {
-                  console.log(`    ! ${mes} é fórmula: ${val}`);
-                  continue;
-                }
-                const cleaned = val.replace(/[^\d.,\-]/g, '').replace(',', '.');
-                valNum = parseFloat(cleaned) || 0;
-              }
-
-              if (valNum !== 0) {
-                orcamento[cat][item.nome][mes] = parseFloat((valNum).toFixed(2));
-                console.log(`    ✓ ${mes} = R$ ${valNum.toFixed(2)}`);
-              }
-            }
-            encontrou = true;
+    for (let i = 1; i < headerRow.length; i++) {
+      const h = (headerRow[i] || '').toString().toLowerCase().trim();
+      for (const [mes, aliases] of Object.entries(mesesMap)) {
+        for (const alias of aliases) {
+          if (h.includes(alias) && !colMeses[mes]) {
+            colMeses[mes] = i;
             break;
           }
-        }
-
-        if (!encontrou) {
-          console.warn(`  ✗ "${item.nome}" NÃO encontrado`);
         }
       }
     }
 
+    const linhasCategoria = { receitas: 4, impostos: 16, custos: 26, despesas: 46, ebitda: 67, ebitda_ajustado: 76 };
+    const orcamento = { receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}, ebitda_ajustado: {} };
+
+    // Passo 1: Carregar totais de categoria (linha total de cada categoria)
+    const catTotais = {}; // Guarda: catTotais[cat][mes] = total
+    for (const [cat, lineaIdx] of Object.entries(linhasCategoria)) {
+      catTotais[cat] = {};
+      if (data[lineaIdx]) {
+        const row = data[lineaIdx];
+        for (const [mes, colIdx] of Object.entries(colMeses)) {
+          const val = row[colIdx];
+          let valNum = 0;
+          if (typeof val === 'number') valNum = val;
+          else if (typeof val === 'string') {
+            const cleaned = val.replace(/[^\d.,\-]/g, '').replace(',', '.');
+            valNum = parseFloat(cleaned) || 0;
+          }
+          if (valNum !== 0) catTotais[cat][mes] = parseFloat((valNum).toFixed(2));
+        }
+      }
+    }
+
+    // Passo 2: Carregar itens individuais por nome da aba
+    // Tenta encontrar cada item de realizado na planilha Orçamento por nome exato
+    const real = _orcadoDatasetAno();
+    for (const cat of Object.keys(orcamento)) {
+      const items = real[cat] || [];
+
+      items.forEach(function(item) {
+        orcamento[cat][item.nome] = {};
+
+        // Procura a linha do item na planilha
+        let encontrou = false;
+        for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
+          const row = data[rowIdx];
+          if (row && row[0]) {
+            const cellVal = (row[0] || '').toString().trim().toLowerCase();
+            const itemNome = (item.nome || '').toString().trim().toLowerCase();
+            if (cellVal === itemNome) {
+              // Encontrou! Carrega valores do item
+              for (const [mes, colIdx] of Object.entries(colMeses)) {
+                const val = row[colIdx];
+                let valNum = 0;
+                if (typeof val === 'number') valNum = val;
+                else if (typeof val === 'string') {
+                  const cleaned = val.replace(/[^\d.,\-]/g, '').replace(',', '.');
+                  valNum = parseFloat(cleaned) || 0;
+                }
+                if (valNum !== 0) orcamento[cat][item.nome][mes] = parseFloat((valNum).toFixed(2));
+              }
+              encontrou = true;
+              break;
+            }
+          }
+        }
+
+        // Se não encontrou item nomeado, divide o total do categoria igualmente
+        if (!encontrou && items.length > 0) {
+          for (const [mes, total] of Object.entries(catTotais[cat])) {
+            orcamento[cat][item.nome][mes] = parseFloat((total / items.length).toFixed(2));
+          }
+        }
+      });
+    }
+
     DASHBOARD_ORCADO.orcamento = orcamento;
-    const totalItens = Object.values(orcamento).reduce((s, cat) => s + Object.keys(cat).length, 0);
-    console.log(`[orcado] Carregado com sucesso: ${totalItens} itens`);
+    console.log('[carregarOrcado] Estrutura final:', orcamento);
 
+    // Persiste no Supabase pra carregar instantâneo ao abrir (igual o Realizado)
     try {
-      if (typeof sbStorage !== 'undefined') await sbStorage.set('orcamento_dados', JSON.stringify(orcamento));
-    } catch(e) { console.warn('[orcado] Erro ao gravar:', e); }
-
+      if (typeof sbStorage !== 'undefined') {
+        console.log('[carregarOrcado] Salvando orcamento_dados no Supabase...');
+        await sbStorage.set('orcamento_dados', JSON.stringify(orcamento));
+        console.log('[carregarOrcado] ✅ orcamento_dados salvo com sucesso');
+      } else {
+        console.warn('[carregarOrcado] sbStorage não disponível');
+      }
+    } catch(e) { console.warn('[carregarOrcado] Erro ao salvar:', e); }
     renderDashboardOrcado();
   } catch(e) {
-    console.error('[orcado] Erro ao carregar:', e);
+    console.error('[carregarOrcado] ❌ Erro crítico:', e);
+    console.error(e.stack);
   }
 }
 
