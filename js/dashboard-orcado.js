@@ -46,12 +46,22 @@ function _orcadoRealMes(real, cat, mesIdx) {
 function _orcadoOrcMes(orcado, cat, mesIdx) {
   if (!orcado || !orcado[cat]) return 0;
   const mes = DASHBOARD_ORCADO.meses[mesIdx];
-  // Nova estrutura: orcado[cat] = { "item nome": { jan: val, fev: val, ... }, ... }
-  // Soma todos os itens deste mês
+  // Suporta 2 estruturas:
+  // 1. Flat (totais): orcado[cat][mes] = valor
+  // 2. Nested (itens): orcado[cat][itemNome][mes] = valor
+
+  // Tenta flat primeiro
+  if (typeof orcado[cat][mes] === 'number') {
+    return orcado[cat][mes];
+  }
+
+  // Se não achou flat, soma itens nested
   let total = 0;
   for (const itemNome in orcado[cat]) {
     const item = orcado[cat][itemNome];
-    if (item && item[mes]) total += item[mes];
+    if (item && typeof item === 'object' && item[mes]) {
+      total += item[mes];
+    }
   }
   return total;
 }
@@ -306,38 +316,9 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
       }
     }
 
-    // Passo 2: Tentar carregar itens individuais procurando pelos nomes na planilha
-    const real = _orcadoDatasetAno();
-    for (const cat of Object.keys(orcamento)) {
-      const items = real[cat] || [];
-      orcamento[cat] = {}; // Reinicializa para usar estrutura de itens nomeados
-
-      items.forEach(function(item) {
-        orcamento[cat][item.nome] = {};
-
-        // Procurar a linha do item na planilha
-        for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
-          const row = data[rowIdx];
-          if (row && row[0]) {
-            const cellVal = (row[0] || '').toString().trim();
-            if (cellVal.toLowerCase() === item.nome.toLowerCase()) {
-              // Encontrou o item, carregar seus valores mensais
-              for (const [mes, colIdx] of Object.entries(colMeses)) {
-                const val = row[colIdx];
-                let valNum = 0;
-                if (typeof val === 'number') valNum = val;
-                else if (typeof val === 'string') {
-                  const cleaned = val.replace(/[^\d.,\-]/g, '').replace(',', '.');
-                  valNum = parseFloat(cleaned) || 0;
-                }
-                if (valNum !== 0) orcamento[cat][item.nome][mes] = parseFloat((valNum).toFixed(2));
-              }
-              break;
-            }
-          }
-        }
-      });
-    }
+    // Passo 2: Os totais do Passo 1 já têm o orçado correto por mês
+    // Mantém essa estrutura flat: orcamento[cat][mes] = total
+    // (A função _orcadoOrcMes sabe somar itens se houver, ou usar totais diretos)
 
     DASHBOARD_ORCADO.orcamento = orcamento;
     // Persiste no Supabase pra carregar instantâneo ao abrir (igual o Realizado)
