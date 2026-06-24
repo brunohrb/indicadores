@@ -44,8 +44,16 @@ function _orcadoRealMes(real, cat, mesIdx) {
   return (real[cat] || []).reduce(function(s, item) { return s + (item[mes] || 0); }, 0);
 }
 function _orcadoOrcMes(orcado, cat, mesIdx) {
+  if (!orcado || !orcado[cat]) return 0;
   const mes = DASHBOARD_ORCADO.meses[mesIdx];
-  return (orcado && orcado[cat] && orcado[cat][mes]) || 0;
+  // Nova estrutura: orcado[cat] = { "item nome": { jan: val, fev: val, ... }, ... }
+  // Soma todos os itens deste mês
+  let total = 0;
+  for (const itemNome in orcado[cat]) {
+    const item = orcado[cat][itemNome];
+    if (item && item[mes]) total += item[mes];
+  }
+  return total;
 }
 
 function renderDashboardOrcado() {
