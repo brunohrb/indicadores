@@ -466,12 +466,17 @@
 
           // Carrega orçamento da aba "Orçamento" (novo)
           syncSetProgress(95, 'Carregando orçamento...');
+          console.log('[consolidado] Verificando se carregarOrcadoDoXLSXBytes existe...');
           if (typeof carregarOrcadoDoXLSXBytes === 'function') {
+            console.log('[consolidado] Chamando carregarOrcadoDoXLSXBytes com data:', typeof data, data.length, 'bytes');
             try {
               await carregarOrcadoDoXLSXBytes(data);
             } catch(e) {
-              console.warn('⚠️ Não conseguiu carregar aba "Orçamento":', e);
+              console.error('[consolidado] ❌ Erro ao carregar aba "Orçamento":', e);
+              console.error(e.stack);
             }
+          } else {
+            console.warn('[consolidado] ⚠️ carregarOrcadoDoXLSXBytes não está definida');
           }
 
           syncMarcarFeito();
