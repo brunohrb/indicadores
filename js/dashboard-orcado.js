@@ -365,7 +365,4 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
   }
 }
 
-// Renderiza quando  }
-}
-
 // Renderiza quando a aba é clicada (via changeView)
