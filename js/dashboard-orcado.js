@@ -46,14 +46,14 @@ function _orcadoRealMes(real, cat, mesIdx) {
 function _orcadoOrcMes(orcado, cat, mesIdx) {
   if (!orcado || !orcado[cat]) return 0;
   const mes = DASHBOARD_ORCADO.meses[mesIdx];
-  // Estrutura nested: orcado[cat][itemNome][mes] = valor
-  // Soma todos os itens deste mês
+  // Usa _total (linha da categoria no XLSX) pra evitar double-counting entre itens encontrados/não encontrados
+  if (orcado[cat]._total) return orcado[cat]._total[mes] || 0;
+  // Fallback legado: soma itens
   let total = 0;
   for (const itemNome in orcado[cat]) {
+    if (itemNome === '_total') continue;
     const item = orcado[cat][itemNome];
-    if (item && typeof item === 'object' && item[mes]) {
-      total += item[mes];
-    }
+    if (item && typeof item === 'object' && item[mes]) total += item[mes];
   }
   return total;
 }
@@ -311,35 +311,32 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
     const linhasCategoria = { receitas: 4, impostos: 16, custos: 26, despesas: 46, ebitda: 67, ebitda_ajustado: 76 };
     const orcamento = { receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}, ebitda_ajustado: {} };
 
-    // Passo 1: Carregar totais de categoria (linha total de cada categoria)
-    const catTotais = {}; // Guarda: catTotais[cat][mes] = total
+    function parseNum(val) {
+      if (typeof val === 'number') return val;
+      if (typeof val === 'string') return parseFloat(val.replace(/[^\d.,\-]/g, '').replace(',', '.')) || 0;
+      return 0;
+    }
+
+    // Passo 1: Carregar totais de categoria e guardar como _total
     for (const [cat, lineaIdx] of Object.entries(linhasCategoria)) {
-      catTotais[cat] = {};
+      orcamento[cat]._total = {};
       if (data[lineaIdx]) {
         const row = data[lineaIdx];
         for (const [mes, colIdx] of Object.entries(colMeses)) {
-          const val = row[colIdx];
-          let valNum = 0;
-          if (typeof val === 'number') valNum = val;
-          else if (typeof val === 'string') {
-            const cleaned = val.replace(/[^\d.,\-]/g, '').replace(',', '.');
-            valNum = parseFloat(cleaned) || 0;
-          }
-          if (valNum !== 0) catTotais[cat][mes] = parseFloat((valNum).toFixed(2));
+          const v = parseNum(row[colIdx]);
+          if (v !== 0) orcamento[cat]._total[mes] = parseFloat(v.toFixed(2));
         }
       }
+      console.log('[carregarOrcado] ' + cat + ' total jan:', orcamento[cat]._total['jan']);
     }
 
-    // Passo 2: Carregar itens individuais por nome da aba
-    // Tenta encontrar cada item de realizado na planilha Orçamento por nome exato
+    // Passo 2: Carregar itens individuais por nome (só sobrescreve se encontrado — sem fallback de divisão)
     const real = _orcadoDatasetAno();
+    let encontrados = 0, naoEncontrados = 0;
     for (const cat of Object.keys(orcamento)) {
       const items = real[cat] || [];
-
       items.forEach(function(item) {
         orcamento[cat][item.nome] = {};
-
-        // Procura a linha do item na planilha
         let encontrou = false;
         for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
           const row = data[rowIdx];
@@ -347,31 +344,20 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
             const cellVal = (row[0] || '').toString().trim().toLowerCase();
             const itemNome = (item.nome || '').toString().trim().toLowerCase();
             if (cellVal === itemNome) {
-              // Encontrou! Carrega valores do item
               for (const [mes, colIdx] of Object.entries(colMeses)) {
-                const val = row[colIdx];
-                let valNum = 0;
-                if (typeof val === 'number') valNum = val;
-                else if (typeof val === 'string') {
-                  const cleaned = val.replace(/[^\d.,\-]/g, '').replace(',', '.');
-                  valNum = parseFloat(cleaned) || 0;
-                }
-                if (valNum !== 0) orcamento[cat][item.nome][mes] = parseFloat((valNum).toFixed(2));
+                const v = parseNum(row[colIdx]);
+                if (v !== 0) orcamento[cat][item.nome][mes] = parseFloat(v.toFixed(2));
               }
               encontrou = true;
+              encontrados++;
               break;
             }
           }
         }
-
-        // Se não encontrou item nomeado, divide o total do categoria igualmente
-        if (!encontrou && items.length > 0) {
-          for (const [mes, total] of Object.entries(catTotais[cat])) {
-            orcamento[cat][item.nome][mes] = parseFloat((total / items.length).toFixed(2));
-          }
-        }
+        if (!encontrou) naoEncontrados++;
       });
     }
+    console.log('[carregarOrcado] Itens encontrados:', encontrados, '/ não encontrados:', naoEncontrados);
 
     DASHBOARD_ORCADO.orcamento = orcamento;
     console.log('[carregarOrcado] Estrutura final:', orcamento);
