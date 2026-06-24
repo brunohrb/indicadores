@@ -275,9 +275,15 @@ function renderDashboardOrcado() {
 // Carrega orçamento do XLSX quando sync roda
 async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
   try {
+    console.log('[carregarOrcado] Iniciando parser...');
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
+    console.log('[carregarOrcado] Sheets disponíveis:', wb.SheetNames);
     const sheet = wb.Sheets['Orçamento'];
-    if (!sheet) return;
+    if (!sheet) {
+      console.warn('[carregarOrcado] ⚠️ Aba "Orçamento" não encontrada');
+      return;
+    }
+    console.log('[carregarOrcado] Aba "Orçamento" encontrada');
 
     const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: 0 });
     const headerRow = data[3];
@@ -321,13 +327,22 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
     // (A função _orcadoOrcMes sabe somar itens se houver, ou usar totais diretos)
 
     DASHBOARD_ORCADO.orcamento = orcamento;
+    console.log('[carregarOrcado] Estrutura final:', orcamento);
+
     // Persiste no Supabase pra carregar instantâneo ao abrir (igual o Realizado)
     try {
-      if (typeof sbStorage !== 'undefined') await sbStorage.set('orcamento_dados', JSON.stringify(orcamento));
-    } catch(e) { console.warn('Não conseguiu salvar orçamento no Supabase:', e); }
+      if (typeof sbStorage !== 'undefined') {
+        console.log('[carregarOrcado] Salvando orcamento_dados no Supabase...');
+        await sbStorage.set('orcamento_dados', JSON.stringify(orcamento));
+        console.log('[carregarOrcado] ✅ orcamento_dados salvo com sucesso');
+      } else {
+        console.warn('[carregarOrcado] sbStorage não disponível');
+      }
+    } catch(e) { console.warn('[carregarOrcado] Erro ao salvar:', e); }
     renderDashboardOrcado();
   } catch(e) {
-    console.warn('Erro ao carregar orçamento:', e);
+    console.error('[carregarOrcado] ❌ Erro crítico:', e);
+    console.error(e.stack);
   }
 }
 
