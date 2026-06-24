@@ -269,13 +269,27 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
   try {
     console.log('[carregarOrcado] Iniciando parser...');
     const wb = XLSX.read(arrayBuffer, { type: 'array' });
-    console.log('[carregarOrcado] Sheets disponíveis:', wb.SheetNames);
-    const sheet = wb.Sheets['Orçamento'];
-    if (!sheet) {
-      console.warn('[carregarOrcado] ⚠️ Aba "Orçamento" não encontrada');
+    console.log('[carregarOrcado] 📋 Abas disponíveis:', wb.SheetNames);
+
+    // Procura pela aba de orçamento (tenta vários nomes possíveis)
+    let sheetName = null;
+    const possibleNames = ['Orçamento', 'Orcamento', 'orcamento', 'Planejado', 'Orçado', 'Budget', 'Orçado 2026'];
+
+    for (const name of possibleNames) {
+      if (wb.Sheets[name]) {
+        sheetName = name;
+        break;
+      }
+    }
+
+    if (!sheetName) {
+      console.error('[carregarOrcado] ❌ Nenhuma aba de orçamento encontrada!');
+      console.error('[carregarOrcado] Abas encontradas:', wb.SheetNames);
       return;
     }
-    console.log('[carregarOrcado] Aba "Orçamento" encontrada');
+
+    console.log('[carregarOrcado] ✅ Aba encontrada:', sheetName);
+    const sheet = wb.Sheets[sheetName];
 
     const data = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: 0 });
     const headerRow = data[3];
