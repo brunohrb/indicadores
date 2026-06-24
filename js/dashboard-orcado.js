@@ -131,7 +131,7 @@ function renderDashboardOrcado() {
   // ---------- TABELA ----------
   const col1 = DASHBOARD_ORCADO.visao === 'mensal' ? 'Mês' : 'Trimestre';
   html += '<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">';
-  html += '<thead style="background:#f1f5f9;"><tr><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;width:2%;">▼</th><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">' + col1 + '</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Realizado</th>';
+  html += '<thead style="background:#f1f5f9;"><tr><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">' + col1 + '</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Realizado</th>';
   if (temOrcado) {
     html += '<th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Orçado</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Desvio %</th><th style="padding:0.8rem;text-align:center;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Status</th>';
   }
@@ -180,11 +180,10 @@ function renderDashboardOrcado() {
     }
 
     const expandido = DASHBOARD_ORCADO.linhasExpandidas[linha.chave];
-    const seta = '<span style="cursor:pointer;user-select:none;font-size:0.75rem;" onclick="_orcadoToggleLinha(\'' + linha.chave + '\')">' + (expandido ? '▼' : '▶') + '</span>';
+    const seta = expandido ? '▼' : '▶';
 
     html += '<tr style="background:' + bgColor + ';border-bottom:1px solid #e2e8f0;cursor:pointer;" onclick="_orcadoToggleLinha(\'' + linha.chave + '\')">';
-    html += '<td style="padding:0.8rem;border:1px solid #e2e8f0;text-align:center;">' + seta + '</td>';
-    html += '<td style="padding:0.8rem;border:1px solid #e2e8f0;font-weight:600;">' + linha.label + '</td>';
+    html += '<td style="padding:0.8rem;border:1px solid #e2e8f0;font-weight:600;"><span style="margin-right:0.5rem;font-size:0.7rem;">' + seta + '</span>' + linha.label + '</td>';
     html += '<td style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;">' + fc(realizado) + '</td>';
     if (temOrcado) {
       html += '<td style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;">' + fc(orcad) + '</td>';
@@ -223,8 +222,7 @@ function renderDashboardOrcado() {
           }
         }
 
-        html += '<tr style="background:' + itemBgColor + ';border-bottom:1px solid #e2e8f0;"><td style="padding:0.5rem 0.8rem;border:1px solid #e2e8f0;"></td>';
-        html += '<td style="padding:0.5rem 0.8rem;border:1px solid #e2e8f0;font-size:0.85rem;padding-left:2.5rem;color:#475569;">└ ' + item.nome + '</td>';
+        html += '<tr style="background:' + itemBgColor + ';border-bottom:1px solid #e2e8f0;"><td style="padding:0.5rem 0.8rem;border:1px solid #e2e8f0;font-size:0.85rem;padding-left:2rem;color:#475569;">' + item.nome + '</td>';
         html += '<td style="padding:0.5rem 0.8rem;text-align:right;border:1px solid #e2e8f0;font-size:0.85rem;">' + fc(itemRealizado) + '</td>';
         if (temOrcado) {
           html += '<td style="padding:0.5rem 0.8rem;text-align:right;border:1px solid #e2e8f0;font-size:0.85rem;">' + fc(itemOrcad) + '</td>';
@@ -307,12 +305,17 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
       items.forEach(function(item) {
         orcamento[cat][item.nome] = {};
 
+        // Normaliza o nome pra busca (remove acentos, espaços extras, maiúscula)
+        const normalize = s => (s || '').toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const itemNorm = normalize(item.nome);
+
         // Procurar a linha do item na planilha
         for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
           const row = data[rowIdx];
           if (row && row[0]) {
             const cellVal = (row[0] || '').toString().trim();
-            if (cellVal.toLowerCase() === item.nome.toLowerCase()) {
+            const cellNorm = normalize(cellVal);
+            if (cellNorm === itemNorm && cellVal.length > 0) {
               // Encontrou o item, carregar seus valores mensais
               for (const [mes, colIdx] of Object.entries(colMeses)) {
                 const val = row[colIdx];
@@ -324,9 +327,15 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
                 }
                 if (valNum !== 0) orcamento[cat][item.nome][mes] = parseFloat((valNum).toFixed(2));
               }
+              console.log(`[orcado] Encontrou "${item.nome}" na planilha`);
               break;
             }
           }
+        }
+
+        // Log pra debug: se não encontrou orçado, avisa
+        if (Object.keys(orcamento[cat][item.nome]).length === 0) {
+          console.warn(`[orcado] Não encontrou orçado para "${item.nome}" na planilha`);
         }
       });
     }
