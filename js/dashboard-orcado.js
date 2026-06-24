@@ -14,7 +14,14 @@ const DASHBOARD_ORCADO = {
   tris_label: ['1º Trimestre (Jan–Mar)', '2º Trimestre (Abr–Jun)', '3º Trimestre (Jul–Set)', '4º Trimestre (Out–Dez)'],
   categorias: ['receitas', 'impostos', 'custos', 'despesas', 'ebitda', 'ebitda_ajustado'],
   categorias_label: { receitas: 'Receitas', impostos: 'Impostos', custos: 'Custos', despesas: 'Despesas', ebitda: 'EBITDA', ebitda_ajustado: 'EBITDA Ajustado' },
+  linhasExpandidas: {},  // rastreia quais linhas estão expandidas: { 'mes_0': true, 'tri_1': false, ... }
 };
+
+// Toggle expand/collapse de uma linha
+function _orcadoToggleLinha(chave) {
+  DASHBOARD_ORCADO.linhasExpandidas[chave] = !DASHBOARD_ORCADO.linhasExpandidas[chave];
+  renderDashboardOrcado();
+}
 
 // Cabeçalho com as 2 abas: Orçado × Realizado | Radar de Gastos
 function _orcadoGetTabsHeader() {
@@ -124,24 +131,24 @@ function renderDashboardOrcado() {
   // ---------- TABELA ----------
   const col1 = DASHBOARD_ORCADO.visao === 'mensal' ? 'Mês' : 'Trimestre';
   html += '<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">';
-  html += '<thead style="background:#f1f5f9;"><tr><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">' + col1 + '</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Realizado</th>';
+  html += '<thead style="background:#f1f5f9;"><tr><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;width:2%;">▼</th><th style="padding:0.8rem;text-align:left;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">' + col1 + '</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Realizado</th>';
   if (temOrcado) {
     html += '<th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Orçado</th><th style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Desvio %</th><th style="padding:0.8rem;text-align:center;border:1px solid #e2e8f0;font-weight:600;color:#0f3460;">Status</th>';
   }
   html += '</tr></thead><tbody>';
 
-  // Monta a lista de linhas {label, mesesIdx[]}
+  // Monta a lista de linhas {label, mesesIdx[], chave}
   let linhas = [];
   if (DASHBOARD_ORCADO.visao === 'mensal') {
     DASHBOARD_ORCADO.meses_label.forEach(function(lbl, idx) {
       if (DASHBOARD_ORCADO.mesFiltro === 'todos' || DASHBOARD_ORCADO.mesFiltro === idx) {
-        linhas.push({ label: lbl, idxs: [idx] });
+        linhas.push({ label: lbl, idxs: [idx], chave: 'mes_' + idx, tipo: 'mes', mesIdx: idx });
       }
     });
   } else {
     DASHBOARD_ORCADO.tris.forEach(function(grupo, idx) {
       if (DASHBOARD_ORCADO.triFiltro === 'todos' || DASHBOARD_ORCADO.triFiltro === idx) {
-        linhas.push({ label: DASHBOARD_ORCADO.tris_label[idx], idxs: grupo });
+        linhas.push({ label: DASHBOARD_ORCADO.tris_label[idx], idxs: grupo, chave: 'tri_' + idx, tipo: 'tri', triIdx: idx });
       }
     });
   }
@@ -172,7 +179,12 @@ function renderDashboardOrcado() {
       }
     }
 
-    html += '<tr style="background:' + bgColor + ';border-bottom:1px solid #e2e8f0;"><td style="padding:0.8rem;border:1px solid #e2e8f0;font-weight:600;">' + linha.label + '</td>';
+    const expandido = DASHBOARD_ORCADO.linhasExpandidas[linha.chave];
+    const seta = '<span style="cursor:pointer;user-select:none;font-size:0.75rem;" onclick="_orcadoToggleLinha(\'' + linha.chave + '\')">' + (expandido ? '▼' : '▶') + '</span>';
+
+    html += '<tr style="background:' + bgColor + ';border-bottom:1px solid #e2e8f0;cursor:pointer;" onclick="_orcadoToggleLinha(\'' + linha.chave + '\')">';
+    html += '<td style="padding:0.8rem;border:1px solid #e2e8f0;text-align:center;">' + seta + '</td>';
+    html += '<td style="padding:0.8rem;border:1px solid #e2e8f0;font-weight:600;">' + linha.label + '</td>';
     html += '<td style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;font-weight:600;">' + fc(realizado) + '</td>';
     if (temOrcado) {
       html += '<td style="padding:0.8rem;text-align:right;border:1px solid #e2e8f0;">' + fc(orcad) + '</td>';
@@ -180,6 +192,48 @@ function renderDashboardOrcado() {
       html += '<td style="padding:0.8rem;text-align:center;border:1px solid #e2e8f0;">' + status + '</td>';
     }
     html += '</tr>';
+
+    // Renderizar sub-itens se expandido
+    if (expandido) {
+      const items = real[cat] || [];
+      items.forEach(function(item) {
+        let itemRealizado = 0, itemOrcad = 0;
+        linha.idxs.forEach(function(mi) {
+          const mes = DASHBOARD_ORCADO.meses[mi];
+          itemRealizado += item[mes] || 0;
+          if (temOrcado && orcado && orcado[cat] && orcado[cat][item.nome]) {
+            itemOrcad += orcado[cat][item.nome][mes] || 0;
+          }
+        });
+
+        // Pular itens com 0 de realizado e 0 de orçado
+        if (itemRealizado === 0 && itemOrcad === 0) return;
+
+        const itemDesvio = itemOrcad !== 0 ? ((itemRealizado - itemOrcad) / itemOrcad) * 100 : 0;
+        let itemBgColor = '#f8fafc', itemStatus = '';
+
+        if (temOrcado && itemOrcad > 0) {
+          const isReceita = (cat === 'receitas' || cat === 'ebitda' || cat === 'ebitda_ajustado');
+          if (isReceita) {
+            if (itemDesvio >= 0) { itemBgColor = '#ecfdf5'; itemStatus = '✅'; }
+            else { itemBgColor = '#fef2f2'; itemStatus = '🔴'; }
+          } else {
+            if (itemDesvio <= 0) { itemBgColor = '#ecfdf5'; itemStatus = '✅'; }
+            else { itemBgColor = '#fef2f2'; itemStatus = '🔴'; }
+          }
+        }
+
+        html += '<tr style="background:' + itemBgColor + ';border-bottom:1px solid #e2e8f0;"><td style="padding:0.5rem 0.8rem;border:1px solid #e2e8f0;"></td>';
+        html += '<td style="padding:0.5rem 0.8rem;border:1px solid #e2e8f0;font-size:0.85rem;padding-left:2.5rem;color:#475569;">└ ' + item.nome + '</td>';
+        html += '<td style="padding:0.5rem 0.8rem;text-align:right;border:1px solid #e2e8f0;font-size:0.85rem;">' + fc(itemRealizado) + '</td>';
+        if (temOrcado) {
+          html += '<td style="padding:0.5rem 0.8rem;text-align:right;border:1px solid #e2e8f0;font-size:0.85rem;">' + fc(itemOrcad) + '</td>';
+          html += '<td style="padding:0.5rem 0.8rem;text-align:right;border:1px solid #e2e8f0;font-size:0.85rem;">' + (itemOrcad > 0 ? (itemDesvio >= 0 ? '+' : '') + itemDesvio.toFixed(1) + '%' : '—') + '</td>';
+          html += '<td style="padding:0.5rem 0.8rem;text-align:center;border:1px solid #e2e8f0;font-size:0.85rem;">' + itemStatus + '</td>';
+        }
+        html += '</tr>';
+      });
+    }
   });
 
   // Linha de TOTAL (quando há mais de uma linha)
@@ -227,6 +281,7 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
     const linhasCategoria = { receitas: 4, impostos: 16, custos: 26, despesas: 46, ebitda: 67, ebitda_ajustado: 76 };
     const orcamento = { receitas: {}, impostos: {}, custos: {}, despesas: {}, ebitda: {}, ebitda_ajustado: {} };
 
+    // Passo 1: Carregar totais de categoria (compatibilidade)
     for (const [cat, lineaIdx] of Object.entries(linhasCategoria)) {
       if (data[lineaIdx]) {
         const row = data[lineaIdx];
@@ -241,6 +296,39 @@ async function carregarOrcadoDoXLSXBytes(arrayBuffer) {
           if (valNum !== 0) orcamento[cat][mes] = parseFloat((valNum).toFixed(2));
         }
       }
+    }
+
+    // Passo 2: Tentar carregar itens individuais procurando pelos nomes na planilha
+    const real = _orcadoDatasetAno();
+    for (const cat of Object.keys(orcamento)) {
+      const items = real[cat] || [];
+      orcamento[cat] = {}; // Reinicializa para usar estrutura de itens nomeados
+
+      items.forEach(function(item) {
+        orcamento[cat][item.nome] = {};
+
+        // Procurar a linha do item na planilha
+        for (let rowIdx = 0; rowIdx < data.length; rowIdx++) {
+          const row = data[rowIdx];
+          if (row && row[0]) {
+            const cellVal = (row[0] || '').toString().trim();
+            if (cellVal.toLowerCase() === item.nome.toLowerCase()) {
+              // Encontrou o item, carregar seus valores mensais
+              for (const [mes, colIdx] of Object.entries(colMeses)) {
+                const val = row[colIdx];
+                let valNum = 0;
+                if (typeof val === 'number') valNum = val;
+                else if (typeof val === 'string') {
+                  const cleaned = val.replace(/[^\d.,\-]/g, '').replace(',', '.');
+                  valNum = parseFloat(cleaned) || 0;
+                }
+                if (valNum !== 0) orcamento[cat][item.nome][mes] = parseFloat((valNum).toFixed(2));
+              }
+              break;
+            }
+          }
+        }
+      });
     }
 
     DASHBOARD_ORCADO.orcamento = orcamento;
