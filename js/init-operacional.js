@@ -301,7 +301,7 @@
         const bonEbitdaMetaOk = metaEbitdaTrim       > 0 && ebitdaAcum    >= metaEbitdaTrim;
 
         // Bônus só é pago se trim acabou (isTrimFim) E meta atingida
-        const bonRes    = isTrimFim && bonResMetaOk    ? resultadoAcum * PREMIO_RESULT_TRIM : 0;
+        const bonRes    = isTrimFim && bonResMetaOk    ? resultadoAcum * 0.10 : 0; // fixo: 10% do resultado
         const bonChurn  = isTrimFim && bonChurnMetaOk  ? ebitdaAcum * PREMIO_CHURN_FIN_TRIM: 0;
         const bonMat    = isTrimFim && bonMatMetaOk    ? ebitdaAcum * PREMIO_MAT_TRIM      : 0;
         const bonFolha  = isTrimFim && bonFolhaMetaOk  ? ebitdaAcum * PREMIO_FOLHA_TRIM    : 0;
