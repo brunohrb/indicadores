@@ -252,7 +252,7 @@
         // O mês atual já está calculado em `resultado`; os anteriores são buscados do storage
         const MESES_IDX = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
         let resultadoAcum = resultado; // já inclui o mês atual
-        let cancAcumTrim  = val_canc_pf + val_canc_pj; // mês atual
+        let cancAcumTrim  = val_canc_pf + val_canc_pj + downgrade; // mês atual (inclui downgrade)
         const mesesAnteriores = mesesAte.filter(mK => mK !== mesKey);
         for (const mK of mesesAnteriores) {
           const mI = MESES_IDX.indexOf(mK);
@@ -276,7 +276,7 @@
           const nn_tot_m = nn_pf_m + nn_pj_m + upg_m + raj_m;
           const cc_tot_m = vcpf_m + vcpj_m + dng_m - reat_m;
           resultadoAcum += nn_tot_m - cc_tot_m;
-          cancAcumTrim  += vcpf_m + vcpj_m;
+          cancAcumTrim  += vcpf_m + vcpj_m + dng_m; // inclui downgrade
         }
 
         const qi = trim ? trim.qi : 0;
@@ -301,7 +301,7 @@
         const bonEbitdaMetaOk = metaEbitdaTrim       > 0 && ebitdaAcum    >= metaEbitdaTrim;
 
         // Bônus só é pago se trim acabou (isTrimFim) E meta atingida
-        const bonRes    = isTrimFim && bonResMetaOk    ? ebitdaAcum * PREMIO_RESULT_TRIM   : 0;
+        const bonRes    = isTrimFim && bonResMetaOk    ? resultadoAcum * PREMIO_RESULT_TRIM : 0;
         const bonChurn  = isTrimFim && bonChurnMetaOk  ? ebitdaAcum * PREMIO_CHURN_FIN_TRIM: 0;
         const bonMat    = isTrimFim && bonMatMetaOk    ? ebitdaAcum * PREMIO_MAT_TRIM      : 0;
         const bonFolha  = isTrimFim && bonFolhaMetaOk  ? ebitdaAcum * PREMIO_FOLHA_TRIM    : 0;
