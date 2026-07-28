@@ -12,7 +12,7 @@
        'metaEbitda_'+mesKey,'metaTrim_q1','metaTrim_q2','metaTrim_q3','metaTrim_q4'
       ].forEach(id => {
         const el = document.getElementById(id);
-        if (el) params[id] = parseFloat(el.value) || 0;
+        if (el) params[id] = parseParamValue(el) || 0;
       });
 
       const fat      = getFaturamento(mesKey);
