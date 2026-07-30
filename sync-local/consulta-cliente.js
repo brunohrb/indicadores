@@ -1,8 +1,23 @@
 const https = require('https');
 const readline = require('readline');
+const fs = require('fs');
+const path = require('path');
 
-const IXC_URL   = 'https://ixcsoft.texnet.net.br';
-const IXC_TOKEN = '185:ef49bcecf6129a5b61690ac3da0ab99acdaca9171ea63d06cc403a73eef8c547';
+// Carrega .env local (nunca sobe pro git)
+try {
+  fs.readFileSync(path.join(__dirname, '.env'), 'utf8').split('\n').forEach(l => {
+    const [k, ...v] = l.split('='); if (k && v.length) process.env[k.trim()] = v.join('=').trim();
+  });
+} catch(e) {}
+
+const IXC_URL   = process.env.IXC_URL   || 'https://ixcsoft.texnet.net.br';
+const IXC_TOKEN = process.env.IXC_TOKEN || '';
+
+if (!IXC_TOKEN) {
+  console.error('ERRO: crie o arquivo sync-local/.env com IXC_TOKEN');
+  process.exit(1);
+}
+
 const BASIC = 'Basic ' + Buffer.from(IXC_TOKEN).toString('base64');
 
 function ixc(tabela, body) {

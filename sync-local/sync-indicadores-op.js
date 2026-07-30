@@ -7,11 +7,26 @@
 // =====================================================
 
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
-const IXC_URL   = 'https://ixcsoft.texnet.net.br';
-const IXC_TOKEN = '185:ef49bcecf6129a5b61690ac3da0ab99acdaca9171ea63d06cc403a73eef8c547';
-const SB_URL    = 'https://xuwwgprchhfshrqdhuqn.supabase.co';
-const SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1d3dncHJjaGhmc2hycWRodXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY5NTI0NTQsImV4cCI6MjA4MjUyODQ1NH0.MEUMQ4_z1R5tF3_wQbEj_eTitGJia03b0M0LT3aOAnc';
+// Carrega .env local (nunca sobe pro git)
+try {
+  fs.readFileSync(path.join(__dirname, '.env'), 'utf8').split('\n').forEach(l => {
+    const [k, ...v] = l.split('='); if (k && v.length) process.env[k.trim()] = v.join('=').trim();
+  });
+} catch(e) {}
+
+const IXC_URL   = process.env.IXC_URL   || 'https://ixcsoft.texnet.net.br';
+const IXC_TOKEN = process.env.IXC_TOKEN || '';
+const SB_URL    = process.env.SB_URL    || '';
+const SB_KEY    = process.env.SB_KEY    || '';
+
+if (!IXC_TOKEN || !SB_URL || !SB_KEY) {
+  console.error('ERRO: crie o arquivo sync-local/.env com IXC_TOKEN, SB_URL e SB_KEY');
+  process.exit(1);
+}
+
 const BASIC = 'Basic ' + Buffer.from(IXC_TOKEN).toString('base64');
 
 // Filiais conhecidas (do Power BI)
